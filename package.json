@@ -12,7 +12,20 @@
     "vue": "^3.3.4"
   },
   "devDependencies": {
+    "@crxjs/vite-plugin": "^1.0.14",
     "@vitejs/plugin-vue": "^4.2.3",
     "vite": "^4.4.5"
-  }
+  },
+  "description": "This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.",
+  "main": "vite.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/larsliin/chromeShortCutsVue.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/larsliin/chromeShortCutsVue/issues"
+  },
+  "homepage": "https://github.com/larsliin/chromeShortCutsVue#readme"
 }

@@ -1,0 +1,18 @@
+{
+	"manifest_version": 3,
+	"name": "Custom Start Page",
+	"version": "1.0",
+	"description": "Change the start page of the Chrome browser to a custom page",
+	"permissions": [
+		"bookmarks",
+		"storage",
+		"tabs",
+		"activeTab"
+	],
+	"chrome_url_overrides": {
+		"newtab": "index.html"
+	},
+	"background": {
+		"service_worker": "background.js"
+	}
+}
