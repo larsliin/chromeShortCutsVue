@@ -1,16 +1,21 @@
 <template>
-  <div class="folders-outer">
-    <MdButton />
-    <BIconStarFill class="folders-background" />
-    <div class="folders-container animated flex">
-      <BookmarksSlide />
+    <div class="folders-outer">
+        <BIconStarFill class="folders-background" />
+        <div class="folders-container animated flex">
+            <template v-for="bookmark in bookmarksStore.bookmarks">
+                <BookmarksSlide :bookmarks="bookmark.children" />
+            </template>
+        </div>
     </div>
-  </div>
 </template>
 
 <script setup>
-import BookmarksSlide from './BookmarksSlide.vue';
-import { BIconStarFill } from 'bootstrap-icons-vue';
+
+    import BookmarksSlide from '@/components/bookmarks/BookmarksSlide.vue';
+    import { BIconStarFill } from 'bootstrap-icons-vue';
+    import { useBookmarksStore } from '@stores/bookmarks';
+
+    const bookmarksStore = useBookmarksStore();
 </script>
 
 <style scoped lang="scss">

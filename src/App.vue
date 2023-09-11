@@ -1,13 +1,13 @@
 <template>
   <Toolbar />
-  <BookmarksSlider />
+  <Bookmarks />
 </template>
 
 <script setup>
-import Toolbar from './components/Toolbar.vue'
-import BookmarksSlider from './components/BookmarksSlider.vue'
+    import Toolbar from '@/components/navigation/Toolbar.vue'
+    import Bookmarks from '@/components/bookmarks/Bookmarks.vue'
 </script>
 
 <style>
-@import "./scss/colors.scss";
+    @import "./scss/colors.scss";
 </style>
