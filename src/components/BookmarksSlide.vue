@@ -1,7 +1,7 @@
 <template>
   <div class="folder">
     <div class="folder-inner">
-      <Bookmark
+      <BookmarkLink
         v-for="bookmark in 4"
         @edit="onEditClick()"
         :id="123"
@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import Bookmark from './Bookmark.vue';
+import BookmarkLink from './BookmarkLink.vue';
 
 function onEditClick(){
   alert('EDIT')
@@ -21,20 +21,20 @@ function onEditClick(){
 
 <style scoped lang="scss">
 .folder {
-    align-content: center;
-    display: inline-flex;
-    flex: 0 0 100%;
-    justify-content: center;
-    max-height: calc(100vh - 200px);
-    overflow-y: auto;
+  align-content: center;
+  display: inline-flex;
+  flex: 0 0 100%;
+  justify-content: center;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
 
-    &-inner {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        max-width: 1024px;
-        width: 100%;
-        padding: 0 40px;
-    }
+  &-inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 1024px;
+    width: 100%;
+    padding: 0 40px;
+  }
 }
 </style>

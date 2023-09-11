@@ -1,5 +1,6 @@
 <template>
   <div class="folders-outer">
+    <MdButton />
     <BIconStarFill class="folders-background" />
     <div class="folders-container animated flex">
       <BookmarksSlide />
