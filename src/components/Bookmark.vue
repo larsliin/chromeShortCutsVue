@@ -3,7 +3,7 @@
     <a :href="link" class="bookmark-link" :aria-label="title" tabindex="-1" draggable="true">
       <BookmarkIcon
         :img="img" />
-      <span class="bookmark-title-container">{{ title }}</span>
+      <span class="bookmark-title-container">{{ title }} 123</span>
     </a>
     <button class="bookmark-edit" @click="$emit('edit', id)"><BIconThreeDots /></button>
   </span>
