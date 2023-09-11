@@ -1,8 +1,10 @@
 <template>
+  <Toolbar />
   <BookmarksSlider />
 </template>
 
 <script setup>
+import Toolbar from './components/Toolbar.vue'
 import BookmarksSlider from './components/BookmarksSlider.vue'
 </script>
 

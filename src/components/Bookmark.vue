@@ -18,9 +18,11 @@ defineProps({
   id: {
     type: [String, Number],
     required: true,
-  },
+    },
+
   title: {
-    type: String,
+      type: String,
+
     required: true,
   },
   link: {
