@@ -3,12 +3,12 @@
         <div class="navigation-header-container animated">
             <h3 class="navigation-header"
                 v-for="(bookmark, index) in bookmarksStore.bookmarks"
-                :class="{active: bookmarksStore.slideIndex === index}">{{ bookmark.title }}</h3>
+                :class="{active: bookmarksStore.sliderIndex === index}">{{ bookmark.title }}</h3>
         </div>
         <div class="navigation-container">
             <button class="navigation-item"
                 v-for="(, index) in bookmarksStore.bookmarks"
-                :class="{active: bookmarksStore.slideIndex === index}"
+                :class="{active: bookmarksStore.sliderIndex === index}"
                 @click="onClick(index)">
                 <div class="navigation-item-border">
                     <div class="navigation-item-inner"></div>
@@ -19,20 +19,15 @@
 </template>
 
 <script setup>
-    import { onMounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const bookmarksStore = useBookmarksStore();
 
     function onClick(index) {
-        bookmarksStore.slideIndex = index;
+        bookmarksStore.sliderIndex = index;
 
-        bookmarksStore.set_localStorage({ slideIndex: bookmarksStore.slideIndex });
+        bookmarksStore.set_localStorage({ sliderIndex: bookmarksStore.sliderIndex });
     }
-
-onMounted(() => {
-    console.log(bookmarksStore.bookmarks);
-});
 </script>
 
 <style scoped lang="scss">

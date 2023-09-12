@@ -19,7 +19,7 @@
     const bookmarksStore = useBookmarksStore();
 
     const sliderPosition = computed(() => {
-        return `translateX(${bookmarksStore.slideIndex * -100}%)`;
+        return `translateX(${bookmarksStore.sliderIndex * -100}%)`;
     });
 </script>
 

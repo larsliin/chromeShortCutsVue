@@ -1,8 +1,13 @@
 <template>
-      <template v-if="bookmarksStore.bookmarks">
-          <BookmarksSlider />
-          <NavigationDots />
-      </template>
+    <template v-if="bookmarksStore.bookmarks">
+        <BookmarksSlider />
+        <NavigationDots />
+        <NavigationArrow
+            direction="left" />
+        <NavigationArrow
+            direction="right" />
+        <NavigationDots />
+    </template>
 </template>
 
 <script setup>
@@ -11,6 +16,7 @@
     import NavigationDots from '@/components/navigation/NavigationDots.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { FOLDER } from '@/constants';
+import NavigationArrow from '../navigation/NavigationArrow.vue';
 
     const bookmarksStore = useBookmarksStore();
 
@@ -55,10 +61,10 @@
     onMounted(async () => {
         buildFolders();
 
-        const slideIndexResponse = await bookmarksStore.get_localStorage('slideIndex');
+        const slideIndexResponse = await bookmarksStore.get_localStorage('sliderIndex');
 
         if (slideIndexResponse) {
-            bookmarksStore.slideIndex = slideIndexResponse;
+            bookmarksStore.sliderIndex = slideIndexResponse;
         }
     });
 
