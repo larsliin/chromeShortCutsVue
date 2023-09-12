@@ -1,7 +1,8 @@
 <template>
     <div class="folders-outer">
         <BIconStarFill class="folders-background" />
-        <div class="folders-container animated flex">
+        <div class="folders-container animated flex"
+            :style="{transform: sliderPosition}">
             <template v-for="bookmark in bookmarksStore.bookmarks">
                 <BookmarksSlide :bookmarks="bookmark.children" />
             </template>
@@ -10,12 +11,16 @@
 </template>
 
 <script setup>
-
+    import { computed } from 'vue';
     import BookmarksSlide from '@/components/bookmarks/BookmarksSlide.vue';
     import { BIconStarFill } from 'bootstrap-icons-vue';
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const bookmarksStore = useBookmarksStore();
+
+    const sliderPosition = computed(() => {
+        return `translateX(${bookmarksStore.slideIndex * -100}%)`;
+    });
 </script>
 
 <style scoped lang="scss">
@@ -41,7 +46,6 @@
 
 .folders-container {
     align-items: center;
-    // display: none;
     height: 100%;
 }
 

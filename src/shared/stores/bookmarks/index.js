@@ -5,6 +5,7 @@ import getters from './_getters';
 export const useBookmarksStore = defineStore('bookmarksStore', {
     state: () => ({
         bookmarks: null,
+        slideIndex: 0,
     }),
     actions,
     getters,

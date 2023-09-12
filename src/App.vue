@@ -10,4 +10,5 @@
 
 <style>
     @import "./scss/colors.scss";
+    @import "./scss/typography.scss";
 </style>
