@@ -11,12 +11,12 @@
 </template>
 
 <script setup>
-    import { onMounted } from 'vue';
+    import { onMounted, nextTick } from 'vue';
     import BookmarksSlider from '@/components/bookmarks/BookmarksSlider.vue';
     import NavigationDots from '@/components/navigation/NavigationDots.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { FOLDER } from '@/constants';
-import NavigationArrow from '../navigation/NavigationArrow.vue';
+    import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
 
     const bookmarksStore = useBookmarksStore();
 
@@ -29,15 +29,45 @@ import NavigationArrow from '../navigation/NavigationArrow.vue';
     }
 
     async function onRemoved(event) {
-        const filteredArray = bookmarksStore.bookmarks.map(obj => ({
-            ...obj,
-            children: obj.children.filter(item => item.id !== event)
-        }));
+        const folder = bookmarksStore.bookmarks.find(obj => obj.children.find(item => item.id === event));
 
-        bookmarksStore.bookmarks = filteredArray;
+        if (!folder) {
+            // if folder has been deleted then
+            // delete bookmark from shared bookmarks array in store
+            const filtered = bookmarksStore.bookmarks.filter(e => e.id != event);
+            bookmarksStore.bookmarks = filtered;
+
+            return;
+        }
+
+        if (folder.children.length === 1) {
+            // if last bookmark in folder
+            // then delete folder with content
+            bookmarksStore.remove_bookmark(folder.id);
+        } else {
+            // delete bookmark from shared bookmarks array in store
+            const filtered = bookmarksStore.bookmarks.map(obj => ({
+                ...obj,
+                children: obj.children.filter(item => item.id !== event)
+            }));
+            bookmarksStore.bookmarks = filtered;
+        }
     }
 
-    async function onMoved(event) {
+    async function onChanged() {
+        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
+        bookmarksStore.bookmarks = bookmarks[0].children;
+    }
+
+    function setChromeEventListeners() {
+        chrome.bookmarks.onCreated.addListener(onCreated);
+
+        chrome.bookmarks.onRemoved.addListener(onRemoved);
+
+        chrome.bookmarks.onMoved.addListener(onChanged);
+
+        chrome.bookmarks.onChanged.addListener(onChanged);
     }
 
     async function getBookmarks() {
@@ -45,16 +75,8 @@ import NavigationArrow from '../navigation/NavigationArrow.vue';
 
         const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
         bookmarksStore.bookmarks = bookmarks[0].children;
-        console.log(bookmarksStore.bookmarks)
 
-        //
-        console.log(bookmarksStore.bookmarks);
-
-        chrome.bookmarks.onCreated.addListener(onCreated);
-
-        chrome.bookmarks.onRemoved.addListener(onRemoved);
-
-        chrome.bookmarks.onMoved.addListener(onMoved);
+        setChromeEventListeners();
     }
 
     async function buildFolders() {
@@ -89,7 +111,6 @@ import NavigationArrow from '../navigation/NavigationArrow.vue';
 
     onMounted(async () => {
         await buildFolders();
-
 
         const slideIndexResponse = await bookmarksStore.get_localStorage('sliderIndex');
 

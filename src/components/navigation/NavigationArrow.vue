@@ -5,8 +5,9 @@
         :disabled="disabled"
         :class="direction"
         @click="onClick()">
-        <BIconChevronLeft v-if="direction === 'left'" />
-        <BIconChevronRight v-else="direction === 'right'" />
+        <!-- https://pictogrammers.com/library/mdi/ -->
+        <v-icon size="large" icon="mdi-chevron-right" v-if="direction === 'right'" ></v-icon>
+        <v-icon size="large" icon="mdi-chevron-left" v-if="direction === 'left'" ></v-icon>
     </button>
 </template>
 

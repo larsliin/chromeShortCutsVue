@@ -42,6 +42,21 @@ export default {
         });
     },
 
+    async remove_bookmark(id) {
+        return new Promise((resolve, reject) => {
+            try {
+                chrome.bookmarks.remove(
+                    id,
+                    (bookmark) => {
+                        resolve(bookmark);
+                    }
+                );
+            } catch (error) {
+                reject(error);
+            }
+        });
+    },
+
     async set_localStorage(storageObj) {
         return new Promise((resolve, reject) => {
             try {

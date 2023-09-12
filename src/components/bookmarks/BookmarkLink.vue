@@ -5,13 +5,15 @@
                 :img="img" />
             <span class="bookmark-title-container">{{ title }}</span>
         </a>
-        <button class="bookmark-edit" @click="$emit('edit', id)"><BIconThreeDots /></button>
+        <button class="bookmark-edit" @click="$emit('edit', id)">
+            <!-- https://pictogrammers.com/library/mdi/ -->
+            <v-icon size="small" icon="mdi-dots-horizontal"></v-icon>
+        </button>
     </span>
 </template>
 
 <script setup>
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
-    import { BIconThreeDots } from 'bootstrap-icons-vue';
 
     defineProps({
         img: String,
@@ -39,7 +41,7 @@
 <style scoped lang="scss">
     .bookmark {
         margin: 0 5px;
-        padding-top: 15px;
+        padding-top: 20px;
         width: 115px;
     }
 
