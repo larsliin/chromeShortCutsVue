@@ -14,6 +14,19 @@ export default {
         });
     },
 
+
+    async get_bookmarkById(id) {
+        return new Promise((resolve, reject) => {
+            try {
+                chrome.bookmarks.get(id, (event) => {
+                    resolve(event[0]);
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    },
+
     async create_bookmark(parentId, title, url) {
         return new Promise((resolve) => {
             try {
