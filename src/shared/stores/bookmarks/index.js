@@ -6,6 +6,7 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
     state: () => ({
         bookmarks: null,
         sliderIndex: 0,
+        icons: null,
     }),
     actions,
     getters,

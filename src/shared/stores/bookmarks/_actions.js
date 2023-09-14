@@ -14,7 +14,6 @@ export default {
         });
     },
 
-
     async get_bookmarkById(id) {
         return new Promise((resolve, reject) => {
             try {
@@ -27,8 +26,39 @@ export default {
         });
     },
 
+    searchFolder(bookmarkTreeNodes, folderName) {
+        const t = this;
+        for (let node of bookmarkTreeNodes) {
+            if (node.title === folderName && node.children) {
+                return node;
+            }
+            if (node.children) {
+                const result = t.searchFolder(node.children, folderName);
+                if (result) {
+                    return result;
+                }
+            }
+        }
+    },
+
+    async get_folderByTitle(parentFolderId, title) {
+        const t = this;
+        return new Promise((resolve, reject) => {
+            try {
+                chrome.bookmarks.getSubTree(parentFolderId, function (result) {
+                    const bookmarkTreeNodes = result[0].children;
+                    const folder = t.searchFolder(bookmarkTreeNodes, title);
+                    const folderResult = folder ? [folder] : [];
+                    resolve(folderResult);
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    },
+
     async create_bookmark(parentId, title, url) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             try {
                 chrome.bookmarks.create(
                     { parentId: parentId.toString(), title, url },
@@ -80,4 +110,29 @@ export default {
             }
         });
     },
+
+    async delete_localStorageItem(id) {
+        return new Promise((resolve, reject) => {
+            try {
+                chrome.storage.local.remove([id], function () {
+                    var error = chrome.runtime.lastError;
+                    if (error) {
+                        console.error(error);
+                    }
+                    resolve();
+                })
+            } catch (error) {
+                reject(error);
+            }
+        });
+    },
+
+    async toBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+        });
+    }
 };

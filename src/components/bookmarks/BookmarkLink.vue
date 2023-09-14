@@ -1,8 +1,8 @@
 <template>
     <span class="bookmark relative inline-block">
-        <a :href="link" class="bookmark-link" :aria-label="title" tabindex="-1" draggable="true">
+        <a :href="link" :id="id" class="bookmark-link" :aria-label="title" tabindex="-1" draggable="true">
             <BookmarkIcon
-                :img="img" />
+                :image="image" />
             <span class="bookmark-title-container">{{ title }}</span>
         </a>
         <button class="bookmark-edit" @click="$emit('edit', id)">
@@ -13,11 +13,12 @@
 </template>
 
 <script setup>
+    import { ref, onMounted, watch, nextTick } from 'vue';
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
+    import { useBookmarksStore } from '@stores/bookmarks';
 
-    defineProps({
-        img: String,
-            id: {
+    const props = defineProps({
+        id: {
             type: [String, Number],
             required: true,
         },
@@ -37,12 +38,36 @@
 
     defineEmits(['edit']);
 
+    const image = ref();
+
+    const bookmarksStore = useBookmarksStore();
+
+    async function updateImage() {
+        const getImageResponse = await bookmarksStore.get_localStorage(props.id);
+
+        if (getImageResponse) {
+
+            image.value = getImageResponse.image;
+        }
+
+    }
+    watch(() => bookmarksStore.bookmarks, async function () {
+        image.value = null;
+
+        await nextTick();
+
+        updateImage();
+    });
+
+    onMounted(async() => {
+        updateImage();
+    });
+
 </script>
 <style scoped lang="scss">
     .bookmark {
-        margin: 0 5px;
+        margin: 0 20px;
         padding-top: 20px;
-        width: 115px;
     }
 
     .bookmark-title-container {

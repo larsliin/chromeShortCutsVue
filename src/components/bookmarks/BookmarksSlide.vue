@@ -1,6 +1,6 @@
 <template>
     <div class="folder">
-        <div class="folder-inner">
+        <div class="folder-inner" v-if="bookmarks">
             <BookmarkLink
                 v-for="bookmark in bookmarks"
                 @edit="onEditClick()"

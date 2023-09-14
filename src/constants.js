@@ -11,3 +11,9 @@ export const FOLDER = Object.freeze({
         'home',
     ),
 });
+
+
+export const EMITS = Object.freeze({
+    CLOSE: 'close',
+    SAVE: 'save',
+});

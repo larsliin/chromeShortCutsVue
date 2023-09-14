@@ -20,22 +20,28 @@
 
     const bookmarksStore = useBookmarksStore();
 
+    async function update() {
+        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
+        bookmarksStore.bookmarks = bookmarks[0].children;
+
+        if (bookmarksStore.sliderIndex > bookmarksStore.bookmarks.length - 1) {
+            bookmarksStore.sliderIndex = bookmarksStore.bookmarks.length - 1;
+
+            bookmarksStore.set_localStorage({ sliderIndex: bookmarksStore.sliderIndex });
+        }
+    }
     async function onCreated(event) {
-        const bookmark = await bookmarksStore.get_bookmarkById(event);
-
-        const folder = bookmarksStore.bookmarks.find(e => e.id === bookmark.parentId);
-
-        folder.children.push(bookmark);
+        update();
     }
 
     async function onRemoved(event) {
-        const folder = bookmarksStore.bookmarks.find(obj => obj.children.find(item => item.id === event));
+        const folder = bookmarksStore.bookmarks.find(obj => obj.children?.find(item => item.id === event));
+
+        await bookmarksStore.delete_localStorageItem(event);
 
         if (!folder) {
-            // if folder has been deleted then
-            // delete bookmark from shared bookmarks array in store
-            const filtered = bookmarksStore.bookmarks.filter(e => e.id != event);
-            bookmarksStore.bookmarks = filtered;
+            update();
 
             return;
         }
@@ -43,21 +49,14 @@
         if (folder.children.length === 1) {
             // if last bookmark in folder
             // then delete folder with content
-            bookmarksStore.remove_bookmark(folder.id);
-        } else {
-            // delete bookmark from shared bookmarks array in store
-            const filtered = bookmarksStore.bookmarks.map(obj => ({
-                ...obj,
-                children: obj.children.filter(item => item.id !== event)
-            }));
-            bookmarksStore.bookmarks = filtered;
+            await bookmarksStore.remove_bookmark(folder.id);
         }
+
+        update();
     }
 
-    async function onChanged() {
-        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
-        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
-        bookmarksStore.bookmarks = bookmarks[0].children;
+async function onChanged() {
+        update();
     }
 
     function setChromeEventListeners() {
@@ -122,34 +121,34 @@
 </script>
 
 <style scoped lang="scss">
-.folders-outer {
-    background: #f0f0f0;
-    background: radial-gradient(circle at 100% 100%, #cfcfcf 0%, #fff 100%);
-    display: block;
-    height: 100vh;
-    overflow: hidden;
-    width: 100vw;
-}
+    .folders-outer {
+        background: #f0f0f0;
+        background: radial-gradient(circle at 100% 100%, #cfcfcf 0%, #fff 100%);
+        display: block;
+        height: 100vh;
+        overflow: hidden;
+        width: 100vw;
+    }
 
-.folders-background {
-    color: var(--yellow);
-    display: block;
-    font-size: 600px;
-    left: 50%;
-    opacity: .05;
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-}
+    .folders-background {
+        color: var(--yellow);
+        display: block;
+        font-size: 600px;
+        left: 50%;
+        opacity: .05;
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
 
-.folders-container {
-    align-items: center;
-    // display: none;
-    height: 100%;
-}
+    .folders-container {
+        align-items: center;
+        // display: none;
+        height: 100%;
+    }
 
-.folders-container.animated {
-    transition: transform 0.5s;
-}
+    .folders-container.animated {
+        transition: transform 0.5s;
+    }
 
 </style>
