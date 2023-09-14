@@ -16,4 +16,6 @@ export const FOLDER = Object.freeze({
 export const EMITS = Object.freeze({
     CLOSE: 'close',
     SAVE: 'save',
+    EDIT: 'edit',
+    IMAGE_UPDATED: 'imageUpdated',
 });

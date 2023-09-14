@@ -3,7 +3,6 @@
         <div class="folder-inner" v-if="bookmarks">
             <BookmarkLink
                 v-for="bookmark in bookmarks"
-                @edit="onEditClick()"
                 :id="bookmark.id"
                 :title="bookmark.title"
                 :link="bookmark.url" />
@@ -18,9 +17,6 @@
         bookmarks: [Object, Array],
     });
 
-    function onEditClick(){
-        alert('EDIT')
-    }
 </script>
 
 <style scoped lang="scss">

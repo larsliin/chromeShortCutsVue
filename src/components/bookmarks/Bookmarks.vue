@@ -11,14 +11,27 @@
 </template>
 
 <script setup>
-    import { onMounted, nextTick } from 'vue';
+    import { onMounted, watch } from 'vue';
     import BookmarksSlider from '@/components/bookmarks/BookmarksSlider.vue';
     import NavigationDots from '@/components/navigation/NavigationDots.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { FOLDER } from '@/constants';
+    import { FOLDER, EMITS } from '@/constants';
     import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
+    import useEventsBus from '@cmp/eventBus';
+
+    const { bus } = useEventsBus();
 
     const bookmarksStore = useBookmarksStore();
+
+    function isBookmarkInScope(id) {
+        const idArray = bookmarksStore.bookmarks.flatMap(item => {
+            const topLevelId = item.id;
+            const childIds = item.children ? item.children.map(child => child.id) : [];
+            return [topLevelId, ...childIds];
+        });
+
+        return idArray.includes(id);
+    }
 
     async function update() {
         const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
@@ -32,10 +45,20 @@
         }
     }
     async function onCreated(event) {
+        // ensure that bookmark is ours in ROOT folder
+        if (!isBookmarkInScope(event)) {
+            return;
+        }
+
         update();
     }
 
-    async function onRemoved(event) {
+        async function onRemoved(event) {
+        // ensure that bookmark is ours in ROOT folder
+        if (!isBookmarkInScope(event)) {
+            return;
+        }
+
         const folder = bookmarksStore.bookmarks.find(obj => obj.children?.find(item => item.id === event));
 
         await bookmarksStore.delete_localStorageItem(event);
@@ -55,16 +78,73 @@
         update();
     }
 
-async function onChanged() {
+    async function onChanged(event) {
+        // ensure that bookmark is ours in ROOT folder
+        if (!isBookmarkInScope(event)) {
+            return;
+        }
+
+        if (!bookmarksStore.editBase64Image) {
+            bookmarksStore.delete_localStorageItem(event);
+            update();
+            return;
+        }
+        const promiseArr = [
+            bookmarksStore.get_bookmarkById(event),
+            bookmarksStore.get_localStorage(event)
+        ];
+
+        Promise.all(promiseArr)
+            .then(results => {
+                if (results[0]) {
+                    bookmarksStore.set_localStorage({
+                        [event]: {
+                            id: event,
+                            image: bookmarksStore.editBase64Image,
+                            url: results[0].url,
+                            title: results[0].title,
+                        }
+                    });
+                    bookmarksStore.editBase64Image = null;
+                }
+            })
+            .catch(error => {
+                console.error(error);
+        });
+
+        update();
+    }
+
+    async function onMoved(event) {
+        // ensure that bookmark is ours in ROOT folder
+        if (!isBookmarkInScope(event)) {
+            return;
+        }
+
+        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
+
+        const emptyFolder = bookmarks[0].children.find(e => e.children.length === 0);
+
+        if (emptyFolder) {
+            await bookmarksStore.remove_bookmark(emptyFolder.id);
+        }
+
         update();
     }
 
     function setChromeEventListeners() {
         chrome.bookmarks.onCreated.addListener(onCreated);
         chrome.bookmarks.onRemoved.addListener(onRemoved);
-        chrome.bookmarks.onMoved.addListener(onChanged);
+        chrome.bookmarks.onMoved.addListener(onMoved);
         chrome.bookmarks.onChanged.addListener(onChanged);
     }
+
+    // force event trigger if bookmark data is not updated
+    // but image has changed while editing bookmark
+    watch(() => bus.value.get(EMITS.IMAGE_UPDATED), (id) => {
+        onChanged(id[0]);
+    });
 
     async function getBookmarks() {
         const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);

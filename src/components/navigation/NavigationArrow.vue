@@ -13,7 +13,6 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import { BIconChevronRight, BIconChevronLeft } from 'bootstrap-icons-vue';
 import { useBookmarksStore } from '@stores/bookmarks';
 
     const props = defineProps({

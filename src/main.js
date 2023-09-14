@@ -1,5 +1,7 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
+import mitt from 'mitt';
+const emitter = mitt();
 import './style.css';
 import '@mdi/font/css/materialdesignicons.css'
 import App from './App.vue';
@@ -19,4 +21,8 @@ const vuetify = createVuetify({
       }
 });
 
-createApp(App).use(pinia).use(vuetify).mount('#app');
+const app = createApp(App);
+
+app.config.globalProperties.emitter = emitter;
+
+app.use(pinia).use(vuetify).mount('#app');

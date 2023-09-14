@@ -19,7 +19,7 @@
                                     Existing Folder
                                 </v-tab>
                                 <v-tab
-                                :disabled="folderSlct && folderSlct.length === 0"
+                                    :disabled="folderSlct && folderSlct.length === 0"
                                     :value="2">
                                     Create New Folder
                                 </v-tab>
@@ -71,18 +71,26 @@
                     <v-row>
                         <v-col
                             cols="12">
-                            <v-btn
-                                color="blue-darken-1"
-                                variant="tonal"
-                                @click="onClickFindImage()">
-                                Find Image
-                            </v-btn>
                             <input
                                 class="inp-file"
                                 type="file"
                                 id="inp_image"
                                 accept=".jpg, .jpeg, .gif, .png, .svg"
                                 @change="onImageInpChange($event)" />
+                            <v-btn
+                                color="blue-darken-1"
+                                variant="tonal"
+                                @click="onClickFindImage()">
+                                Find Image
+                            </v-btn>
+                            <v-btn
+                                class="ml-5"
+                                color="blue-darken-1"
+                                variant="tonal"
+                                :disabled="!base64Image"
+                                @click="base64Image = null">
+                                Clear Image
+                            </v-btn>
                         </v-col>
                     </v-row>
                 </v-container>
@@ -107,15 +115,21 @@
 </template>
 
 <script setup>
-    import { ref, computed, onMounted, nextTick } from 'vue';
+    import { ref, computed, onMounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
     import { FOLDER, EMITS } from '@/constants';
+    import useEventsBus from '@cmp/eventBus';
+
+    const { emit } = useEventsBus();
 
     const tabs = ref();
 
     const emits = defineEmits(EMITS.CLOSE);
 
+    const props = defineProps({
+        data: Object,
+    });
     const rules = {
         required: value => !!value || 'Field is required',
         urlvalid: value => isValidURL(value) || 'Field requires a valid URL'
@@ -124,7 +138,12 @@
     const bookmarksStore = useBookmarksStore();
 
     const foldersArr = computed(() => bookmarksStore.bookmarks.flatMap(e => e.title));
+    const foldersIdArr = computed(() => bookmarksStore.bookmarks.map(e => {
+        return { [e.title]: e.id };
+    }));
 
+    const id = ref();
+    const parentId = ref();
     const imageFile = ref();
     const base64Image = ref();
     const clearbitFile = ref();
@@ -134,46 +153,109 @@
     const titleTxt = ref('');
     const urlTxt = ref('');
 
-    async function onClickSave() {
-        const valid = await form.value.validate();
+    // force event trigger if bookmark data is not updated but image has changed
+    function emitImageUpdate() {
+        if (id.value && titleTxt.value  === props.data.title && urlTxt.value  === props.data.url) {
+            emit(EMITS.IMAGE_UPDATED, id.value);
+        }
+    }
 
-        if (!valid.valid) {
+    async function onClickSave() {
+        const formValidation = await form.value.validate();
+
+        if (!formValidation.valid) {
             return;
         }
 
+        // get folder text
         const folderStr = tabs.value === 1 ? folderSlct.value : folderTxt.value
 
         const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
 
+        // check if there is any existing folders with that folder name in our root folder
         const findFolderResponse = await bookmarksStore.get_folderByTitle(getRootResponse.id, folderStr);
 
         let createBookmarkResponse;
+        let slideToFolderId;
+
+        bookmarksStore.editBase64Image = base64Image.value;
 
         if (findFolderResponse && findFolderResponse.length) {
-            // if folder exists
-            createBookmarkResponse = await bookmarksStore.create_bookmark(findFolderResponse[0].id, titleTxt.value, urlTxt.value);
+            // if we have a folder with the provided folder name already
+            if (id.value) {
+                // if bookmark is existing bookmark that is being edited
+                createBookmarkResponse = await bookmarksStore
+                    .update_bookmark(id.value, { title: titleTxt.value, url: urlTxt.value });
+
+                moveToFolder(folderStr);
+
+            } else {
+                // bookmark is new bookmark
+                createBookmarkResponse = await bookmarksStore
+                .create_bookmark(findFolderResponse[0].id, titleTxt.value, urlTxt.value);
+            }
+            slideToFolderId = foldersIdArr.value
+                .find(item => item.hasOwnProperty(folderStr))[folderStr];
 
         } else {
-            // if folder does not exist
+            // if folder does NOT exist
             const createFolderResponse = await bookmarksStore.create_bookmark(getRootResponse.id, folderStr);
 
-            createBookmarkResponse = await bookmarksStore.create_bookmark(createFolderResponse.id, titleTxt.value, urlTxt.value);
+            if (id.value) {
+                // if bookmark is an exsisting bookmark that is being edited then update bookmark
+                createBookmarkResponse = await bookmarksStore.update_bookmark(id.value, { title: titleTxt.value, url: urlTxt.value });
+
+                // move to the newly created folder
+                await moveToFolder(folderStr, createFolderResponse.id);
+                slideToFolderId = createFolderResponse.id;
+            } else {
+                // if bookmark is a new bookmark then create a new bookmark
+                createBookmarkResponse = await bookmarksStore.create_bookmark(createFolderResponse.id, titleTxt.value, urlTxt.value);
+                slideToFolderId = createBookmarkResponse.parentId;
+            }
         }
 
-        await bookmarksStore.set_localStorage({
-            [createBookmarkResponse.id]: {
-                id: createBookmarkResponse.id,
-                image: base64Image.value,
-                url: urlTxt.value,
-                title: titleTxt.value,
-            }
-        });
+        if (id.value) {
+            emitImageUpdate();
+        } else {
+            // create local storage item
+            await bookmarksStore.set_localStorage({
+                [createBookmarkResponse.id]: {
+                    id: createBookmarkResponse.id,
+                    image: base64Image.value,
+                    url: urlTxt.value,
+                    title: titleTxt.value,
+                }
+            });
+        }
 
-        bookmarksStore.sliderIndex = bookmarksStore.bookmarks.findIndex(e => e.id === createBookmarkResponse.parentId);
+        // slide to the new bookmark folder
+        bookmarksStore.sliderIndex = bookmarksStore.bookmarks.findIndex(e => e.id === slideToFolderId);
 
         bookmarksStore.set_localStorage({ sliderIndex: bookmarksStore.sliderIndex });
 
         emits(EMITS.SAVE);
+    }
+
+    async function moveToFolder(folderStr, newFolderId) {
+        if (newFolderId) {
+            // move bookmark to a newly created folder
+            await bookmarksStore.move_bookmark(id.value, { parentId: newFolderId });
+        } else {
+            // move bookmark to an exsisting folder if the provided prop parent id
+            // does not match the parent id from the select dropdown
+            const isSameFolder = !!(foldersIdArr.value
+                .find(item => item[folderStr] === parentId.value));
+
+            // if bookmark is existing bookmark that is being edited
+            // and bookmark is being moved to another folder
+            if (!isSameFolder) {
+                const targetId = foldersIdArr.value
+                    .find(item => item.hasOwnProperty(folderStr))[folderStr];
+
+                await bookmarksStore.move_bookmark(id.value, { parentId: targetId });
+            }
+        }
     }
 
     function isValidURL(str) {
@@ -207,6 +289,14 @@
 
     onMounted(async() => {
         folderSlct.value = bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title;
+
+        if (props.data) {
+            id.value = props.data.id;
+            parentId.value = props.data.parentId;
+            titleTxt.value = props.data.title;
+            urlTxt.value = props.data.url;
+            base64Image.value = props.data.image;
+        }
 
         if (folderSlct.value.length === 0) {
             tabs.value = 2;

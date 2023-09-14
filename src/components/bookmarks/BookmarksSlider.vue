@@ -4,7 +4,8 @@
         <div class="folders-container animated flex"
             :style="{transform: sliderPosition}">
             <template v-for="bookmark in bookmarksStore.bookmarks">
-                <BookmarksSlide :bookmarks="bookmark.children" />
+                <BookmarksSlide
+                    :bookmarks="bookmark.children" />
             </template>
         </div>
     </div>

@@ -42,7 +42,7 @@
         position: relative;
         transform-origin: center right;
         transition: all 0.05s;
-        width: 100px;
+        width: 90px;
     }
 
     .bookmark-image {

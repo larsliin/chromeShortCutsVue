@@ -72,6 +72,44 @@ export default {
         });
     },
 
+    async update_bookmark(id, data) {
+        return new Promise((resolve, reject) => {
+            try {
+                chrome.bookmarks.update(
+                    id,
+                    {
+                        title: data.title,
+                        url: data.url,
+                    },
+                    (bookmark) => {
+                        resolve(bookmark);
+                    }
+                );
+            } catch (error) {
+                reject(error);
+            }
+        });
+    },
+
+
+    async move_bookmark(id, targetId) {
+        return new Promise((resolve, reject) => {
+            try {
+                chrome.bookmarks.move(
+                    id,
+                    targetId,
+                    () => {
+                        resolve();
+                    },
+                )
+            } catch (error) {
+                reject(error);
+            }
+        });
+    },
+
+
+
     async remove_bookmark(id) {
         return new Promise((resolve, reject) => {
             try {

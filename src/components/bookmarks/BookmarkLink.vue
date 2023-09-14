@@ -5,7 +5,7 @@
                 :image="image" />
             <span class="bookmark-title-container">{{ title }}</span>
         </a>
-        <button class="bookmark-edit" @click="$emit('edit', id)">
+        <button class="bookmark-edit" @click="emit(EMITS.EDIT, id)">
             <!-- https://pictogrammers.com/library/mdi/ -->
             <v-icon size="small" icon="mdi-dots-horizontal"></v-icon>
         </button>
@@ -16,6 +16,10 @@
     import { ref, onMounted, watch, nextTick } from 'vue';
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
+    import { EMITS } from '@/constants';
+    import useEventsBus from '@cmp/eventBus';
+
+    const { emit } = useEventsBus();
 
     const props = defineProps({
         id: {
@@ -35,8 +39,6 @@
             default: '-1',
         },
     });
-
-    defineEmits(['edit']);
 
     const image = ref();
 
@@ -96,7 +98,7 @@
         display: none;
         font-size: 18px;
         position: absolute;
-        right: 20px;
+        right: 0;
         top: 0px;
     }
 

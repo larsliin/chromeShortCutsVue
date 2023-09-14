@@ -7,6 +7,7 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         bookmarks: null,
         sliderIndex: 0,
         icons: null,
+        editBase64Image: null,
     }),
     actions,
     getters,
