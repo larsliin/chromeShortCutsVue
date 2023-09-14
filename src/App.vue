@@ -4,7 +4,7 @@
 </template>
 
 <script setup>
-    import Toolbar from '@/components/navigation/Toolbar.vue'
+    import Toolbar from '@/components/toolbar/Toolbar.vue'
     import Bookmarks from '@/components/bookmarks/Bookmarks.vue'
     import { useBookmarksStore } from '@stores/bookmarks';
 

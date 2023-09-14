@@ -14,10 +14,12 @@
                                 color="primary"
                                 grow>
                                 <v-tab
+                                    :disabled="folderSlct && folderSlct.length === 0"
                                     :value="1">
                                     Existing Folder
                                 </v-tab>
                                 <v-tab
+                                :disabled="folderSlct && folderSlct.length === 0"
                                     :value="2">
                                     Create New Folder
                                 </v-tab>
@@ -105,7 +107,7 @@
 </template>
 
 <script setup>
-    import { ref, computed, onMounted } from 'vue';
+    import { ref, computed, onMounted, nextTick } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
     import { FOLDER, EMITS } from '@/constants';
@@ -203,8 +205,12 @@
         base64Image.value = base64Response;
     }
 
-    onMounted(() => {
+    onMounted(async() => {
         folderSlct.value = bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title;
+
+        if (folderSlct.value.length === 0) {
+            tabs.value = 2;
+        }
     });
 </script>
 <style>

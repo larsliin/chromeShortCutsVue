@@ -61,11 +61,8 @@ async function onChanged() {
 
     function setChromeEventListeners() {
         chrome.bookmarks.onCreated.addListener(onCreated);
-
         chrome.bookmarks.onRemoved.addListener(onRemoved);
-
         chrome.bookmarks.onMoved.addListener(onChanged);
-
         chrome.bookmarks.onChanged.addListener(onChanged);
     }
 
@@ -91,7 +88,6 @@ async function onChanged() {
             } else {
                 // if home folder does not exist then create home folder
                 const createHomeResponse = await bookmarksStore.create_bookmark(getRootResponse.id, FOLDER.HOME.label);
-
                 await bookmarksStore.set_localStorage({ [FOLDER.HOME.id]: createHomeResponse });
 
                 getBookmarks();
@@ -99,11 +95,9 @@ async function onChanged() {
         } else {
             // if root folder does not exist create root and home folders
             const createRootResponse = await bookmarksStore.create_bookmark(2, FOLDER.ROOT.label);
-
             await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: createRootResponse });
 
             const createHomeResponse = await bookmarksStore.create_bookmark(createRootResponse.id, FOLDER.HOME.label);
-
             await bookmarksStore.set_localStorage({ [FOLDER.HOME.id]: createHomeResponse });
         }
     }
