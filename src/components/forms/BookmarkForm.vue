@@ -1,11 +1,16 @@
 <template>
     <v-card>
         <v-form ref="form" fast-fail @submit.prevent>
-            <v-card-title>
-                <span class="text-h5">Add Bookmark</span>
-            </v-card-title>
             <v-card-text>
                 <v-container>
+                    <v-row>
+                        <v-col
+                            cols="12">
+                            <v-card-title>
+                                <span class="text-h5">Add Bookmark</span>
+                            </v-card-title>
+                        </v-col>
+                    </v-row>
                     <v-row>
                         <v-col
                             cols="12">
@@ -64,6 +69,12 @@
                     <v-row>
                         <v-col
                             cols="12">
+                            <span class="text-h6">Icon</span>
+                        </v-col>
+                    </v-row>
+                    <v-row>
+                        <v-col
+                            cols="12">
                             <BookmarkIcon
                                 :image="base64Image" />
                         </v-col>
@@ -81,7 +92,15 @@
                                 color="blue-darken-1"
                                 variant="tonal"
                                 @click="onClickFindImage()">
-                                Find Image
+                                Browse
+                            </v-btn>
+                            <v-btn
+                                class="ml-5"
+                                color="blue-darken-1"
+                                variant="tonal"
+                                :disabled="!urlTxt"
+                                @click="getClearbitImage()">
+                                Generate
                             </v-btn>
                             <v-btn
                                 class="ml-5"
@@ -89,7 +108,7 @@
                                 variant="tonal"
                                 :disabled="!base64Image"
                                 @click="base64Image = null">
-                                Clear Image
+                                Clear
                             </v-btn>
                         </v-col>
                     </v-row>
@@ -120,8 +139,11 @@
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
     import { FOLDER, EMITS } from '@/constants';
     import useEventsBus from '@cmp/eventBus';
+    import { useUtils } from '@/shared/utils/utils';
 
     const { emit } = useEventsBus();
+
+    const utils = useUtils();
 
     const tabs = ref();
 
@@ -133,7 +155,7 @@
     const rules = {
         required: (value) => !!value || 'Field is required',
         // eslint-disable-next-line no-use-before-define
-        urlvalid: (value) => isValidURL(value) || 'Field requires a valid URL',
+        urlvalid: (value) => utils.isValidURL(value) || 'Field requires a valid URL',
     };
 
     const bookmarksStore = useBookmarksStore();
@@ -151,6 +173,32 @@
     const folderTxt = ref('');
     const titleTxt = ref('');
     const urlTxt = ref('');
+
+    async function fetchClearBitImage(imageUrl) {
+        try {
+            const response = await utils.getBase64ImageFromUrl(imageUrl);
+            if (response === 'error') {
+                //
+            } else {
+                base64Image.value = response;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    function getClearbitImage() {
+        if (!urlTxt.value) {
+            return;
+        }
+
+        if (utils.isValidURL(urlTxt.value)) {
+            const domain = utils.getDomainFromUrl(urlTxt.value);
+            const imageUrl = `https://logo.clearbit.com/${domain}?size=200`;
+
+            fetchClearBitImage(imageUrl);
+        }
+    }
 
     // force event trigger if bookmark data is not updated but image has changed
     function emitImageUpdate() {
@@ -260,14 +308,6 @@
         bookmarksStore.set_localStorage({ sliderIndex: bookmarksStore.sliderIndex });
 
         emits(EMITS.SAVE);
-    }
-
-    function isValidURL(str) {
-        // eslint-disable-next-line max-len, no-useless-escape
-        const expression = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi;
-        const regex = new RegExp(expression);
-
-        return !!str.match(regex);
     }
 
     function onClickFindImage() {

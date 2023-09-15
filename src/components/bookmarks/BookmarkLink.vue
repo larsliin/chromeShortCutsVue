@@ -1,11 +1,11 @@
 <template>
     <span class="bookmark relative inline-block">
         <a
+            :id="id"
             class="bookmark-link"
             tabindex="-1"
             draggable="true"
             :href="link"
-            :id="id"
             :aria-label="title">
             <BookmarkIcon
                 :image="image" />

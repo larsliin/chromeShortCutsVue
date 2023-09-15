@@ -115,6 +115,23 @@ export default {
         });
     },
 
+    async reorder_bookmark(id, index) {
+        return new Promise((resolve, reject) => {
+            try {
+                // eslint-disable-next-line no-undef
+                chrome.bookmarks.move(
+                    id,
+                    { index },
+                    () => {
+                        resolve();
+                    },
+                );
+            } catch (error) {
+                reject(error);
+            }
+        });
+    },
+
     async remove_bookmark(id) {
         return new Promise((resolve, reject) => {
             try {

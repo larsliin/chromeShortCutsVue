@@ -34,6 +34,11 @@
     }
 
     async function update() {
+        if (bookmarksStore.dragStart) {
+            bookmarksStore.dragStart = false;
+            return;
+        }
+
         const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
         const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
         bookmarksStore.bookmarks = bookmarks[0].children;
@@ -151,6 +156,8 @@
 
     async function getBookmarks() {
         const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+
+        bookmarksStore.rootId = getRootResponse.id;
 
         const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
         bookmarksStore.bookmarks = bookmarks[0].children;
