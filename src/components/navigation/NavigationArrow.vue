@@ -12,14 +12,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import { useBookmarksStore } from '@stores/bookmarks';
+    import { ref, onMounted, watch } from 'vue';
+    import { useBookmarksStore } from '@stores/bookmarks';
 
     const props = defineProps({
         direction: {
             type: String,
             required: true,
-        }
+        },
     });
 
     const disabled = ref(false);
@@ -28,7 +28,7 @@ import { useBookmarksStore } from '@stores/bookmarks';
 
     function onClick() {
         if (props.direction === 'left'
-        && bookmarksStore.sliderIndex > 0) {
+            && bookmarksStore.sliderIndex > 0) {
             bookmarksStore.sliderIndex -= 1;
         }
         if (props.direction === 'right'
@@ -53,9 +53,9 @@ import { useBookmarksStore } from '@stores/bookmarks';
         toggleEnabled();
     });
 
-    watch(() => bookmarksStore.sliderIndex, function () {
+    watch(() => bookmarksStore.sliderIndex, () => {
         toggleEnabled();
-   });
+    });
 
 </script>
 

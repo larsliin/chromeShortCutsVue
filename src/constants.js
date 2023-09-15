@@ -1,4 +1,3 @@
-
 import { UiFolder } from './models/Folder';
 
 export const FOLDER = Object.freeze({
@@ -11,7 +10,6 @@ export const FOLDER = Object.freeze({
         'home',
     ),
 });
-
 
 export const EMITS = Object.freeze({
     CLOSE: 'close',

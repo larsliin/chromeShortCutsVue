@@ -1,6 +1,12 @@
 <template>
     <span class="bookmark relative inline-block">
-        <a :href="link" :id="id" class="bookmark-link" :aria-label="title" tabindex="-1" draggable="true">
+        <a
+            class="bookmark-link"
+            tabindex="-1"
+            draggable="true"
+            :href="link"
+            :id="id"
+            :aria-label="title">
             <BookmarkIcon
                 :image="image" />
             <span class="bookmark-title-container">{{ title }}</span>
@@ -13,7 +19,9 @@
 </template>
 
 <script setup>
-    import { ref, onMounted, watch, nextTick } from 'vue';
+    import {
+        ref, onMounted, watch, nextTick,
+    } from 'vue';
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
@@ -48,12 +56,10 @@
         const getImageResponse = await bookmarksStore.get_localStorage(props.id);
 
         if (getImageResponse) {
-
             image.value = getImageResponse.image;
         }
-
     }
-    watch(() => bookmarksStore.bookmarks, async function () {
+    watch(() => bookmarksStore.bookmarks, async () => {
         image.value = null;
 
         await nextTick();
@@ -61,7 +67,7 @@
         updateImage();
     });
 
-    onMounted(async() => {
+    onMounted(async () => {
         updateImage();
     });
 

@@ -2,8 +2,8 @@
     <div class="toolbar flex">
         <div>
             <v-btn
-            :color="'primary'"
-            @click="dialog = true">Add Bookmark</v-btn>
+                :color="'primary'"
+                @click="dialog = true">Add Bookmark</v-btn>
         </div>
         <v-btn icon="mdi-wrench" size="small"></v-btn>
     </div>
@@ -46,11 +46,11 @@
     watch(() => bus.value.get(EMITS.EDIT), (id) => {
         const promiseArr = [
             bookmarksStore.get_bookmarkById(id[0]),
-            bookmarksStore.get_localStorage(id[0])
+            bookmarksStore.get_localStorage(id[0]),
         ];
 
         Promise.all(promiseArr)
-            .then(results => {
+            .then((results) => {
                 editBookmarkData.value = {
                     id: results[0].id,
                     image: results[1]?.image,
@@ -60,7 +60,7 @@
                 };
                 dialog.value = true;
             })
-            .catch(error => {
+            .catch((error) => {
                 console.error(error);
             });
     });

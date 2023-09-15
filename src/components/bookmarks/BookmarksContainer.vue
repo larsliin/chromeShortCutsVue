@@ -24,9 +24,9 @@
     const bookmarksStore = useBookmarksStore();
 
     function isBookmarkInScope(id) {
-        const idArray = bookmarksStore.bookmarks.flatMap(item => {
+        const idArray = bookmarksStore.bookmarks.flatMap((item) => {
             const topLevelId = item.id;
-            const childIds = item.children ? item.children.map(child => child.id) : [];
+            const childIds = item.children ? item.children.map((child) => child.id) : [];
             return [topLevelId, ...childIds];
         });
 
@@ -53,13 +53,14 @@
         update();
     }
 
-        async function onRemoved(event) {
+    async function onRemoved(event) {
         // ensure that bookmark is ours in ROOT folder
         if (!isBookmarkInScope(event)) {
             return;
         }
 
-        const folder = bookmarksStore.bookmarks.find(obj => obj.children?.find(item => item.id === event));
+        const folder = bookmarksStore
+            .bookmarks.find((obj) => obj.children?.find((item) => item.id === event));
 
         await bookmarksStore.delete_localStorageItem(event);
 
@@ -91,11 +92,11 @@
         }
         const promiseArr = [
             bookmarksStore.get_bookmarkById(event),
-            bookmarksStore.get_localStorage(event)
+            bookmarksStore.get_localStorage(event),
         ];
 
         Promise.all(promiseArr)
-            .then(results => {
+            .then((results) => {
                 if (results[0]) {
                     bookmarksStore.set_localStorage({
                         [event]: {
@@ -103,14 +104,14 @@
                             image: bookmarksStore.editBase64Image,
                             url: results[0].url,
                             title: results[0].title,
-                        }
+                        },
                     });
                     bookmarksStore.editBase64Image = null;
                 }
             })
-            .catch(error => {
+            .catch((error) => {
                 console.error(error);
-        });
+            });
 
         update();
     }
@@ -124,7 +125,7 @@
         const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
         const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
 
-        const emptyFolder = bookmarks[0].children.find(e => e.children.length === 0);
+        const emptyFolder = bookmarks[0].children.find((e) => e.children.length === 0);
 
         if (emptyFolder) {
             await bookmarksStore.remove_bookmark(emptyFolder.id);
@@ -134,10 +135,12 @@
     }
 
     function setChromeEventListeners() {
+        /* eslint-disable */
         chrome.bookmarks.onCreated.addListener(onCreated);
         chrome.bookmarks.onRemoved.addListener(onRemoved);
         chrome.bookmarks.onMoved.addListener(onMoved);
         chrome.bookmarks.onChanged.addListener(onChanged);
+        /* eslint-disable */
     }
 
     // force event trigger if bookmark data is not updated

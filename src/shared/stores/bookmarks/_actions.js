@@ -2,11 +2,12 @@ export default {
     async get_bookmarks(id) {
         return new Promise((resolve, reject) => {
             try {
+                // eslint-disable-next-line no-undef
                 chrome.bookmarks.getSubTree(
                     id,
                     (event) => {
                         resolve(event);
-                    }
+                    },
                 );
             } catch (error) {
                 reject(error);
@@ -17,6 +18,7 @@ export default {
     async get_bookmarkById(id) {
         return new Promise((resolve, reject) => {
             try {
+                // eslint-disable-next-line no-undef
                 chrome.bookmarks.get(id, (event) => {
                     resolve(event[0]);
                 });
@@ -28,7 +30,8 @@ export default {
 
     searchFolder(bookmarkTreeNodes, folderName) {
         const t = this;
-        for (let node of bookmarkTreeNodes) {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const node of bookmarkTreeNodes) {
             if (node.title === folderName && node.children) {
                 return node;
             }
@@ -39,13 +42,15 @@ export default {
                 }
             }
         }
+        return false;
     },
 
     async get_folderByTitle(parentFolderId, title) {
         const t = this;
         return new Promise((resolve, reject) => {
             try {
-                chrome.bookmarks.getSubTree(parentFolderId, function (result) {
+                // eslint-disable-next-line no-undef
+                chrome.bookmarks.getSubTree(parentFolderId, (result) => {
                     const bookmarkTreeNodes = result[0].children;
                     const folder = t.searchFolder(bookmarkTreeNodes, title);
                     const folderResult = folder ? [folder] : [];
@@ -60,11 +65,12 @@ export default {
     async create_bookmark(parentId, title, url) {
         return new Promise((resolve, reject) => {
             try {
+                // eslint-disable-next-line no-undef
                 chrome.bookmarks.create(
                     { parentId: parentId.toString(), title, url },
                     (bookmark) => {
                         resolve(bookmark);
-                    }
+                    },
                 );
             } catch (error) {
                 reject(error);
@@ -75,6 +81,7 @@ export default {
     async update_bookmark(id, data) {
         return new Promise((resolve, reject) => {
             try {
+                // eslint-disable-next-line no-undef
                 chrome.bookmarks.update(
                     id,
                     {
@@ -83,7 +90,7 @@ export default {
                     },
                     (bookmark) => {
                         resolve(bookmark);
-                    }
+                    },
                 );
             } catch (error) {
                 reject(error);
@@ -91,33 +98,32 @@ export default {
         });
     },
 
-
     async move_bookmark(id, targetId) {
         return new Promise((resolve, reject) => {
             try {
+                // eslint-disable-next-line no-undef
                 chrome.bookmarks.move(
                     id,
                     targetId,
                     () => {
                         resolve();
                     },
-                )
+                );
             } catch (error) {
                 reject(error);
             }
         });
     },
 
-
-
     async remove_bookmark(id) {
         return new Promise((resolve, reject) => {
             try {
+                // eslint-disable-next-line no-undef
                 chrome.bookmarks.remove(
                     id,
                     (bookmark) => {
                         resolve(bookmark);
-                    }
+                    },
                 );
             } catch (error) {
                 reject(error);
@@ -128,6 +134,7 @@ export default {
     async set_localStorage(storageObj) {
         return new Promise((resolve, reject) => {
             try {
+                // eslint-disable-next-line no-undef
                 chrome.storage.local.set(storageObj).then((event) => {
                     resolve(event);
                 });
@@ -140,6 +147,7 @@ export default {
     async get_localStorage(id) {
         return new Promise((resolve, reject) => {
             try {
+                // eslint-disable-next-line no-undef
                 chrome.storage.local.get(id.toString()).then((event) => {
                     resolve(event[id]);
                 });
@@ -152,13 +160,15 @@ export default {
     async delete_localStorageItem(id) {
         return new Promise((resolve, reject) => {
             try {
-                chrome.storage.local.remove([id], function () {
-                    var error = chrome.runtime.lastError;
+                // eslint-disable-next-line no-undef
+                chrome.storage.local.remove([id], () => {
+                    // eslint-disable-next-line no-undef
+                    const error = chrome.runtime.lastError;
                     if (error) {
                         console.error(error);
                     }
                     resolve();
-                })
+                });
             } catch (error) {
                 reject(error);
             }
@@ -172,5 +182,5 @@ export default {
             reader.onload = () => resolve(reader.result);
             reader.onerror = reject;
         });
-    }
+    },
 };

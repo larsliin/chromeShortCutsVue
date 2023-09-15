@@ -3,6 +3,7 @@
         <div class="folder-inner" v-if="bookmarks">
             <BookmarkLink
                 v-for="bookmark in bookmarks"
+                :key="bookmark.id"
                 :id="bookmark.id"
                 :title="bookmark.title"
                 :link="bookmark.url" />
@@ -13,7 +14,7 @@
 <script setup>
     import BookmarkLink from '@/components/bookmarks/BookmarkLink.vue';
 
-    const props = defineProps({
+    defineProps({
         bookmarks: [Object, Array],
     });
 

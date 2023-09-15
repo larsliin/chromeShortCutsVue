@@ -1,14 +1,14 @@
 <template>
-  <Toolbar v-if="bookmarksStore.bookmarks" />
-  <Bookmarks />
+    <BookmarksToolbar v-if="bookmarksStore.bookmarks" />
+    <BookmarksContainer />
 </template>
 
 <script setup>
-    import Toolbar from '@/components/toolbar/Toolbar.vue'
-    import Bookmarks from '@/components/bookmarks/Bookmarks.vue'
+    import BookmarksToolbar from '@/components/toolbar/BookmarksToolbar.vue';
+    import BookmarksContainer from '@/components/bookmarks/BookmarksContainer.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
 
-const bookmarksStore = useBookmarksStore();
+    const bookmarksStore = useBookmarksStore();
 </script>
 
 <style>

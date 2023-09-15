@@ -3,7 +3,9 @@
         <BIconStarFill class="folders-background" />
         <div class="folders-container animated flex"
             :style="{transform: sliderPosition}">
-            <template v-for="bookmark in bookmarksStore.bookmarks">
+            <template
+                v-for="bookmark in bookmarksStore.bookmarks"
+                :key="bookmark.id">
                 <BookmarksSlide
                     :bookmarks="bookmark.children" />
             </template>
@@ -19,9 +21,7 @@
 
     const bookmarksStore = useBookmarksStore();
 
-    const sliderPosition = computed(() => {
-        return `translateX(${bookmarksStore.sliderIndex * -100}%)`;
-    });
+    const sliderPosition = computed(() => `translateX(${bookmarksStore.sliderIndex * -100}%)`);
 </script>
 
 <style scoped lang="scss">

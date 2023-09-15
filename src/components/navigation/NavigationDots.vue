@@ -3,11 +3,14 @@
         <div class="navigation-header-container animated">
             <h3 class="navigation-header"
                 v-for="(bookmark, index) in bookmarksStore.bookmarks"
-                :class="{active: bookmarksStore.sliderIndex === index}">{{ bookmark.title }}</h3>
+                :key="index"
+                :class="{active: bookmarksStore.sliderIndex === index}">
+                {{ bookmark.title }}
+            </h3>
         </div>
         <div class="navigation-container">
             <button class="navigation-item"
-                v-for="(, index) in bookmarksStore.bookmarks"
+                v-for="(bookmark, index) in bookmarksStore.bookmarks" :key="index"
                 :class="{active: bookmarksStore.sliderIndex === index}"
                 @click="onClick(index)">
                 <div class="navigation-item-border">
