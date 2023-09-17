@@ -1,24 +1,35 @@
 <template>
-    <div class="toolbar flex">
+    <div class="toolbar d-flex">
         <div>
             <v-btn
                 :color="'primary'"
-                @click="dialog = true">Add Bookmark</v-btn>
+                @click="dialogAdd = true">Add Bookmark</v-btn>
         </div>
-        <v-btn icon="mdi-wrench" size="small"></v-btn>
+        <v-btn
+            icon="mdi-wrench"
+            size="small"
+            @click="dialogSettings = true"></v-btn>
     </div>
 
     <Teleport to="body">
         <template>
             <v-row justify="center">
                 <v-dialog
-                    v-model="dialog"
+                    v-model="dialogAdd"
                     persistent
                     width="450">
                     <BookmarkForm
                         :data="editBookmarkData"
-                        @close="dialog = false"
-                        @save="onSave()" />
+                        @close="dialogAdd = false"
+                        @save="dialogAdd = false" />
+                </v-dialog>
+                <v-dialog
+                    v-model="dialogSettings"
+                    persistent
+                    width="450">
+                    <BookmarkSettingsForm
+                        @close="dialogSettings = false"
+                        @save="dialogSettings = false" />
                 </v-dialog>
             </v-row>
         </template>
@@ -28,6 +39,7 @@
 <script setup>
     import { ref, watch } from 'vue';
     import BookmarkForm from '@/components/forms/BookmarkForm.vue';
+    import BookmarkSettingsForm from '@/components/forms/BookmarkSettingsForm.vue';
     import useEventsBus from '@cmp/eventBus';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
@@ -36,12 +48,10 @@
 
     const { bus } = useEventsBus();
 
-    const dialog = ref(false);
-    const editBookmarkData = ref();
+    const dialogAdd = ref(false);
+    const dialogSettings = ref(false);
 
-    function onSave() {
-        dialog.value = false;
-    }
+    const editBookmarkData = ref();
 
     watch(() => bus.value.get(EMITS.EDIT), (id) => {
         const promiseArr = [
@@ -58,7 +68,7 @@
                     url: results[0].url,
                     parentId: results[0].parentId,
                 };
-                dialog.value = true;
+                dialogAdd.value = true;
             })
             .catch((error) => {
                 console.error(error);

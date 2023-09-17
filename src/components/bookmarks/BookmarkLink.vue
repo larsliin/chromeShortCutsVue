@@ -1,11 +1,11 @@
 <template>
     <span class="bookmark relative inline-block">
         <a
-            :id="id"
             class="bookmark-link"
             tabindex="-1"
             draggable="true"
             :href="link"
+            :id="id"
             :aria-label="title">
             <BookmarkIcon
                 :image="image" />
@@ -79,23 +79,27 @@
     }
 
     .bookmark-title-container {
+        display: inline-block;
+        line-height: 1.15;
+        margin: 10px 0;
         max-width: 100%;
         overflow: hidden;
-        padding-bottom: 10px;
-        padding-top: 10px;
+        padding-bottom: 0;
+        padding-top: 5px;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
     .bookmark-link {
         align-items: center;
+        color: rgba(var(--v-theme-on-surface),var(--v-high-emphasis-opacity));
         display: flex;
         flex-direction: column;
-        text-decoration: none;
-        padding-top: 10px;
         margin-bottom: 4px;
         outline-color: #01a1f6;
         outline-offset: 3px;
+        padding-top: 30px;
+        text-decoration: none;
     }
 
     .bookmark-edit {
@@ -105,7 +109,7 @@
         font-size: 18px;
         position: absolute;
         right: 0;
-        top: 0px;
+        top: 0;
     }
 
     .bookmark-edit:hover {

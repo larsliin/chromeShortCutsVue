@@ -6,9 +6,7 @@
                     <v-row>
                         <v-col
                             cols="12">
-                            <v-card-title>
-                                <span class="text-h5">Add Bookmark</span>
-                            </v-card-title>
+                            <span class="text-h5">Add Bookmark</span>
                         </v-col>
                     </v-row>
                     <v-row>
@@ -138,8 +136,8 @@
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
     import { FOLDER, EMITS } from '@/constants';
-    import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
+    import useEventsBus from '@cmp/eventBus';
 
     const { emit } = useEventsBus();
 
@@ -147,7 +145,7 @@
 
     const tabs = ref();
 
-    const emits = defineEmits(EMITS.CLOSE);
+    const emits = defineEmits([EMITS.CLOSE, EMITS.SAVE]);
 
     const props = defineProps({
         data: Object,

@@ -1,7 +1,7 @@
 <template>
     <div class="folders-outer">
         <BIconStarFill class="folders-background" />
-        <div class="folders-container animated flex"
+        <div class="folders-container animated d-flex"
             :style="{transform: sliderPosition}">
             <template
                 v-for="bookmark in bookmarksStore.bookmarks"

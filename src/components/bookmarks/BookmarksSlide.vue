@@ -1,6 +1,6 @@
 <template>
     <div class="folder">
-        <div class="folder-inner" v-if="bookmarks">
+        <div v-if="bookmarks">
             <draggable
                 tag="ul"
                 item-key="id"
@@ -60,10 +60,20 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
+            list-style: none;
             margin: 0 auto;
+            margin: 0;
             max-width: 1024px;
             padding: 0 40px;
             width: 100%;
+
+            li {
+                padding: 0;
+                margin: 0 20px;
+                display: inline;
+                line-height: 0;
+                position: relative;
+            }
         }
     }
 </style>

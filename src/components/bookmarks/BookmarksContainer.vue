@@ -3,8 +3,10 @@
         <BookmarksSlider />
         <NavigationDots />
         <NavigationArrow
+            v-if="bookmarksStore.arrowNavigation"
             direction="left" />
         <NavigationArrow
+            v-if="bookmarksStore.arrowNavigation"
             direction="right" />
         <NavigationDots />
     </template>
@@ -200,6 +202,10 @@
         if (slideIndexResponse) {
             bookmarksStore.sliderIndex = slideIndexResponse;
         }
+
+        const arrowNavigationResponse = await bookmarksStore.get_localStorage('arrowNavigation');
+
+        bookmarksStore.arrowNavigation = arrowNavigationResponse === undefined;
     });
 
 </script>
