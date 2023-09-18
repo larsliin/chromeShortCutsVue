@@ -1,6 +1,6 @@
 <template>
     <div class="folder">
-        <div v-if="bookmarks">
+        <div class="folder-inner" v-if="bookmarks">
             <draggable
                 tag="ul"
                 item-key="id"
@@ -55,6 +55,11 @@
         flex: 0 0 100%;
         max-height: calc(100vh - 200px);
         overflow-y: auto;
+
+        &-inner {
+            display: flex;
+            justify-content: center;
+        }
 
         ul {
             display: flex;

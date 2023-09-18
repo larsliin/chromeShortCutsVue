@@ -48,7 +48,9 @@
         if (bookmarksStore.sliderIndex > bookmarksStore.bookmarks.length - 1) {
             bookmarksStore.sliderIndex = bookmarksStore.bookmarks.length - 1;
 
-            bookmarksStore.set_localStorage({ sliderIndex: bookmarksStore.sliderIndex });
+            bookmarksStore.set_localStorage({
+                sliderIndex: Math.max(bookmarksStore.sliderIndex, 0),
+            });
         }
     }
     async function onCreated(event) {

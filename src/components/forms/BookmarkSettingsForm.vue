@@ -20,27 +20,27 @@
                     <v-row>
                         <v-col
                             cols="12">
-                            <h5 class="text-h6 mb-3">Import Bookmarks</h5>
                             <p
-                                class="text-body-1 mb-3">
-                                Import bookmarks data file
+                                class="text-body-1 mb-5">
+                                Import bookmarks and icons data file
                             </p>
                             <v-file-input
                                 label="File input"
-                                prepend-icon="mdi-upload"></v-file-input>
+                                prepend-icon="mdi-download"
+                                v-model="fileImport"></v-file-input>
                         </v-col>
                     </v-row>
                     <v-row>
                         <v-col
                             cols="12">
                             <p
-                                class="text-body-1 mb-3">
-                                Export bookmarks for simple importing on devices not
-                                linked to this Google account
+                                class="text-body-1 mb-5">
+                                Export bookmarks and icons data file
                             </p>
                             <v-btn
                                 color="blue-darken-1"
                                 variant="tonal"
+                                prepend-icon="mdi-upload"
                                 @click="onClickExport()">
                                 Export
                             </v-btn>
@@ -68,8 +68,8 @@
 </template>
 
 <script setup>
-    import { ref, onMounted } from 'vue';
-    import { EMITS } from '@/constants';
+    import { ref, onMounted, nextTick } from 'vue';
+    import { EMITS, FOLDER } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const emits = defineEmits([EMITS.CLOSE, EMITS.SAVE]);
@@ -77,33 +77,68 @@
     const bookmarksStore = useBookmarksStore();
 
     const form = ref();
-    const enableArrowNavigation = ref(bookmarksStore.arrowNavigation);
-
-    function onClickImport() {
-        document.getElementById('inp_import').click();
-    }
+    const enableArrowNavigation = ref();
+    const fileImport = ref();
 
     function onClickExport() { }
 
+    async function onImportIconsReaderLoad(event) {
+        const importBookmarks = JSON.parse(event.target.result);
+
+        // delete all images from local storage
+        const promiseLocalStorageArr = [];
+        const localStorageItems = await bookmarksStore.get_localStorageAll(null);
+        const localStorageItemsImageArr = Object.values(localStorageItems).filter((e) => e.image);
+
+        localStorageItemsImageArr.forEach((item) => {
+            promiseLocalStorageArr.push(bookmarksStore.delete_localStorageItem(item.id));
+        });
+
+        Promise.all(promiseLocalStorageArr)
+            .then(() => {
+                // delete all bookmarks
+                const promiseArr = [];
+
+                bookmarksStore.bookmarks.forEach((item) => {
+                    promiseArr.push(bookmarksStore.remove_bookmarkFolder(item.id));
+                });
+
+                Promise.all(promiseArr)
+                    .then(async () => {
+                        await nextTick();
+                        bookmarksStore.sliderIndex = 0;
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+    }
+
     function onClickSave() {
+        // import
+        if (fileImport.value) {
+            const reader = new FileReader();
+            reader.onload = onImportIconsReaderLoad;
+            reader.readAsText(fileImport.value[0]);
+        }
+
+        // arrow navigation
         bookmarksStore.arrowNavigation = enableArrowNavigation.value;
 
         if (!enableArrowNavigation.value) {
             bookmarksStore.set_localStorage({ arrowNavigation: false });
         } else {
-            console.log('del');
             bookmarksStore.delete_localStorageItem('arrowNavigation');
         }
 
         emits(EMITS.SAVE);
     }
 
-    onMounted(async () => {
+    onMounted(() => {
+        console.log(bookmarksStore.bookmarks);
         enableArrowNavigation.value = bookmarksStore.arrowNavigation;
     });
 </script>
-<style>
-    .inp-file {
-        display: none;
-    }
-</style>
