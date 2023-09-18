@@ -1,14 +1,13 @@
 <template>
     <template v-if="bookmarksStore.bookmarks">
         <BookmarksSlider />
-        <NavigationDots />
+        <NavigationDots v-if="bookmarksStore.bookmarks && bookmarksStore.bookmarks.length > 1" />
         <NavigationArrow
-            v-if="bookmarksStore.arrowNavigation"
+            v-if="bookmarksStore.arrowNavigation && bookmarksStore.bookmarks.length > 1"
             direction="left" />
         <NavigationArrow
-            v-if="bookmarksStore.arrowNavigation"
+            v-if="bookmarksStore.arrowNavigation && bookmarksStore.bookmarks.length > 1"
             direction="right" />
-        <NavigationDots />
     </template>
 </template>
 
@@ -26,13 +25,14 @@
     const bookmarksStore = useBookmarksStore();
 
     function isBookmarkInScope(id) {
-        const idArray = bookmarksStore.bookmarks.flatMap((item) => {
-            const topLevelId = item.id;
-            const childIds = item.children ? item.children.map((child) => child.id) : [];
-            return [topLevelId, ...childIds];
-        });
+        // const idArray = bookmarksStore.bookmarks.flatMap((item) => {
+        //     const topLevelId = item.id;
+        //     const childIds = item.children ? item.children.map((child) => child.id) : [];
+        //     return [topLevelId, ...childIds];
+        // });
 
-        return idArray.includes(id);
+        // return idArray.includes(id);
+        return true;
     }
 
     async function update() {
@@ -43,37 +43,97 @@
 
         const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
         const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
+
         bookmarksStore.bookmarks = bookmarks[0].children;
 
-        if (bookmarksStore.sliderIndex > bookmarksStore.bookmarks.length - 1) {
-            bookmarksStore.sliderIndex = bookmarksStore.bookmarks.length - 1;
+        bookmarksStore.sliderIndex = Math.min(
+            bookmarksStore.sliderIndex,
+            bookmarksStore.bookmarks.length - 1,
+        );
 
-            bookmarksStore.set_localStorage({
-                sliderIndex: Math.max(bookmarksStore.sliderIndex, 0),
-            });
-        }
+        bookmarksStore.sliderIndex = Math.max(
+            bookmarksStore.sliderIndex,
+            0,
+        );
+
+        bookmarksStore.set_localStorage({
+            sliderIndex: bookmarksStore.sliderIndex,
+        });
     }
+
     async function onCreated(event) {
+        if (bookmarksStore.isImporting) {
+            return;
+        }
+
         // ensure that bookmark is ours in ROOT folder
         if (!isBookmarkInScope(event)) {
             return;
         }
+
+        // eslint-disable-next-line no-use-before-define
+        await buildFolders();
 
         update();
     }
 
+    async function deleteAllLocalStorageImages() {
+        // delete all images from local storage
+        const localStorageItems = await bookmarksStore.get_localStorageAll(null);
+        const localStorageItemsImageArr = Object.values(localStorageItems).filter((e) => e.image);
+
+        localStorageItemsImageArr.forEach((item) => {
+            bookmarksStore.delete_localStorageItem(item.id);
+        });
+    }
+
     async function onRemoved(event) {
+        if (bookmarksStore.isImporting) {
+            return;
+        }
+
+        if (bookmarksStore.rootId === event) {
+            // if root folder is deleted then delete all
+            await bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id);
+
+            bookmarksStore.bookmarks = [];
+
+            deleteAllLocalStorageImages();
+
+            bookmarksStore.sliderIndex = 0;
+
+            bookmarksStore.set_localStorage({
+                sliderIndex: bookmarksStore.sliderIndex,
+            });
+
+            return;
+        }
+
         // ensure that bookmark is ours in ROOT folder
         if (!isBookmarkInScope(event)) {
             return;
+        }
+
+        // delete local storage image
+        const localStorageResponse = await bookmarksStore.get_localStorage(event);
+
+        if (localStorageResponse) {
+            bookmarksStore.delete_localStorageItem(event);
         }
 
         const folder = bookmarksStore
             .bookmarks.find((obj) => obj.children?.find((item) => item.id === event));
 
-        await bookmarksStore.delete_localStorageItem(event);
-
         if (!folder) {
+            // delete all local storage items in folder
+            const localStorageItems = await bookmarksStore.get_localStorageAll(null);
+            const localStorageItemsImageArr = Object.values(localStorageItems)
+                .filter((e) => e.parentId === event);
+
+            localStorageItemsImageArr.forEach((item) => {
+                bookmarksStore.delete_localStorageItem(item.id);
+            });
+
             update();
 
             return;
@@ -109,6 +169,7 @@
                 if (results[0]) {
                     bookmarksStore.set_localStorage({
                         [event]: {
+                            parentId: results[0].parentId,
                             id: event,
                             image: bookmarksStore.editBase64Image,
                             url: results[0].url,
@@ -164,7 +225,8 @@
         bookmarksStore.rootId = getRootResponse.id;
 
         const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
-        bookmarksStore.bookmarks = bookmarks[0].children;
+
+        bookmarksStore.bookmarks = bookmarks ? bookmarks[0].children : [];
 
         setChromeEventListeners();
     }
@@ -172,28 +234,17 @@
     async function buildFolders() {
         const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
 
-        if (getRootResponse) {
-            // if root folder exists
-            const getHomeResponse = await bookmarksStore.get_localStorage(FOLDER.HOME.id);
+        if (!getRootResponse) {
+            bookmarksStore.sliderIndex = 0;
 
-            if (getHomeResponse) {
-                // if home folder exists
-                getBookmarks();
-            } else {
-                // if home folder does not exist then create home folder
-                const createHomeResponse = await bookmarksStore.create_bookmark(getRootResponse.id, FOLDER.HOME.label);
-                await bookmarksStore.set_localStorage({ [FOLDER.HOME.id]: createHomeResponse });
+            bookmarksStore.set_localStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
 
-                getBookmarks();
-            }
-        } else {
             // if root folder does not exist create root and home folders
             const createRootResponse = await bookmarksStore.create_bookmark(2, FOLDER.ROOT.label);
             await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: createRootResponse });
-
-            const createHomeResponse = await bookmarksStore.create_bookmark(createRootResponse.id, FOLDER.HOME.label);
-            await bookmarksStore.set_localStorage({ [FOLDER.HOME.id]: createHomeResponse });
         }
+
+        getBookmarks();
     }
 
     onMounted(async () => {

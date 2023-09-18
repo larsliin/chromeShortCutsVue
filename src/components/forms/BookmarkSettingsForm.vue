@@ -68,8 +68,8 @@
 </template>
 
 <script setup>
-    import { ref, onMounted, nextTick } from 'vue';
-    import { EMITS, FOLDER } from '@/constants';
+    import { ref, onMounted } from 'vue';
+    import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const emits = defineEmits([EMITS.CLOSE, EMITS.SAVE]);
@@ -80,33 +80,98 @@
     const enableArrowNavigation = ref();
     const fileImport = ref();
 
-    function onClickExport() { }
+    function onClickExport() {
+        const jsonString = JSON.stringify(bookmarksStore.bookmarks);
 
-    async function onImportIconsReaderLoad(event) {
-        const importBookmarks = JSON.parse(event.target.result);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([jsonString], { type: 'application/json' }));
+        a.download = 'bookmarks-exported-v2.json';
+        a.click();
+    }
 
+    async function resetAll() {
         // delete all images from local storage
         const promiseLocalStorageArr = [];
         const localStorageItems = await bookmarksStore.get_localStorageAll(null);
         const localStorageItemsImageArr = Object.values(localStorageItems).filter((e) => e.image);
 
-        localStorageItemsImageArr.forEach((item) => {
-            promiseLocalStorageArr.push(bookmarksStore.delete_localStorageItem(item.id));
-        });
-
-        Promise.all(promiseLocalStorageArr)
-            .then(() => {
-                // delete all bookmarks
-                const promiseArr = [];
-
-                bookmarksStore.bookmarks.forEach((item) => {
-                    promiseArr.push(bookmarksStore.remove_bookmarkFolder(item.id));
+        return new Promise((resolve, reject) => {
+            try {
+                // eslint-disable-next-line no-undef
+                localStorageItemsImageArr.forEach((item) => {
+                    promiseLocalStorageArr.push(bookmarksStore.delete_localStorageItem(item.id));
                 });
 
-                Promise.all(promiseArr)
-                    .then(async () => {
-                        await nextTick();
-                        bookmarksStore.sliderIndex = 0;
+                Promise.all(promiseLocalStorageArr)
+                    .then(() => {
+                        // delete all bookmarks
+                        const promiseArr = [];
+
+                        bookmarksStore.bookmarks.forEach((item) => {
+                            promiseArr.push(bookmarksStore.remove_bookmarkFolder(item.id));
+                        });
+
+                        Promise.all(promiseArr)
+                            .then(() => {
+                                bookmarksStore.sliderIndex = 0;
+
+                                bookmarksStore.bookmarks = [];
+
+                                resolve('ready');
+                            })
+                            .catch((error) => {
+                                console.error(error);
+                            });
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async function onImportIconsReaderLoad(event) {
+        bookmarksStore.isImporting = true;
+
+        await resetAll();
+
+        const importBookmarks = JSON.parse(event.target.result);
+
+        const bookmarksRootResponse = await bookmarksStore.get_bookmarkById(bookmarksStore.rootId);
+
+        const map = {};
+
+        const foldersPromiseArr = [];
+        // first create folders for bookmarks
+        importBookmarks.forEach((folder) => {
+            foldersPromiseArr.push(bookmarksStore
+                .create_bookmark(bookmarksRootResponse.id, folder.title));
+        });
+
+        Promise.all(foldersPromiseArr)
+            .then((p) => {
+                // put all bookmarks children in a flat array for easier iteration
+                const bookmarksFlatArr = importBookmarks.flatMap((obj) => obj.children);
+
+                // map old parent folder id to new folder id create in the step before
+                p.forEach((f, i) => {
+                    map[importBookmarks[i].id] = f.id;
+                });
+
+                const bookmarkssPromiseArr = [];
+                // then create bookmarks ad add to folders created before
+                bookmarksFlatArr.forEach((bookmark) => {
+                    bookmarkssPromiseArr.push(bookmarksStore
+                        .create_bookmark(map[bookmark.parentId], bookmark.title, bookmark.url));
+                });
+
+                Promise.all(bookmarkssPromiseArr)
+                    .then(() => {
+                        bookmarksStore.bookmarks = importBookmarks;
+
+                        bookmarksStore.isImporting = false;
                     })
                     .catch((error) => {
                         console.error(error);
@@ -138,7 +203,6 @@
     }
 
     onMounted(() => {
-        console.log(bookmarksStore.bookmarks);
         enableArrowNavigation.value = bookmarksStore.arrowNavigation;
     });
 </script>

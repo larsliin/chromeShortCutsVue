@@ -17,12 +17,12 @@
                                 color="primary"
                                 grow>
                                 <v-tab
-                                    :disabled="folderSlct && folderSlct.length === 0"
+                                    :disabled="!bookmarksStore.bookmarks
+                                        || bookmarksStore.bookmarks.length === 0"
                                     :value="1">
                                     Existing Folder
                                 </v-tab>
                                 <v-tab
-                                    :disabled="folderSlct && folderSlct.length === 0"
                                     :value="2">
                                     Create New Folder
                                 </v-tab>
@@ -33,6 +33,8 @@
                                 label="Select Folder"
                                 single-line
                                 :rules="[rules.required]"
+                                :disabled="!bookmarksStore.bookmarks
+                                    || bookmarksStore.bookmarks.length === 0"
                                 v-model="folderSlct">
                             </v-autocomplete>
                             <v-text-field
@@ -172,6 +174,9 @@
     const titleTxt = ref('');
     const urlTxt = ref('');
 
+    // eslint-disable-next-line
+    const slctEnabled = computed(() => { bookmarksStore.bookmarks  && bookmarksStore.bookmarks.length > 0 });
+
     async function fetchClearBitImage(imageUrl) {
         try {
             const response = await utils.getBase64ImageFromUrl(imageUrl);
@@ -292,6 +297,7 @@
             await bookmarksStore.set_localStorage({
                 [createBookmarkResponse.id]: {
                     id: createBookmarkResponse.id,
+                    parentId: createBookmarkResponse.parentId,
                     image: base64Image.value,
                     url: urlTxt.value,
                     title: titleTxt.value,
@@ -303,7 +309,7 @@
         bookmarksStore.sliderIndex = bookmarksStore.bookmarks
             .findIndex((e) => e.id === slideToFolderId);
 
-        bookmarksStore.set_localStorage({ sliderIndex: bookmarksStore.sliderIndex });
+        bookmarksStore.set_localStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
 
         emits(EMITS.SAVE);
     }
@@ -332,7 +338,12 @@
     }
 
     onMounted(async () => {
-        folderSlct.value = bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title;
+        const slctDisabled = !bookmarksStore.bookmarks
+            || bookmarksStore.bookmarks.length === 0;
+
+        if (!slctDisabled) {
+            folderSlct.value = bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title;
+        }
 
         if (props.data) {
             id.value = props.data.id;
@@ -342,7 +353,7 @@
             base64Image.value = props.data.image;
         }
 
-        if (folderSlct.value.length === 0) {
+        if (slctDisabled) {
             tabs.value = 2;
         }
     });

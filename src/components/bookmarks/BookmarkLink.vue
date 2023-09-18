@@ -99,6 +99,7 @@
         outline-color: #01a1f6;
         outline-offset: 3px;
         padding-top: 30px;
+        width: 90px;
         text-decoration: none;
     }
 
