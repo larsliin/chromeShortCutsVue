@@ -83,8 +83,24 @@
     const enableArrowNavigation = ref();
     const fileImport = ref();
 
-    function onClickExport() {
-        const jsonString = JSON.stringify(bookmarksStore.bookmarks);
+    async function onClickExport() {
+        const exportBookmarks = bookmarksStore.bookmarks;
+
+        // fetch all images from local storage
+        const localStorageItems = await bookmarksStore.get_localStorageAll(null);
+        const localStorageItemsImageArr = Object.values(localStorageItems).filter((e) => e.image);
+
+        // add images to each bookmar in exported bookmarks to
+        localStorageItemsImageArr.forEach((localitem) => {
+            const bookmark = exportBookmarks
+                .map((outerItem) => outerItem.children.find((child) => child.id === localitem.id))
+                .filter((childItem) => childItem !== undefined)[0];
+
+            bookmark.image = localitem.image;
+        });
+
+        // run exporter
+        const jsonString = JSON.stringify(exportBookmarks);
 
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([jsonString], { type: 'application/json' }));
@@ -92,11 +108,13 @@
         a.click();
     }
 
+    // update global store bookmarks obj with the latest imported bookmarks
     async function updateBookmarksStore() {
         const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
         bookmarksStore.bookmarks = bookmarksResponse[0].children;
     }
 
+    // import bookmarks
     async function onImportIconsReaderLoad(event) {
         bookmarksStore.isImporting = true;
 
