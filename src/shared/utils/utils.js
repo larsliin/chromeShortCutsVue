@@ -1,4 +1,5 @@
 import { useBookmarksStore } from '@stores/bookmarks';
+import { FOLDER } from '@/constants';
 
 // eslint-disable-next-line import/prefer-default-export
 export function useUtils() {
@@ -64,10 +65,34 @@ export function useUtils() {
             });
     }
 
+    async function getBookmarksAsFlatArr() {
+        const bookmarksStore = useBookmarksStore();
+
+        if (!bookmarksStore.rootId) {
+            return null;
+        }
+
+        // fetch all bookmarks
+        const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+
+        if (!bookmarksResponse) {
+            return null;
+        }
+
+        // put all bookmarks folders in flat array for easier iteration
+        const bookmarksFlatArray = bookmarksResponse
+            .flatMap((item) => item.children.flatMap((child) => child.children));
+
+        return bookmarksFlatArray;
+    }
+
     async function deleteAllBookmarks() {
         const bookmarksStore = useBookmarksStore();
 
         // fetch all bookmarks
+        if (!bookmarksStore.rootId) {
+            return;
+        }
         const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
 
         // put all bookmarks folders in flat array for easier iteration
@@ -91,11 +116,30 @@ export function useUtils() {
             });
     }
 
+    async function buildRootFolder() {
+        const bookmarksStore = useBookmarksStore();
+        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+
+        if (!getRootResponse) {
+            bookmarksStore.sliderIndex = 0;
+
+            bookmarksStore
+                .set_localStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
+
+            // if root folder does not exist create root and home folders
+            const createRootResponse = await bookmarksStore.create_bookmark(2, FOLDER.ROOT.label);
+            bookmarksStore.rootId = createRootResponse.id;
+            await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: createRootResponse });
+        }
+    }
+
     return {
+        getBookmarksAsFlatArr,
         deleteLocalStoreImages,
         getDomainFromUrl,
         isValidURL,
         getBase64ImageFromUrl,
         deleteAllBookmarks,
+        buildRootFolder,
     };
 }

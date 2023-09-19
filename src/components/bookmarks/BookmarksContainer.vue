@@ -1,5 +1,6 @@
 <template>
-    <template v-if="bookmarksStore.bookmarks">
+
+    <div class="bookmarks-slider" v-if="bookmarksStore.bookmarks">
         <BookmarksSlider />
         <NavigationDots v-if="bookmarksStore.bookmarks && bookmarksStore.bookmarks.length > 1" />
         <NavigationArrow
@@ -8,7 +9,8 @@
         <NavigationArrow
             v-if="bookmarksStore.arrowNavigation && bookmarksStore.bookmarks.length > 1"
             direction="right" />
-    </template>
+
+    </div>
 </template>
 
 <script setup>
@@ -18,6 +20,7 @@
     import { useBookmarksStore } from '@stores/bookmarks';
     import { FOLDER, EMITS } from '@/constants';
     import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
+
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
 
@@ -27,15 +30,17 @@
 
     const bookmarksStore = useBookmarksStore();
 
-    function isBookmarkInScope(id) {
-        // const idArray = bookmarksStore.bookmarks.flatMap((item) => {
-        //     const topLevelId = item.id;
-        //     const childIds = item.children ? item.children.map((child) => child.id) : [];
-        //     return [topLevelId, ...childIds];
-        // });
+    async function isBookmarkInScope(id) {
+        const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
 
-        // return idArray.includes(id);
-        return true;
+        const idArray = bookmarks.flatMap((item) => {
+            const topLevelId = item.id;
+            const childIds = item.children ? item.children.map((child) => child.id) : [];
+            return [topLevelId, ...childIds];
+        });
+
+        return idArray.includes(id);
+        //  return true;
     }
 
     async function update() {
@@ -64,6 +69,27 @@
         });
     }
 
+    function setChromeEventListeners() {
+        /* eslint-disable */
+        chrome.bookmarks.onCreated.addListener(onCreated);
+        chrome.bookmarks.onRemoved.addListener(onRemoved);
+        chrome.bookmarks.onMoved.addListener(onMoved);
+        chrome.bookmarks.onChanged.addListener(onChanged);
+        /* eslint-disable */
+    }
+
+    async function getBookmarks() {
+        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+
+        bookmarksStore.rootId = getRootResponse.id;
+
+        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
+
+        bookmarksStore.bookmarks = bookmarks ? bookmarks[0].children : [];
+
+        setChromeEventListeners();
+    }
+
     async function onCreated(event) {
         if (bookmarksStore.isImporting) {
             return;
@@ -75,21 +101,11 @@
         }
 
         // eslint-disable-next-line no-use-before-define
-        await buildFolders();
+        await utils.buildRootFolder();
+        await getBookmarks();
 
         update();
     }
-
-    // async function deleteAllLocalStorageImages() {
-    //     // delete all images from local storage
-    //     const localStorageItems = await bookmarksStore.get_localStorageAll(null);
-    //     const localStorageItemsImageArr = Object
-    // .values(localStorageItems).filter((e) => e.image);
-
-    //     localStorageItemsImageArr.forEach((item) => {
-    //         bookmarksStore.delete_localStorageItem(item.id);
-    //     });
-    // }
 
     async function onRemoved(event) {
         if (bookmarksStore.isImporting) {
@@ -99,6 +115,7 @@
         if (bookmarksStore.rootId === event) {
             // if root folder is deleted then delete all
             await bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id);
+            bookmarksStore.rootId = null;
 
             bookmarksStore.bookmarks = [];
 
@@ -209,52 +226,13 @@
         update();
     }
 
-    function setChromeEventListeners() {
-        /* eslint-disable */
-        chrome.bookmarks.onCreated.addListener(onCreated);
-        chrome.bookmarks.onRemoved.addListener(onRemoved);
-        chrome.bookmarks.onMoved.addListener(onMoved);
-        chrome.bookmarks.onChanged.addListener(onChanged);
-        /* eslint-disable */
-    }
-
     // force event trigger if bookmark data is not updated
     // but image has changed while editing bookmark
     watch(() => bus.value.get(EMITS.IMAGE_UPDATED), (id) => {
         onChanged(id[0]);
     });
 
-    async function getBookmarks() {
-        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
-
-        bookmarksStore.rootId = getRootResponse.id;
-
-        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
-
-        bookmarksStore.bookmarks = bookmarks ? bookmarks[0].children : [];
-
-        setChromeEventListeners();
-    }
-
-    async function buildFolders() {
-        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
-
-        if (!getRootResponse) {
-            bookmarksStore.sliderIndex = 0;
-
-            bookmarksStore.set_localStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
-
-            // if root folder does not exist create root and home folders
-            const createRootResponse = await bookmarksStore.create_bookmark(2, FOLDER.ROOT.label);
-            await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: createRootResponse });
-        }
-
-        getBookmarks();
-    }
-
     onMounted(async () => {
-        await buildFolders();
-
         const slideIndexResponse = await bookmarksStore.get_localStorage('sliderIndex');
 
         if (slideIndexResponse) {
@@ -264,18 +242,33 @@
         const arrowNavigationResponse = await bookmarksStore.get_localStorage('arrowNavigation');
 
         bookmarksStore.arrowNavigation = arrowNavigationResponse === undefined;
+
+        await utils.buildRootFolder();
+        await getBookmarks();
     });
 
 </script>
 
 <style scoped lang="scss">
+    .bookmarks-slider {
+        $breakpoint: 540px;
+
+        position: relative;
+        width: $breakpoint;
+
+        @media (min-width: $breakpoint) {
+            width: 100%;
+        }
+    }
+
+
     .folders-outer {
         background: #f0f0f0;
         background: radial-gradient(circle at 100% 100%, #cfcfcf 0%, #fff 100%);
         display: block;
         height: 100vh;
         overflow: hidden;
-        width: 100vw;
+        width: 100%;
     }
 
     .folders-background {

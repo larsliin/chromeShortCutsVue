@@ -1,5 +1,6 @@
 <template>
-    <span class="bookmark relative inline-block">
+    <span class="bookmark relative inline-block"
+        v-if="ready">
         <a
             class="bookmark-link"
             tabindex="-1"
@@ -49,6 +50,7 @@
     });
 
     const image = ref();
+    const ready = ref(false);
 
     const bookmarksStore = useBookmarksStore();
 
@@ -58,6 +60,8 @@
         if (getImageResponse) {
             image.value = getImageResponse.image;
         }
+
+        ready.value = true;
     }
     watch(() => bookmarksStore.bookmarks, async () => {
         image.value = null;

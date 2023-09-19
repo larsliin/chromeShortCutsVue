@@ -3,11 +3,12 @@
         <div>
             <v-btn
                 :color="'primary'"
+                size="large"
                 @click="dialogAdd = true">Add Bookmark</v-btn>
+            <BookmarksSearch class="ml-5" />
         </div>
         <v-btn
             icon="mdi-wrench"
-            size="small"
             @click="dialogSettings = true"></v-btn>
     </div>
 
@@ -43,6 +44,7 @@
     import useEventsBus from '@cmp/eventBus';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
+    import BookmarksSearch from '@/components/navigation/BookmarksSearch.vue';
 
     const bookmarksStore = useBookmarksStore();
 
@@ -77,14 +79,22 @@
 </script>
 
 <style scoped lang="scss">
-.toolbar {
-    padding: 20px;
-    position: fixed;
-    width: 100%;
-    z-index: 999;
+    .toolbar {
+        $breakpoint: 540px;
 
-    > div:first-child {
-        flex: 1;
+        padding: 20px;
+        position: fixed;
+        width: 100%;
+        z-index: 999;
+        width: $breakpoint;
+
+        @media (min-width: $breakpoint) {
+                width: 100%;
+            }
+
+        > div:first-child {
+            display: flex;
+            flex: 1;
+        }
     }
-}
 </style>

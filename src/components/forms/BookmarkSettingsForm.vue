@@ -114,14 +114,44 @@
         bookmarksStore.bookmarks = bookmarksResponse[0].children;
     }
 
+    // save imported images
+    async function saveImages(results, images) {
+        const promiseArr = [];
+        results.forEach((item, index) => {
+            if (images[index]) {
+                promiseArr.push(bookmarksStore.set_localStorage({
+                    [item.id]: {
+                        id: item.id,
+                        parentId: item.parentId,
+                        image: images[index],
+                        url: item.url,
+                        title: item.title,
+                    },
+                }));
+            }
+        });
+
+        Promise.all(promiseArr)
+            .then(() => {
+                // when all images are saved then update bookmarks
+                updateBookmarksStore();
+
+                bookmarksStore.isImporting = false;
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+    }
+
     // import bookmarks
-    async function onImportIconsReaderLoad(event) {
+    async function onImportReaderLoad(event) {
         bookmarksStore.isImporting = true;
+
+        const importBookmarks = JSON.parse(event.target.result);
 
         await utils.deleteLocalStoreImages();
         await utils.deleteAllBookmarks();
-
-        const importBookmarks = JSON.parse(event.target.result);
+        await utils.buildRootFolder();
 
         const bookmarksRootResponse = await bookmarksStore.get_bookmarkById(bookmarksStore.rootId);
 
@@ -144,18 +174,20 @@
                     map[importBookmarks[i].id] = f.id;
                 });
 
+                const imagesArr = [];
+
                 const bookmarkssPromiseArr = [];
                 // then create bookmarks ad add to folders created before
                 bookmarksFlatArr.forEach((bookmark) => {
                     bookmarkssPromiseArr.push(bookmarksStore
                         .create_bookmark(map[bookmark.parentId], bookmark.title, bookmark.url));
+
+                    imagesArr.push(bookmark.image);
                 });
 
                 Promise.all(bookmarkssPromiseArr)
-                    .then(() => {
-                        updateBookmarksStore();
-
-                        bookmarksStore.isImporting = false;
+                    .then((results) => {
+                        saveImages(results, imagesArr);
                     })
                     .catch((error) => {
                         console.error(error);
@@ -170,7 +202,7 @@
         // import
         if (fileImport.value) {
             const reader = new FileReader();
-            reader.onload = onImportIconsReaderLoad;
+            reader.onload = onImportReaderLoad;
             reader.readAsText(fileImport.value[0]);
         }
 
