@@ -71,6 +71,9 @@
     import { ref, onMounted } from 'vue';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
+    import { useUtils } from '@/shared/utils/utils';
+
+    const utils = useUtils();
 
     const emits = defineEmits([EMITS.CLOSE, EMITS.SAVE]);
 
@@ -89,53 +92,16 @@
         a.click();
     }
 
-    async function resetAll() {
-        // delete all images from local storage
-        const promiseLocalStorageArr = [];
-        const localStorageItems = await bookmarksStore.get_localStorageAll(null);
-        const localStorageItemsImageArr = Object.values(localStorageItems).filter((e) => e.image);
-
-        return new Promise((resolve, reject) => {
-            try {
-                // eslint-disable-next-line no-undef
-                localStorageItemsImageArr.forEach((item) => {
-                    promiseLocalStorageArr.push(bookmarksStore.delete_localStorageItem(item.id));
-                });
-
-                Promise.all(promiseLocalStorageArr)
-                    .then(() => {
-                        // delete all bookmarks
-                        const promiseArr = [];
-
-                        bookmarksStore.bookmarks.forEach((item) => {
-                            promiseArr.push(bookmarksStore.remove_bookmarkFolder(item.id));
-                        });
-
-                        Promise.all(promiseArr)
-                            .then(() => {
-                                bookmarksStore.sliderIndex = 0;
-
-                                bookmarksStore.bookmarks = [];
-
-                                resolve('ready');
-                            })
-                            .catch((error) => {
-                                console.error(error);
-                            });
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                    });
-            } catch (error) {
-                reject(error);
-            }
-        });
+    async function updateBookmarksStore() {
+        const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+        bookmarksStore.bookmarks = bookmarksResponse[0].children;
     }
 
     async function onImportIconsReaderLoad(event) {
         bookmarksStore.isImporting = true;
 
-        await resetAll();
+        await utils.deleteLocalStoreImages();
+        await utils.deleteAllBookmarks();
 
         const importBookmarks = JSON.parse(event.target.result);
 
@@ -169,7 +135,7 @@
 
                 Promise.all(bookmarkssPromiseArr)
                     .then(() => {
-                        bookmarksStore.bookmarks = importBookmarks;
+                        updateBookmarksStore();
 
                         bookmarksStore.isImporting = false;
                     })
@@ -202,7 +168,7 @@
         emits(EMITS.SAVE);
     }
 
-    onMounted(() => {
+    onMounted(async () => {
         enableArrowNavigation.value = bookmarksStore.arrowNavigation;
     });
 </script>

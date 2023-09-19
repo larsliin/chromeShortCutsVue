@@ -19,6 +19,9 @@
     import { FOLDER, EMITS } from '@/constants';
     import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
     import useEventsBus from '@cmp/eventBus';
+    import { useUtils } from '@/shared/utils/utils';
+
+    const utils = useUtils();
 
     const { bus } = useEventsBus();
 
@@ -77,15 +80,16 @@
         update();
     }
 
-    async function deleteAllLocalStorageImages() {
-        // delete all images from local storage
-        const localStorageItems = await bookmarksStore.get_localStorageAll(null);
-        const localStorageItemsImageArr = Object.values(localStorageItems).filter((e) => e.image);
+    // async function deleteAllLocalStorageImages() {
+    //     // delete all images from local storage
+    //     const localStorageItems = await bookmarksStore.get_localStorageAll(null);
+    //     const localStorageItemsImageArr = Object
+    // .values(localStorageItems).filter((e) => e.image);
 
-        localStorageItemsImageArr.forEach((item) => {
-            bookmarksStore.delete_localStorageItem(item.id);
-        });
-    }
+    //     localStorageItemsImageArr.forEach((item) => {
+    //         bookmarksStore.delete_localStorageItem(item.id);
+    //     });
+    // }
 
     async function onRemoved(event) {
         if (bookmarksStore.isImporting) {
@@ -98,7 +102,8 @@
 
             bookmarksStore.bookmarks = [];
 
-            deleteAllLocalStorageImages();
+            // deleteAllLocalStorageImages();
+            await utils.deleteLocalStoreImages();
 
             bookmarksStore.sliderIndex = 0;
 

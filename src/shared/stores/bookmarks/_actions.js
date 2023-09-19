@@ -138,8 +138,8 @@ export default {
                 // eslint-disable-next-line no-undef
                 chrome.bookmarks.remove(
                     id,
-                    (bookmark) => {
-                        resolve(bookmark);
+                    () => {
+                        resolve(id);
                     },
                 );
             } catch (error) {
@@ -154,8 +154,8 @@ export default {
                 // eslint-disable-next-line no-undef
                 chrome.bookmarks.removeTree(
                     id,
-                    (bookmark) => {
-                        resolve(bookmark);
+                    () => {
+                        resolve(id);
                     },
                 );
             } catch (error) {

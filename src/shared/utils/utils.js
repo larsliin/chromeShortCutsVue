@@ -1,3 +1,5 @@
+import { useBookmarksStore } from '@stores/bookmarks';
+
 // eslint-disable-next-line import/prefer-default-export
 export function useUtils() {
     function getDomainFromUrl(url) {
@@ -43,9 +45,57 @@ export function useUtils() {
         }
     }
 
+    async function deleteLocalStoreImages() {
+        const bookmarksStore = useBookmarksStore();
+
+        // delete all images from local storage
+        const promiseLocalStorageArr = [];
+        const localStorageItems = await bookmarksStore.get_localStorageAll(null);
+        const localStorageItemsImageArr = Object.values(localStorageItems).filter((e) => e.image);
+
+        localStorageItemsImageArr.forEach((item) => {
+            promiseLocalStorageArr.push(bookmarksStore.delete_localStorageItem(item.id));
+        });
+
+        Promise.all(promiseLocalStorageArr)
+            .then(() => {})
+            .catch((error) => {
+                console.error(error);
+            });
+    }
+
+    async function deleteAllBookmarks() {
+        const bookmarksStore = useBookmarksStore();
+
+        // fetch all bookmarks
+        const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+
+        // put all bookmarks folders in flat array for easier iteration
+        const bookmarksFlatArray = bookmarksResponse
+            .flatMap((item) => item.children.flatMap((child) => child));
+
+        // delete all bookmarks folders and bookmarks inside
+        const promiseArr = [];
+        bookmarksFlatArray.forEach((item) => {
+            promiseArr.push(bookmarksStore.remove_bookmarkFolder(item.id));
+        });
+
+        Promise.all(promiseArr)
+            .then(() => {
+                bookmarksStore.sliderIndex = 0;
+
+                bookmarksStore.bookmarks = [];
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+    }
+
     return {
+        deleteLocalStoreImages,
         getDomainFromUrl,
         isValidURL,
         getBase64ImageFromUrl,
+        deleteAllBookmarks,
     };
 }
