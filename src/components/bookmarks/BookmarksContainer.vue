@@ -234,9 +234,10 @@
 
     onMounted(async () => {
         const slideIndexResponse = await bookmarksStore.get_localStorage('sliderIndex');
-
-        if (slideIndexResponse) {
+        if (typeof slideIndexResponse === 'number') {
             bookmarksStore.sliderIndex = slideIndexResponse;
+        } else {
+            bookmarksStore.sliderIndex = 0;
         }
 
         const arrowNavigationResponse = await bookmarksStore.get_localStorage('arrowNavigation');
