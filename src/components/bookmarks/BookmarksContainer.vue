@@ -1,5 +1,4 @@
 <template>
-
     <div class="bookmarks-slider" v-if="bookmarksStore.bookmarks">
         <BookmarksSlider />
         <NavigationDots v-if="bookmarksStore.bookmarks && bookmarksStore.bookmarks.length > 1" />

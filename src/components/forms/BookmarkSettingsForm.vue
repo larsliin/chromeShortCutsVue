@@ -12,11 +12,16 @@
                     <v-row>
                         <v-col
                             cols="12">
-
                             <v-switch
                                 label="Enable Arrov Navigation"
                                 color="info"
+                                hide-details="auto"
                                 v-model="enableArrowNavigation"></v-switch>
+                            <v-switch
+                                label="Enable Search"
+                                color="info"
+                                hide-details="auto"
+                                v-model="enableSearchNavigation"></v-switch>
                         </v-col>
                     </v-row>
                     <v-row>
@@ -122,6 +127,8 @@
 
     const form = ref();
     const enableArrowNavigation = ref();
+    const enableSearchNavigation = ref();
+
     const bookmarksFileImport = ref();
     const iconsFileImport = ref();
 
@@ -316,10 +323,21 @@
             bookmarksStore.delete_localStorageItem('arrowNavigation');
         }
 
+        bookmarksStore.searchNavigation = enableSearchNavigation.value;
+
+        if (!enableSearchNavigation.value) {
+            console.log('disable search');
+            bookmarksStore.set_localStorage({ searchNavigation: false });
+        } else {
+            console.log('enable search');
+            bookmarksStore.delete_localStorageItem('searchNavigation');
+        }
+
         emits(EMITS.SAVE);
     }
 
     onMounted(async () => {
         enableArrowNavigation.value = bookmarksStore.arrowNavigation;
+        enableSearchNavigation.value = bookmarksStore.searchNavigation;
     });
 </script>

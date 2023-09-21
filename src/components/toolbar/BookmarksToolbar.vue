@@ -1,11 +1,13 @@
 <template>
-    <div class="toolbar d-flex">
+    <div class="toolbar d-flex" v-if="ready">
         <div>
             <v-btn
                 :color="'primary'"
                 size="large"
                 @click="dialogAdd = true">Add Bookmark</v-btn>
-            <BookmarksSearch class="ml-5" />
+            <BookmarksSearch
+                class="ml-5"
+                v-if="bookmarksStore.searchNavigation" />
         </div>
         <v-btn
             icon="mdi-wrench"
@@ -38,7 +40,7 @@
 </template>
 
 <script setup>
-    import { ref, watch } from 'vue';
+    import { ref, watch, onMounted } from 'vue';
     import BookmarkForm from '@/components/forms/BookmarkForm.vue';
     import BookmarkSettingsForm from '@/components/forms/BookmarkSettingsForm.vue';
     import useEventsBus from '@cmp/eventBus';
@@ -52,6 +54,7 @@
 
     const dialogAdd = ref(false);
     const dialogSettings = ref(false);
+    const ready = ref(false);
 
     const editBookmarkData = ref();
 
@@ -75,6 +78,14 @@
             .catch((error) => {
                 console.error(error);
             });
+    });
+
+    onMounted(async () => {
+        const searchNavigationResponse = await bookmarksStore.get_localStorage('searchNavigation');
+
+        bookmarksStore.searchNavigation = searchNavigationResponse === undefined;
+
+        ready.value = true;
     });
 </script>
 
