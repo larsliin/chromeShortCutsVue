@@ -22,12 +22,13 @@
                             cols="12">
                             <p
                                 class="text-body-1 mb-5">
-                                Import bookmarks and icons data file
+                                Import bookmarks data file
                             </p>
                             <v-file-input
-                                label="File input"
+                                :disabled="iconsFileImport"
+                                label="Bookmarks Data File"
                                 prepend-icon="mdi-download"
-                                v-model="fileImport"></v-file-input>
+                                v-model="bookmarksFileImport"></v-file-input>
                         </v-col>
                     </v-row>
                     <v-row>
@@ -35,14 +36,44 @@
                             cols="12">
                             <p
                                 class="text-body-1 mb-5">
-                                Export bookmarks and icons data file
+                                Export bookmarks data file
                             </p>
                             <v-btn
                                 color="blue-darken-1"
                                 variant="tonal"
                                 prepend-icon="mdi-upload"
-                                @click="onClickExport()">
-                                Export
+                                @click="onClickExportBookmarks()">
+                                Export Bookmarks
+                            </v-btn>
+                        </v-col>
+                    </v-row>
+                    <v-row>
+                        <v-col
+                            cols="12">
+                            <p
+                                class="text-body-1 mb-5">
+                                Import icons data file
+                            </p>
+                            <v-file-input
+                                :disabled="bookmarksFileImport"
+                                label="Icons Data File input"
+                                prepend-icon="mdi-download"
+                                v-model="iconsFileImport"></v-file-input>
+                        </v-col>
+                    </v-row>
+                    <v-row>
+                        <v-col
+                            cols="12">
+                            <p
+                                class="text-body-1 mb-5">
+                                Export icons data file
+                            </p>
+                            <v-btn
+                                color="blue-darken-1"
+                                variant="tonal"
+                                prepend-icon="mdi-upload"
+                                @click="onClickExportIcons()">
+                                Export Icons
                             </v-btn>
                         </v-col>
                     </v-row>
@@ -71,9 +102,12 @@
     import { ref, onMounted } from 'vue';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
+    import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
 
     const utils = useUtils();
+
+    const { emit } = useEventsBus();
 
     const emits = defineEmits([EMITS.CLOSE, EMITS.SAVE]);
 
@@ -81,9 +115,23 @@
 
     const form = ref();
     const enableArrowNavigation = ref();
-    const fileImport = ref();
+    const bookmarksFileImport = ref();
+    const iconsFileImport = ref();
 
-    async function onClickExport() {
+    async function onClickExportIcons() {
+        const localStorageItems = await bookmarksStore.get_localStorageAll(null);
+        const localStorageItemsImageArr = Object.values(localStorageItems).filter((e) => e.image);
+
+        const jsonString = JSON.stringify(localStorageItemsImageArr);
+
+        const a = document.createElement('a');
+
+        a.href = URL.createObjectURL(new Blob([jsonString], { type: 'application/json' }));
+        a.download = 'bookmark-icons-exported.json';
+        a.click();
+    }
+
+    async function onClickExportBookmarks() {
         const exportBookmarks = bookmarksStore.bookmarks;
 
         // fetch all images from local storage
@@ -104,7 +152,7 @@
 
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([jsonString], { type: 'application/json' }));
-        a.download = 'bookmarks-exported-v2.json';
+        a.download = 'bookmarks-exported.json';
         a.click();
     }
 
@@ -144,7 +192,7 @@
     }
 
     // import bookmarks
-    async function onImportReaderLoad(event) {
+    async function onBookmarksImportReaderLoad(event) {
         bookmarksStore.isImporting = true;
 
         const importBookmarks = JSON.parse(event.target.result);
@@ -198,12 +246,47 @@
             });
     }
 
+    // import bookmarks
+    async function onIconsImportReaderLoad(event) {
+        bookmarksStore.isImporting = true;
+
+        const importIcons = JSON.parse(event.target.result);
+
+        const promiseAllArr = [];
+
+        importIcons.forEach((item) => {
+            promiseAllArr.push(bookmarksStore.set_localStorage({
+                [item.id]: {
+                    id: item.id,
+                    parentId: item.parentId,
+                    image: item.image,
+                    url: item.url,
+                    title: item.title,
+                },
+            }));
+        });
+
+        Promise.all(promiseAllArr)
+            .then(() => {
+                emit(EMITS.IMAGES_IMPORT);
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+    }
+
     function onClickSave() {
         // import
-        if (fileImport.value) {
+        if (bookmarksFileImport.value) {
             const reader = new FileReader();
-            reader.onload = onImportReaderLoad;
-            reader.readAsText(fileImport.value[0]);
+            reader.onload = onBookmarksImportReaderLoad;
+            reader.readAsText(bookmarksFileImport.value[0]);
+        }
+
+        if (iconsFileImport.value) {
+            const reader = new FileReader();
+            reader.onload = onIconsImportReaderLoad;
+            reader.readAsText(iconsFileImport.value[0]);
         }
 
         // arrow navigation

@@ -28,7 +28,7 @@
     import { EMITS } from '@/constants';
     import useEventsBus from '@cmp/eventBus';
 
-    const { emit } = useEventsBus();
+    const { emit, bus } = useEventsBus();
 
     const props = defineProps({
         id: {
@@ -63,6 +63,11 @@
 
         ready.value = true;
     }
+
+    watch(() => bus.value.get(EMITS.IMAGES_IMPORT), () => {
+        updateImage();
+    });
+
     watch(() => bookmarksStore.bookmarks, async () => {
         image.value = null;
 

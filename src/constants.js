@@ -16,4 +16,5 @@ export const EMITS = Object.freeze({
     SAVE: 'save',
     EDIT: 'edit',
     IMAGE_UPDATED: 'imageUpdated',
+    IMAGES_IMPORT: 'imagesImport',
 });

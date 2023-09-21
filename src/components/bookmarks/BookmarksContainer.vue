@@ -174,7 +174,7 @@
             return;
         }
 
-        if (!bookmarksStore.editBase64Image && bookmarksStore.isSaving) {
+        if (!bookmarksStore.editBase64Image) {
             bookmarksStore.delete_localStorageItem(event);
             update();
             return;

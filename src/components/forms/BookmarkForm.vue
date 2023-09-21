@@ -239,8 +239,6 @@
             return;
         }
 
-        bookmarksStore.isSaving = true;
-
         // get folder text
         const folderStr = tabs.value === 1 ? folderSlct.value : folderTxt.value;
 
@@ -314,8 +312,6 @@
         bookmarksStore.set_localStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
 
         emits(EMITS.SAVE);
-
-        bookmarksStore.isSaving = false;
     }
 
     function onClickFindImage() {
