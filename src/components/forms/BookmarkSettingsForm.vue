@@ -278,7 +278,7 @@
 
         importIcons.forEach((item) => {
             const bookmarkId = bookmarksFlatResponse
-                .filter((e) => item.url === e.url);
+                .find((e) => item.url === e.url);
 
             promiseAllArr.push(bookmarksStore.set_localStorage({
                 [bookmarkId.id]: {
