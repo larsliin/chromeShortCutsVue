@@ -49,7 +49,7 @@
         }
 
         const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
-        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
+        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse);
 
         bookmarksStore.bookmarks = bookmarks[0].children;
 
@@ -214,7 +214,7 @@
         }
 
         const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
-        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
+        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse);
 
         const emptyFolder = bookmarks[0].children.find((e) => e.children.length === 0);
 

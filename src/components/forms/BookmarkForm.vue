@@ -246,7 +246,7 @@
 
         // check if there is any existing folders with that folder name in our root folder
         const findFolderResponse = await bookmarksStore
-            .get_folderByTitle(getRootResponse.id, folderStr);
+            .get_folderByTitle(getRootResponse, folderStr);
 
         let createBookmarkResponse;
         let slideToFolderId;
