@@ -24,7 +24,7 @@
 
     const utils = useUtils();
 
-    const { bus } = useEventsBus();
+    const { bus, emit } = useEventsBus();
 
     const bookmarksStore = useBookmarksStore();
 
@@ -40,17 +40,7 @@
         //  return true;
     }
 
-    async function update() {
-        if (bookmarksStore.dragStart) {
-            bookmarksStore.dragStart = false;
-            return;
-        }
-
-        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
-        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse);
-
-        bookmarksStore.bookmarks = bookmarks[0].children;
-
+    function slideToFolder() {
         bookmarksStore.sliderIndex = Math.min(
             bookmarksStore.sliderIndex,
             bookmarksStore.bookmarks.length - 1,
@@ -64,6 +54,20 @@
         bookmarksStore.set_localStorage({
             sliderIndex: bookmarksStore.sliderIndex,
         });
+    }
+
+    async function update() {
+        if (bookmarksStore.dragStart) {
+            bookmarksStore.dragStart = false;
+            return;
+        }
+
+        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse);
+
+        bookmarksStore.bookmarks = bookmarks[0].children;
+
+        slideToFolder();
     }
 
     function setChromeEventListeners() {
@@ -99,9 +103,11 @@
 
         // eslint-disable-next-line no-use-before-define
         await utils.buildRootFolder();
-        // await getBookmarks();
 
-        update();
+        const bookmarkResponse = await bookmarksStore.get_bookmarkById(event);
+        const folder = bookmarksStore.bookmarks.find(e => e.id === bookmarkResponse.parentId);
+
+        folder.children.push(bookmarkResponse);
     }
 
     async function onRemoved(event) {
@@ -132,6 +138,19 @@
         if (!isBookmarkInScope(event)) {
             return;
         }
+
+        /*
+        // delete folder
+        const folderIndex = bookmarksStore.bookmarks.findIndex(e => e.id === event);
+
+        if (typeof folderIndex === 'number') {
+            bookmarksStore.bookmarks.splice(folderIndex, 1);
+
+            slideToFolder();
+
+            return;
+        }
+        */
 
         // delete local storage image
         const localStorageResponse = await bookmarksStore.get_localStorage(event);
@@ -175,8 +194,6 @@
 
         if (!bookmarksStore.editBase64Image) {
             bookmarksStore.delete_localStorageItem(event);
-            update();
-            return;
         }
         const promiseArr = [
             bookmarksStore.get_bookmarkById(event),
@@ -184,9 +201,9 @@
         ];
 
         Promise.all(promiseArr)
-            .then((results) => {
+            .then(async(results) => {
                 if (results[0]) {
-                    bookmarksStore.set_localStorage({
+                    await bookmarksStore.set_localStorage({
                         [event]: {
                             parentId: results[0].parentId,
                             id: event,
@@ -195,6 +212,7 @@
                             title: results[0].title,
                         },
                     });
+                    emit(EMITS.ICON_UPDATE, event);
                     bookmarksStore.editBase64Image = null;
                 }
             })
@@ -202,7 +220,18 @@
                 console.error(error);
             });
 
-        update();
+        // update bookmark UI
+        // find bookmark with id
+        const bookmark = bookmarksStore.bookmarks.reduce((result, item) => {
+            const child = item.children && item.children.find(child => child.id === event);
+            return child || result;
+        }, null);
+
+        // update bookmark title/url/parentid
+        const bookmarkResponse = await bookmarksStore.get_bookmarkById(event);
+        bookmark.parentId = bookmarkResponse.parentId;
+        bookmark.url = bookmarkResponse.url;
+        bookmark.title = bookmarkResponse.title;
     }
 
     async function onMoved(event) {
@@ -225,7 +254,7 @@
 
     // force event trigger if bookmark data is not updated
     // but image has changed while editing bookmark
-    watch(() => bus.value.get(EMITS.IMAGE_UPDATED), (id) => {
+    watch(() => bus.value.get(EMITS.CHANGED), (id) => {
         onChanged(id[0]);
     });
 

@@ -207,7 +207,7 @@
     // force event trigger if bookmark data is not updated but image has changed
     function emitImageUpdate() {
         if (id.value && titleTxt.value === props.data.title && urlTxt.value === props.data.url) {
-            emit(EMITS.IMAGE_UPDATED, id.value);
+            emit(EMITS.CHANGED, id.value);
         }
     }
 

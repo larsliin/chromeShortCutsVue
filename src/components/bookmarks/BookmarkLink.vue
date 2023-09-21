@@ -68,6 +68,12 @@
         updateImage();
     });
 
+    watch(() => bus.value.get(EMITS.ICON_UPDATE), (id) => {
+        if (id[0] === props.id) {
+            updateImage();
+        }
+    });
+
     watch(() => bookmarksStore.bookmarks, async () => {
         image.value = null;
 
