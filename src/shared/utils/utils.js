@@ -118,19 +118,26 @@ export function useUtils() {
 
     async function buildRootFolder() {
         const bookmarksStore = useBookmarksStore();
-        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
 
-        if (!getRootResponse) {
-            bookmarksStore.sliderIndex = 0;
+        const rootFolderResponse = await bookmarksStore.get_bookmarks('2');
 
-            bookmarksStore
-                .set_localStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
+        const rootFolder = rootFolderResponse[0]
+            .children.find((e) => e.title === FOLDER.ROOT.label);
 
-            // if root folder does not exist create root and home folders
-            const createRootResponse = await bookmarksStore.create_bookmark(2, FOLDER.ROOT.label);
+        if (rootFolder) {
+            bookmarksStore.rootId = rootFolder.id;
+            await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: rootFolder.id });
+        } else {
+            // if root folder does not exist then create root and home folders
+            const createRootResponse = await bookmarksStore
+                .create_bookmark(2, FOLDER.ROOT.label);
             bookmarksStore.rootId = createRootResponse.id;
             await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: createRootResponse });
         }
+        bookmarksStore.sliderIndex = 0;
+
+        bookmarksStore
+            .set_localStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
     }
 
     return {

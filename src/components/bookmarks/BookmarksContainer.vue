@@ -38,7 +38,6 @@
             const childIds = item.children ? item.children.map((child) => child.id) : [];
             return [topLevelId, ...childIds];
         });
-
         return idArray.includes(id);
         //  return true;
     }
@@ -81,9 +80,9 @@
     async function getBookmarks() {
         const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
 
-        bookmarksStore.rootId = getRootResponse.id;
+        bookmarksStore.rootId = getRootResponse;
 
-        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse.id);
+        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse);
 
         bookmarksStore.bookmarks = bookmarks ? bookmarks[0].children : [];
 
@@ -102,7 +101,7 @@
 
         // eslint-disable-next-line no-use-before-define
         await utils.buildRootFolder();
-        await getBookmarks();
+        // await getBookmarks();
 
         update();
     }
