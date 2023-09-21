@@ -9,7 +9,6 @@
         <NavigationArrow
             v-if="bookmarksStore.arrowNavigation && bookmarksStore.bookmarks.length > 1"
             direction="right" />
-
     </div>
 </template>
 
@@ -175,7 +174,7 @@
             return;
         }
 
-        if (!bookmarksStore.editBase64Image) {
+        if (!bookmarksStore.editBase64Image && bookmarksStore.isSaving) {
             bookmarksStore.delete_localStorageItem(event);
             update();
             return;

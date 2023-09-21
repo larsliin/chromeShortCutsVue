@@ -13,6 +13,7 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         rootId: null,
         arrowNavigation: true,
         isImporting: false,
+        isSaving: false,
     }),
     actions,
     getters,
