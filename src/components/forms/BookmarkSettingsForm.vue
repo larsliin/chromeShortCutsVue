@@ -12,19 +12,25 @@
                     <v-row>
                         <v-col
                             cols="12">
-                            <v-checkbox
+
+                            <v-switch
                                 label="Enable Arrov Navigation"
-                                v-model="enableArrowNavigation" />
+                                color="info"
+                                v-model="enableArrowNavigation"></v-switch>
                         </v-col>
                     </v-row>
                     <v-row>
                         <v-col
                             cols="12">
+
+                            <span class="text-h6 mb-2 d-block">
+                                Import and export bookmarks and icons</span>
                             <p
                                 class="text-body-1 mb-5">
                                 Import bookmarks data file
                             </p>
                             <v-file-input
+                                @click:clear="clearFileInput()"
                                 :disabled="iconsFileImport"
                                 label="Bookmarks Data File"
                                 prepend-icon="mdi-download"
@@ -35,7 +41,7 @@
                         <v-col
                             cols="12">
                             <p
-                                class="text-body-1 mb-5">
+                                class="text-body-1 mb-2">
                                 Export bookmarks data file
                             </p>
                             <v-btn
@@ -51,10 +57,11 @@
                         <v-col
                             cols="12">
                             <p
-                                class="text-body-1 mb-5">
+                                class="text-body-1 mb-2">
                                 Import icons data file
                             </p>
                             <v-file-input
+                                @click:clear="clearFileInput()"
                                 :disabled="bookmarksFileImport"
                                 label="Icons Data File input"
                                 prepend-icon="mdi-download"
@@ -117,6 +124,12 @@
     const enableArrowNavigation = ref();
     const bookmarksFileImport = ref();
     const iconsFileImport = ref();
+
+    function clearFileInput() {
+        console.log('clear');
+        iconsFileImport.value = null;
+        bookmarksFileImport.value = null;
+    }
 
     async function onClickExportIcons() {
         const localStorageItems = await bookmarksStore.get_localStorageAll(null);
@@ -258,11 +271,11 @@
 
         importIcons.forEach((item) => {
             const bookmarkId = bookmarksFlatResponse
-                .find((e) => item.url === e.url).id;
+                .filter((e) => item.url === e.url);
 
             promiseAllArr.push(bookmarksStore.set_localStorage({
-                [bookmarkId]: {
-                    id: bookmarkId,
+                [bookmarkId.id]: {
+                    id: bookmarkId.id,
                     parentId: item.parentId,
                     image: item.image,
                     url: item.url,

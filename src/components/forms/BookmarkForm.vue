@@ -6,7 +6,8 @@
                     <v-row>
                         <v-col
                             cols="12">
-                            <span class="text-h5">Add Bookmark</span>
+                            <span class="text-h5" v-if="id">Edit Bookmark</span>
+                            <span class="text-h5" v-else>Add Bookmark</span>
                         </v-col>
                     </v-row>
                     <v-row>
