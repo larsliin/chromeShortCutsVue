@@ -252,12 +252,17 @@
 
         const importIcons = JSON.parse(event.target.result);
 
+        const bookmarksFlatResponse = await utils.getBookmarksAsFlatArr();
+
         const promiseAllArr = [];
 
         importIcons.forEach((item) => {
+            const bookmarkId = bookmarksFlatResponse
+                .find((e) => item.url === e.url).id;
+
             promiseAllArr.push(bookmarksStore.set_localStorage({
-                [item.id]: {
-                    id: item.id,
+                [bookmarkId]: {
+                    id: bookmarkId,
                     parentId: item.parentId,
                     image: item.image,
                     url: item.url,
