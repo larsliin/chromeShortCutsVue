@@ -81,10 +81,6 @@
     });
 
     onMounted(async () => {
-        const searchNavigationResponse = await bookmarksStore.get_localStorage('searchNavigation');
-
-        bookmarksStore.searchNavigation = searchNavigationResponse === undefined;
-
         ready.value = true;
     });
 </script>

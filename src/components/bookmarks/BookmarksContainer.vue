@@ -230,14 +230,14 @@
     });
 
     onMounted(async () => {
-        const slideIndexResponse = await bookmarksStore.get_localStorage('sliderIndex');
+        const slideIndexResponse = await bookmarksStore.get_syncStorage('sliderIndex');
         if (typeof slideIndexResponse === 'number') {
             bookmarksStore.sliderIndex = slideIndexResponse;
         } else {
             bookmarksStore.sliderIndex = 0;
         }
 
-        const arrowNavigationResponse = await bookmarksStore.get_localStorage('arrowNavigation');
+        const arrowNavigationResponse = await bookmarksStore.get_syncStorage('arrowNavigation');
 
         bookmarksStore.arrowNavigation = arrowNavigationResponse === undefined;
 

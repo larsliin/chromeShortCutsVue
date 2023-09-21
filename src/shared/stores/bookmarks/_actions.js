@@ -190,6 +190,32 @@ export default {
         });
     },
 
+    async set_syncStorage(storageObj) {
+        return new Promise((resolve, reject) => {
+            try {
+                // eslint-disable-next-line no-undef
+                chrome.storage.sync.set(storageObj).then((event) => {
+                    resolve(event);
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    },
+
+    async get_syncStorage(id) {
+        return new Promise((resolve, reject) => {
+            try {
+                // eslint-disable-next-line no-undef
+                chrome.storage.sync.get(id.toString()).then((event) => {
+                    resolve(event[id]);
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    },
+
     async get_localStorageAll() {
         return new Promise((resolve, reject) => {
             try {
@@ -208,6 +234,24 @@ export default {
             try {
                 // eslint-disable-next-line no-undef
                 chrome.storage.local.remove([id], () => {
+                    // eslint-disable-next-line no-undef
+                    const error = chrome.runtime.lastError;
+                    if (error) {
+                        console.error(error);
+                    }
+                    resolve();
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    },
+
+    async delete_syncStorageItem(id) {
+        return new Promise((resolve, reject) => {
+            try {
+                // eslint-disable-next-line no-undef
+                chrome.storage.sync.remove([id], () => {
                     // eslint-disable-next-line no-undef
                     const error = chrome.runtime.lastError;
                     if (error) {

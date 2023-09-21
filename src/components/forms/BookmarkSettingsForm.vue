@@ -318,19 +318,19 @@
         bookmarksStore.arrowNavigation = enableArrowNavigation.value;
 
         if (!enableArrowNavigation.value) {
-            bookmarksStore.set_localStorage({ arrowNavigation: false });
+            bookmarksStore.set_syncStorage({ arrowNavigation: false });
         } else {
-            bookmarksStore.delete_localStorageItem('arrowNavigation');
+            bookmarksStore.delete_syncStorageItem('arrowNavigation');
         }
 
         bookmarksStore.searchNavigation = enableSearchNavigation.value;
 
         if (!enableSearchNavigation.value) {
             console.log('disable search');
-            bookmarksStore.set_localStorage({ searchNavigation: false });
+            bookmarksStore.set_syncStorage({ searchNavigation: false });
         } else {
             console.log('enable search');
-            bookmarksStore.delete_localStorageItem('searchNavigation');
+            bookmarksStore.delete_syncStorageItem('searchNavigation');
         }
 
         emits(EMITS.SAVE);
