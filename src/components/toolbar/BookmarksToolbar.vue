@@ -4,7 +4,7 @@
             <v-btn
                 :color="'primary'"
                 size="large"
-                @click="dialogAdd = true">Add Bookmark</v-btn>
+                @click="dialogAddOpen = true">Add Bookmark</v-btn>
             <BookmarksSearch
                 class="ml-5"
                 v-if="bookmarksStore.searchNavigation" />
@@ -18,13 +18,13 @@
         <template>
             <v-row justify="center">
                 <v-dialog
-                    v-model="dialogAdd"
+                    v-model="dialogAddOpen"
                     persistent
                     width="450">
                     <BookmarkForm
                         :data="editBookmarkData"
-                        @close="dialogAdd = false"
-                        @save="dialogAdd = false" />
+                        @close="dialogAddOpen = false"
+                        @save="dialogAddOpen = false" />
                 </v-dialog>
                 <v-dialog
                     v-model="dialogSettings"
@@ -52,7 +52,7 @@
 
     const { bus } = useEventsBus();
 
-    const dialogAdd = ref(false);
+    const dialogAddOpen = ref(false);
     const dialogSettings = ref(false);
     const ready = ref(false);
 
@@ -73,15 +73,24 @@
                     url: results[0].url,
                     parentId: results[0].parentId,
                 };
-                dialogAdd.value = true;
+                dialogAddOpen.value = true;
             })
             .catch((error) => {
                 console.error(error);
             });
     });
 
+    watch(dialogAddOpen, (val) => {
+        if (!val) {
+            editBookmarkData.value = null;
+        }
+    });
+
     onMounted(async () => {
         ready.value = true;
+
+        const enableSearchResponse = await bookmarksStore.get_syncStorage('searchNavigation');
+        bookmarksStore.searchNavigation = !enableSearchResponse;
     });
 </script>
 

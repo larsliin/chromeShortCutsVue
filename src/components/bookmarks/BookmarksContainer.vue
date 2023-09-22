@@ -51,7 +51,7 @@
             0,
         );
 
-        bookmarksStore.set_localStorage({
+        bookmarksStore.set_syncStorage({
             sliderIndex: bookmarksStore.sliderIndex,
         });
     }
@@ -111,81 +111,55 @@
     }
 
     async function onRemoved(event) {
-        if (bookmarksStore.isImporting) {
-            return;
-        }
+        const bookmark = utils.getBookmarkById(event);
 
         if (bookmarksStore.rootId === event) {
-            // if root folder is deleted then delete all
-            await bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id);
+
+            // if root folder is deleted then simply delete everything
+            const rootDel = await bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id);
+
             bookmarksStore.rootId = null;
 
             bookmarksStore.bookmarks = [];
 
-            // deleteAllLocalStorageImages();
             await utils.deleteLocalStoreImages();
 
             bookmarksStore.sliderIndex = 0;
 
-            bookmarksStore.set_localStorage({
+            bookmarksStore.set_syncStorage({
                 sliderIndex: bookmarksStore.sliderIndex,
             });
 
             return;
         }
 
-        // ensure that bookmark is ours in ROOT folder
-        if (!isBookmarkInScope(event)) {
-            return;
+        if (bookmark) { // if is type bookmark
+            const parentId = bookmark.parentId;
+
+            // Filter away child object with the specified ID
+            bookmarksStore.bookmarks = bookmarksStore.bookmarks.map(parent => ({
+                ...parent,
+                children: parent.children.filter(child => child.id !== event)
+            }));
+
+            const folder = bookmarksStore.bookmarks.find(e => e.id === parentId);
+
+            if (!folder.children.length) {
+                // if folder is empty after bookmark has been deleted
+                // then delete the containing folder
+                bookmarksStore.remove_bookmark(folder.id);
+            }
+        } else { // if is type folder
+            bookmarksStore.bookmarks = bookmarksStore.bookmarks.filter(e => e.id !== event);
         }
 
-        /*
-        // delete folder
-        const folderIndex = bookmarksStore.bookmarks.findIndex(e => e.id === event);
-
-        if (typeof folderIndex === 'number') {
-            bookmarksStore.bookmarks.splice(folderIndex, 1);
-
-            slideToFolder();
-
-            return;
-        }
-        */
-
-        // delete local storage image
-        const localStorageResponse = await bookmarksStore.get_localStorage(event);
-
-        if (localStorageResponse) {
-            bookmarksStore.delete_localStorageItem(event);
-        }
-
-        const folder = bookmarksStore
-            .bookmarks.find((obj) => obj.children?.find((item) => item.id === event));
-
-        if (!folder) {
-            // delete all local storage items in folder
-            const localStorageItems = await bookmarksStore.get_localStorageAll(null);
-            const localStorageItemsImageArr = Object.values(localStorageItems)
-                .filter((e) => e.parentId === event);
-
-            localStorageItemsImageArr.forEach((item) => {
-                bookmarksStore.delete_localStorageItem(item.id);
+        if (bookmarksStore.sliderIndex >= bookmarksStore.bookmarks.length) {
+            bookmarksStore.sliderIndex = bookmarksStore.bookmarks.length - 1;
+            bookmarksStore.set_syncStorage({
+                sliderIndex: bookmarksStore.sliderIndex,
             });
-
-            update();
-
-            return;
         }
-
-        if (folder.children.length === 1) {
-            // if last bookmark in folder
-            // then delete folder with content
-            await bookmarksStore.remove_bookmark(folder.id);
-        }
-
-        update();
     }
-
     async function onChanged(event) {
         // ensure that bookmark is ours in ROOT folder
         if (!isBookmarkInScope(event)) {
@@ -258,13 +232,15 @@
         onChanged(id[0]);
     });
 
-    onMounted(async () => {
+    async function init() {
         const slideIndexResponse = await bookmarksStore.get_syncStorage('sliderIndex');
+
         if (typeof slideIndexResponse === 'number') {
             bookmarksStore.sliderIndex = slideIndexResponse;
         } else {
             bookmarksStore.sliderIndex = 0;
         }
+        console.log('slide to', bookmarksStore.sliderIndex);
 
         const arrowNavigationResponse = await bookmarksStore.get_syncStorage('arrowNavigation');
 
@@ -272,6 +248,10 @@
 
         await utils.buildRootFolder();
         await getBookmarks();
+    }
+
+    onMounted(() => {
+        init();
     });
 
 </script>

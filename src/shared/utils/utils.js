@@ -116,6 +116,14 @@ export function useUtils() {
             });
     }
 
+    function getBookmarkById(id) {
+        const bookmarksStore = useBookmarksStore();
+        return bookmarksStore.bookmarks.reduce((result, item) => {
+            const child = item.children && item.children.find((bookmark) => bookmark.id === id);
+            return child || result;
+        }, null);
+    }
+
     async function buildRootFolder() {
         const bookmarksStore = useBookmarksStore();
 
@@ -132,15 +140,16 @@ export function useUtils() {
             const createRootResponse = await bookmarksStore
                 .create_bookmark(2, FOLDER.ROOT.label);
             bookmarksStore.rootId = createRootResponse.id;
-            await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: createRootResponse });
+            await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: createRootResponse.id });
+            bookmarksStore.sliderIndex = 0;
         }
-        bookmarksStore.sliderIndex = 0;
 
         bookmarksStore
             .set_localStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
     }
 
     return {
+        getBookmarkById,
         getBookmarksAsFlatArr,
         deleteLocalStoreImages,
         getDomainFromUrl,

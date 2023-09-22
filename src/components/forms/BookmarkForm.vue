@@ -118,13 +118,18 @@
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn
-                    color="blue-darken-1"
+                    v-if="data"
+                    variant="tonal"
+                    color="red"
+                    @click="onClickDelete()">
+                    Delete
+                </v-btn>
+                <v-btn
                     variant="text"
                     @click="$emit(EMITS.CLOSE)">
                     Close
                 </v-btn>
                 <v-btn
-                    color="blue-darken-1"
                     variant="text"
                     @click="onClickSave()">
                     Save
@@ -135,7 +140,9 @@
 </template>
 
 <script setup>
-    import { ref, computed, onMounted } from 'vue';
+    import {
+        ref, computed, onMounted,
+    } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
     import { FOLDER, EMITS } from '@/constants';
@@ -174,9 +181,6 @@
     const folderTxt = ref('');
     const titleTxt = ref('');
     const urlTxt = ref('');
-
-    // eslint-disable-next-line
-    const slctEnabled = computed(() => { bookmarksStore.bookmarks  && bookmarksStore.bookmarks.length > 0 });
 
     async function fetchClearBitImage(imageUrl) {
         try {
@@ -231,6 +235,12 @@
                 await bookmarksStore.move_bookmark(id.value, { parentId: targetId });
             }
         }
+    }
+
+    function onClickDelete() {
+        emits(EMITS.CLOSE);
+
+        bookmarksStore.remove_bookmark(props.data.id);
     }
 
     async function onClickSave() {
@@ -310,7 +320,7 @@
         bookmarksStore.sliderIndex = bookmarksStore.bookmarks
             .findIndex((e) => e.id === slideToFolderId);
 
-        bookmarksStore.set_localStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
+        bookmarksStore.set_syncStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
 
         emits(EMITS.SAVE);
     }

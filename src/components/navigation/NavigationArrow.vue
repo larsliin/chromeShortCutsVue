@@ -36,7 +36,7 @@
             bookmarksStore.sliderIndex += 1;
         }
 
-        bookmarksStore.set_localStorage({ sliderIndex: bookmarksStore.sliderIndex });
+        bookmarksStore.set_syncStorage({ sliderIndex: bookmarksStore.sliderIndex });
     }
 
     function toggleEnabled() {

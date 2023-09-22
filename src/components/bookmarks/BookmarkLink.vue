@@ -75,11 +75,11 @@
     });
 
     watch(() => bookmarksStore.bookmarks, async () => {
-        image.value = null;
+        // image.value = null;
 
-        await nextTick();
+        // await nextTick();
 
-        updateImage();
+        // updateImage();
     });
 
     onMounted(async () => {

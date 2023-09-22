@@ -29,7 +29,7 @@
     function onClick(index) {
         bookmarksStore.sliderIndex = index;
 
-        bookmarksStore.set_localStorage({ sliderIndex: bookmarksStore.sliderIndex });
+        bookmarksStore.set_syncStorage({ sliderIndex: bookmarksStore.sliderIndex });
     }
 </script>
 

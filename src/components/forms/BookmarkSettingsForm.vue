@@ -133,7 +133,6 @@
     const iconsFileImport = ref();
 
     function clearFileInput() {
-        console.log('clear');
         iconsFileImport.value = null;
         bookmarksFileImport.value = null;
     }
@@ -317,20 +316,18 @@
         // arrow navigation
         bookmarksStore.arrowNavigation = enableArrowNavigation.value;
 
-        if (!enableArrowNavigation.value) {
-            bookmarksStore.set_syncStorage({ arrowNavigation: false });
-        } else {
+        if (enableArrowNavigation.value) {
             bookmarksStore.delete_syncStorageItem('arrowNavigation');
+        } else {
+            bookmarksStore.set_syncStorage({ arrowNavigation: 'disabled' });
         }
 
         bookmarksStore.searchNavigation = enableSearchNavigation.value;
 
-        if (!enableSearchNavigation.value) {
-            console.log('disable search');
-            bookmarksStore.set_syncStorage({ searchNavigation: false });
-        } else {
-            console.log('enable search');
+        if (enableSearchNavigation.value) {
             bookmarksStore.delete_syncStorageItem('searchNavigation');
+        } else {
+            bookmarksStore.set_syncStorage({ searchNavigation: 'disabled' });
         }
 
         emits(EMITS.SAVE);

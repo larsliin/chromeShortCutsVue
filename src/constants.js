@@ -1,4 +1,4 @@
-import { UiFolder } from './models/Folder';
+import UiFolder from './models/Folder';
 
 export const FOLDER = Object.freeze({
     ROOT: new UiFolder(
