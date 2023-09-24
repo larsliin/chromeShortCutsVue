@@ -29,15 +29,14 @@
     const bookmarksStore = useBookmarksStore();
 
     async function isBookmarkInScope(id) {
-        const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+        const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+        const bookmarks = bookmarksResponse[0];
 
-        const idArray = bookmarks.flatMap((item) => {
-            const topLevelId = item.id;
-            const childIds = item.children ? item.children.map((child) => child.id) : [];
-            return [topLevelId, ...childIds];
-        });
-        return idArray.includes(id);
-        //  return true;
+        const folderIds = bookmarks.children.map((e) => e.id);
+        const bookmarkIds = bookmarks.children.flatMap((e) => e.children.map((a) => a.id));
+        const allIds = folderIds.concat(bookmarkIds);
+
+        return allIds.includes(id);
     }
 
     function slideToFolder() {
