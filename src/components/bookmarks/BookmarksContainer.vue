@@ -111,7 +111,7 @@
     }
 
     async function onRemoved(event) {
-        const bookmark = utils.getBookmarkById(event);
+        const bookmark = utils.getStoredBookmarkById(event);
 
         if (bookmarksStore.rootId === event) {
 
@@ -196,10 +196,7 @@
 
         // update bookmark UI
         // find bookmark with id
-        const bookmark = bookmarksStore.bookmarks.reduce((result, item) => {
-            const child = item.children && item.children.find(child => child.id === event);
-            return child || result;
-        }, null);
+        const bookmark = utils.getStoredBookmarkById(event);
 
         // update bookmark title/url/parentid
         const bookmarkResponse = await bookmarksStore.get_bookmarkById(event);
@@ -240,7 +237,9 @@
         } else {
             bookmarksStore.sliderIndex = 0;
         }
-        console.log('slide to', bookmarksStore.sliderIndex);
+
+        const enableSearchResponse = await bookmarksStore.get_syncStorage('searchNavigation');
+        bookmarksStore.searchNavigation = !enableSearchResponse;
 
         const arrowNavigationResponse = await bookmarksStore.get_syncStorage('arrowNavigation');
 

@@ -88,9 +88,6 @@
 
     onMounted(async () => {
         ready.value = true;
-
-        const enableSearchResponse = await bookmarksStore.get_syncStorage('searchNavigation');
-        bookmarksStore.searchNavigation = !enableSearchResponse;
     });
 </script>
 

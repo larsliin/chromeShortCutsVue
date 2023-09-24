@@ -116,7 +116,7 @@ export function useUtils() {
             });
     }
 
-    function getBookmarkById(id) {
+    function getStoredBookmarkById(id) {
         const bookmarksStore = useBookmarksStore();
         return bookmarksStore.bookmarks.reduce((result, item) => {
             const child = item.children && item.children.find((bookmark) => bookmark.id === id);
@@ -149,7 +149,7 @@ export function useUtils() {
     }
 
     return {
-        getBookmarkById,
+        getStoredBookmarkById,
         getBookmarksAsFlatArr,
         deleteLocalStoreImages,
         getDomainFromUrl,
