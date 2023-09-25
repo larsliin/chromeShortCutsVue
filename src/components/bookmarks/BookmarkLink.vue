@@ -47,10 +47,6 @@
             type: String,
             required: true,
         },
-        tabIndex: {
-            type: String,
-            default: '-1',
-        },
     });
 
     const image = ref();
@@ -76,14 +72,6 @@
         if (id[0] === props.id) {
             updateImage();
         }
-    });
-
-    watch(() => bookmarksStore.bookmarks, async () => {
-        // image.value = null;
-
-        // await nextTick();
-
-        // updateImage();
     });
 
     onMounted(async () => {
