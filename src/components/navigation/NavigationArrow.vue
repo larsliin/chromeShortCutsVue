@@ -1,7 +1,6 @@
 <template>
     <button
         class="navigation-arrow"
-        tabindex="1"
         :disabled="disabled"
         :class="direction"
         @click="onClick()">

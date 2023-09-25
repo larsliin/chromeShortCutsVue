@@ -12,6 +12,7 @@
                 <template #item="{element}">
                     <li>
                         <BookmarkLink
+                            :tabIndex="slideindex === bookmarksStore.sliderIndex ? '1' : '-1'"
                             :id="element.id"
                             :key="element.id"
                             :link="element.url"
@@ -32,7 +33,11 @@
     const bookmarksStore = useBookmarksStore();
 
     const props = defineProps({
-        bookmarks: Array,
+        slideindex: Number,
+        bookmarks: {
+            type: Array,
+            default: () => [],
+        },
     });
 
     function onDragStart() {
@@ -74,7 +79,7 @@
 
             li {
                 padding: 0;
-                margin: 0 20px;
+                margin: 0 5px;
                 display: inline;
                 line-height: 0;
                 position: relative;

@@ -39,7 +39,18 @@
         return allIds.includes(id);
     }
 
-    function slideToFolder() {
+    async function update() {
+        if (bookmarksStore.dragStart) {
+            bookmarksStore.dragStart = false;
+            return;
+        }
+
+        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse);
+
+        bookmarksStore.bookmarks = bookmarks[0].children;
+
+        // slide to active folder index
         bookmarksStore.sliderIndex = Math.min(
             bookmarksStore.sliderIndex,
             bookmarksStore.bookmarks.length - 1,
@@ -53,20 +64,6 @@
         bookmarksStore.set_syncStorage({
             sliderIndex: bookmarksStore.sliderIndex,
         });
-    }
-
-    async function update() {
-        if (bookmarksStore.dragStart) {
-            bookmarksStore.dragStart = false;
-            return;
-        }
-
-        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
-        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse);
-
-        bookmarksStore.bookmarks = bookmarks[0].children;
-
-        slideToFolder();
     }
 
     function setChromeEventListeners() {
@@ -106,7 +103,19 @@
         const bookmarkResponse = await bookmarksStore.get_bookmarkById(event);
         const folder = bookmarksStore.bookmarks.find(e => e.id === bookmarkResponse.parentId);
 
-        folder.children.push(bookmarkResponse);
+        // if folder
+        if (bookmarkResponse.parentId === bookmarksStore.rootId) {
+            bookmarksStore.bookmarks.push(bookmarkResponse);
+        } else {
+            // if bookmark
+            if (!folder.children) {
+                // create bookmarks children object if folder is empty
+                folder.children = [];
+            }
+            folder.children.push(bookmarkResponse);
+
+        }
+        console.log(bookmarksStore.bookmarks);
     }
 
     async function onRemoved(event) {
@@ -165,6 +174,8 @@
             return;
         }
 
+        // if bookmark does not have an image icon
+        // then delete applied icon image from bookmark
         if (!bookmarksStore.editBase64Image) {
             bookmarksStore.delete_localStorageItem(event);
         }
@@ -193,15 +204,23 @@
                 console.error(error);
             });
 
-        // update bookmark UI
-        // find bookmark with id
-        const bookmark = utils.getStoredBookmarkById(event);
-
-        // update bookmark title/url/parentid
         const bookmarkResponse = await bookmarksStore.get_bookmarkById(event);
-        bookmark.parentId = bookmarkResponse.parentId;
-        bookmark.url = bookmarkResponse.url;
-        bookmark.title = bookmarkResponse.title;
+
+        // update UI titles
+        // find folder with id
+        const folder = bookmarksStore.bookmarks.find(e => e.id === event);
+
+        if (folder) {
+            // if is a folder
+            folder.title = bookmarkResponse.title;
+        } else {
+            const bookmark = utils.getStoredBookmarkById(event);
+            // if not a folder then this is a bookmark
+            // update bookmark title/url/parentid
+            bookmark.parentId = bookmarkResponse.parentId;
+            bookmark.url = bookmarkResponse.url;
+            bookmark.title = bookmarkResponse.title;
+        }
     }
 
     async function onMoved(event) {

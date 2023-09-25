@@ -3,7 +3,7 @@
         v-if="ready">
         <a
             class="bookmark-link"
-            tabindex="-1"
+            :tabindex="tabIndex"
             draggable="true"
             :href="link"
             :id="id"
@@ -21,7 +21,7 @@
 
 <script setup>
     import {
-        ref, onMounted, watch, nextTick,
+        ref, onMounted, watch,
     } from 'vue';
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
@@ -31,6 +31,10 @@
     const { emit, bus } = useEventsBus();
 
     const props = defineProps({
+        tabIndex: {
+            type: String,
+            default: '-1',
+        },
         id: {
             type: [String, Number],
             required: true,
@@ -88,19 +92,14 @@
 
 </script>
 <style scoped lang="scss">
-    .bookmark {
-        margin: 0 20px;
-        padding-top: 20px;
-    }
 
     .bookmark-title-container {
         display: inline-block;
         line-height: 1.15;
-        margin: 10px 0;
+        margin: 15px 0 0;
         max-width: 100%;
         overflow: hidden;
         padding-bottom: 0;
-        padding-top: 5px;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
@@ -113,9 +112,10 @@
         margin-bottom: 4px;
         outline-color: #01a1f6;
         outline-offset: 3px;
-        padding-top: 30px;
-        width: 90px;
+        margin-top: 20px;
+        width: 110px;
         text-decoration: none;
+        padding: 10px;
     }
 
     .bookmark-edit {
@@ -124,7 +124,7 @@
         display: none;
         font-size: 18px;
         position: absolute;
-        right: 0;
+        right: 8px;
         top: 0;
     }
 

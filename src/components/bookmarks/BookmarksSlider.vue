@@ -4,9 +4,10 @@
         <div class="folders-container animated d-flex"
             :style="{transform: sliderPosition}">
             <template
-                v-for="bookmark in bookmarksStore.bookmarks"
+                v-for="(bookmark, index) in bookmarksStore.bookmarks"
                 :key="bookmark.id">
                 <BookmarksSlide
+                    :slideindex="index"
                     :bookmarks="bookmark.children" />
             </template>
         </div>
