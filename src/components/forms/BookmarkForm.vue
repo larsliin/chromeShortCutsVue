@@ -46,73 +46,75 @@
                             </v-text-field>
                         </v-col>
                     </v-row>
-                    <v-row>
-                        <v-col
-                            cols="12">
-                            <v-text-field
-                                v-model="titleTxt"
-                                :rules="[rules.required]"
-                                label="Bookmark Title">
-                            </v-text-field>
-                        </v-col>
-                    </v-row>
-                    <v-row>
-                        <v-col
-                            cols="12">
-                            <v-text-field
-                                v-model="urlTxt"
-                                label="Bookmark URL"
-                                hint="bookmark link"
-                                :rules="[rules.required, rules.urlvalid]">
-                            </v-text-field>
-                        </v-col>
-                    </v-row>
-                    <v-row>
-                        <v-col
-                            cols="12">
-                            <span class="text-h6">Icon</span>
-                        </v-col>
-                    </v-row>
-                    <v-row>
-                        <v-col
-                            cols="12">
-                            <BookmarkIcon
-                                :image="base64Image" />
-                        </v-col>
-                    </v-row>
-                    <v-row>
-                        <v-col
-                            cols="12">
-                            <input
-                                class="inp-file"
-                                type="file"
-                                id="inp_image"
-                                accept=".jpg, .jpeg, .gif, .png, .svg"
-                                @change="onImageInpChange($event)" />
-                            <v-btn
-                                color="blue-darken-1"
-                                variant="tonal"
-                                @click="onClickFindImage()">
-                                Browse
-                            </v-btn>
-                            <v-btn
-                                class="ml-5"
-                                color="blue-darken-1"
-                                variant="tonal"
-                                :disabled="!urlTxt"
-                                @click="getClearbitImage()">
-                                Generate
-                            </v-btn>
-                            <v-btn
-                                class="ml-5"
-                                color="blue-darken-1"
-                                variant="tonal"
-                                :disabled="!base64Image"
-                                @click="base64Image = null">
-                                Clear
-                            </v-btn>
-                        </v-col>
-                    </v-row>
+                    <template v-if="!data || (data && data.url)">
+                        <v-row>
+                            <v-col
+                                cols="12">
+                                <v-text-field
+                                    v-model="titleTxt"
+                                    :rules="[rules.required]"
+                                    label="Bookmark Title">
+                                </v-text-field>
+                            </v-col>
+                        </v-row>
+                        <v-row>
+                            <v-col
+                                cols="12">
+                                <v-text-field
+                                    v-model="urlTxt"
+                                    label="Bookmark URL"
+                                    hint="bookmark link"
+                                    :rules="[rules.required, rules.urlvalid]">
+                                </v-text-field>
+                            </v-col>
+                        </v-row>
+                        <v-row>
+                            <v-col
+                                cols="12">
+                                <span class="text-h6">Icon</span>
+                            </v-col>
+                        </v-row>
+                        <v-row>
+                            <v-col
+                                cols="12">
+                                <BookmarkIcon
+                                    :image="base64Image" />
+                            </v-col>
+                        </v-row>
+                        <v-row>
+                            <v-col
+                                cols="12">
+                                <input
+                                    class="inp-file"
+                                    type="file"
+                                    id="inp_image"
+                                    accept=".jpg, .jpeg, .gif, .png, .svg"
+                                    @change="onImageInpChange($event)" />
+                                <v-btn
+                                    color="blue-darken-1"
+                                    variant="tonal"
+                                    @click="onClickFindImage()">
+                                    Browse
+                                </v-btn>
+                                <v-btn
+                                    class="ml-5"
+                                    color="blue-darken-1"
+                                    variant="tonal"
+                                    :disabled="!urlTxt"
+                                    @click="getClearbitImage()">
+                                    Generate
+                                </v-btn>
+                                <v-btn
+                                    class="ml-5"
+                                    color="blue-darken-1"
+                                    variant="tonal"
+                                    :disabled="!base64Image"
+                                    @click="base64Image = null">
+                                    Clear
+                                </v-btn>
+                            </v-col>
+                        </v-row>
+                    </template>
                 </v-container>
             </v-card-text>
             <v-card-actions>
@@ -253,14 +255,15 @@
         // get folder text
         const folderStr = tabs.value === 1 ? folderSlct.value : folderTxt.value;
 
-        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+        const getRootIdResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+        const getRootResponse = await bookmarksStore.get_bookmarkById(getRootIdResponse);
 
         // check if there is any existing folders with that folder name in our root folder
         const findFolderResponse = await bookmarksStore
-            .get_folderByTitle(getRootResponse, folderStr);
-
+            .get_folderByTitle(getRootIdResponse, folderStr);
+        // debugger;
         let createBookmarkResponse;
-        let slideToFolderId;
+        // let slideToFolderId;
 
         bookmarksStore.editBase64Image = base64Image.value;
 
@@ -277,11 +280,12 @@
                 createBookmarkResponse = await bookmarksStore
                     .create_bookmark(findFolderResponse[0].id, titleTxt.value, urlTxt.value);
             }
-            slideToFolderId = foldersIdArr.value
-                // eslint-disable-next-line no-prototype-builtins
-                .find((item) => item.hasOwnProperty(folderStr))[folderStr];
+            // slideToFolderId = foldersIdArr.value
+            // eslint-disable-next-line no-prototype-builtins
+            // .find((item) => item.hasOwnProperty(folderStr))[folderStr];
         } else {
             // if folder does NOT exist
+            // then create a new folder
             const createFolderResponse = await bookmarksStore
                 .create_bookmark(getRootResponse.id, folderStr);
 
@@ -292,12 +296,12 @@
 
                 // move to the newly created folder
                 await moveToFolder(folderStr, createFolderResponse.id);
-                slideToFolderId = createFolderResponse.id;
+                // slideToFolderId = createFolderResponse.id;
             } else {
                 // if bookmark is a new bookmark then create a new bookmark
                 createBookmarkResponse = await bookmarksStore
                     .create_bookmark(createFolderResponse.id, titleTxt.value, urlTxt.value);
-                slideToFolderId = createBookmarkResponse.parentId;
+                // slideToFolderId = createBookmarkResponse.parentId;
             }
         }
 
@@ -315,12 +319,6 @@
                 },
             });
         }
-
-        // slide to the new bookmark folder
-        bookmarksStore.sliderIndex = bookmarksStore.bookmarks
-            .findIndex((e) => e.id === slideToFolderId);
-
-        bookmarksStore.set_syncStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
 
         emits(EMITS.SAVE);
     }

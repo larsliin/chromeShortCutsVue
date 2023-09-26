@@ -1,6 +1,9 @@
 <template>
-    <span class="bookmark-image-container">
-        <template v-if="image">
+    <span class="bookmark-image-container"
+        :class="{ 'dimmed': folder}">
+        <v-icon v-if="folder"
+            icon="mdi-folder-open" />
+        <template v-else-if="image">
             <span class="bookmark-image-overlay" ></span>
             <span class="bookmark-image"
                 :style="{ 'background-image': `url(${image})` }"></span>
@@ -13,6 +16,7 @@
     import { BIconStarFill } from 'bootstrap-icons-vue';
 
     defineProps({
+        folder: Boolean,
         image: String,
     });
 </script>
@@ -43,6 +47,10 @@
         transform-origin: center right;
         transition: all 0.05s;
         width: 90px;
+
+        &.dimmed {
+            color: var(--grey);
+        }
     }
 
     .bookmark-image {

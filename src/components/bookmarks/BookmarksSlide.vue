@@ -16,7 +16,8 @@
                             :id="element.id"
                             :key="element.id"
                             :link="element.url"
-                            :title="element.title" />
+                            :title="element.url ? element.title : ''"
+                            :typeFolder="!!element.url" />
                     </li>
                 </template>
             </draggable>

@@ -101,21 +101,25 @@
         await utils.buildRootFolder();
 
         const bookmarkResponse = await bookmarksStore.get_bookmarkById(event);
+
         const folder = bookmarksStore.bookmarks.find(e => e.id === bookmarkResponse.parentId);
 
-        // if folder
         if (bookmarkResponse.parentId === bookmarksStore.rootId) {
+            // if folder bookmark is a folder in root directory
             bookmarksStore.bookmarks.push(bookmarkResponse);
-        } else {
-            // if bookmark
+        } else if (folder){
+            // if bookmark event is bookmark and not folder
             if (!folder.children) {
                 // create bookmarks children object if folder is empty
                 folder.children = [];
             }
             folder.children.push(bookmarkResponse);
 
+            bookmarksStore.sliderIndex = bookmarksStore.bookmarks
+                .findIndex(e => e.id === folder.id);
+
+            bookmarksStore.set_syncStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
         }
-        console.log(bookmarksStore.bookmarks);
     }
 
     async function onRemoved(event) {
@@ -238,7 +242,12 @@
             await bookmarksStore.remove_bookmark(emptyFolder.id);
         }
 
-        update();
+        await update();
+
+        bookmarksStore.sliderIndex = bookmarksStore.bookmarks
+            .findIndex(e => e.children.find(a => a.id === event));
+
+        bookmarksStore.set_syncStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
     }
 
     // force event trigger if bookmark data is not updated

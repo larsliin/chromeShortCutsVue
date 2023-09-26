@@ -82,7 +82,10 @@
 
     watch(dialogAddOpen, (val) => {
         if (!val) {
-            editBookmarkData.value = null;
+            // wait with reseting untill modal has finished close animation
+            setTimeout(() => {
+                editBookmarkData.value = null;
+            }, 1000);
         }
     });
 

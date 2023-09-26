@@ -4,15 +4,18 @@
         <a
             class="bookmark-link"
             :tabindex="tabIndex"
+            :class="{ 'folder': !link }"
             draggable="true"
             :href="link"
             :id="id"
             :aria-label="title">
             <BookmarkIcon
+                :folder="!link"
                 :image="image" />
             <span class="bookmark-title-container">{{ title }}</span>
         </a>
-        <button class="bookmark-edit" @click="emit(EMITS.EDIT, id)">
+        <button class="bookmark-edit"
+            @click="emit(EMITS.EDIT, id)">
             <!-- https://pictogrammers.com/library/mdi/ -->
             <v-icon size="small" icon="mdi-dots-horizontal"></v-icon>
         </button>
@@ -39,14 +42,8 @@
             type: [String, Number],
             required: true,
         },
-        title: {
-            type: String,
-            required: true,
-        },
-        link: {
-            type: String,
-            required: true,
-        },
+        title: String,
+        link: String,
     });
 
     const image = ref();
@@ -129,7 +126,7 @@
         box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
     }
 
-    .bookmark .bookmark-link:active .bookmark-image-container {
+    .bookmark .bookmark-link:active::not(.folder) .bookmark-image-container {
         transform: perspective(400px) rotateY(-10deg) scale(0.95);
         box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
     }
