@@ -78,6 +78,11 @@
 </script>
 <style scoped lang="scss">
 
+    .bookmark {
+        display: inline-block;
+        margin: 10px;
+    }
+
     .bookmark-title-container {
         display: inline-block;
         line-height: 1.15;
@@ -96,11 +101,10 @@
         flex-direction: column;
         margin-bottom: 4px;
         outline-color: #01a1f6;
-        outline-offset: 3px;
-        margin-top: 20px;
-        width: 110px;
+        outline-offset: 14px;
+        margin-top: 25px;
+        width: 90px;
         text-decoration: none;
-        padding: 10px;
     }
 
     .bookmark-edit {
@@ -109,8 +113,9 @@
         display: none;
         font-size: 18px;
         position: absolute;
-        right: 8px;
+        right: 0px;
         top: 0;
+        padding: 5px 10px;
     }
 
     .bookmark-edit:hover {
@@ -121,12 +126,12 @@
         display: block;
     }
 
-    .bookmark:hover .bookmark-image-container {
+    .bookmark:hover .bookmark-link:not(.folder) .bookmark-image-container {
         transform: perspective(400px) rotateY(10deg) scale(1.05);
         box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
     }
 
-    .bookmark .bookmark-link:active::not(.folder) .bookmark-image-container {
+    .bookmark .bookmark-link:active:not(.folder) .bookmark-image-container {
         transform: perspective(400px) rotateY(-10deg) scale(0.95);
         box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
     }

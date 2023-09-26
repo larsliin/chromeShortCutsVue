@@ -108,6 +108,7 @@ export function useUtils() {
         Promise.all(promiseArr)
             .then(() => {
                 bookmarksStore.sliderIndex = 0;
+                bookmarksStore.set_syncStorage({ sliderIndex: 0 });
 
                 bookmarksStore.bookmarks = [];
             })
