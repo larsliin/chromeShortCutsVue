@@ -143,7 +143,7 @@
 
 <script setup>
     import {
-        ref, computed, onMounted,
+        ref, watch, onMounted,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
@@ -151,7 +151,7 @@
     import { useUtils } from '@/shared/utils/utils';
     import useEventsBus from '@cmp/eventBus';
 
-    const { emit } = useEventsBus();
+    const { bus, emit } = useEventsBus();
 
     const utils = useUtils();
 
@@ -170,8 +170,8 @@
 
     const bookmarksStore = useBookmarksStore();
 
-    const foldersArr = computed(() => bookmarksStore.bookmarks.flatMap((e) => e.title));
-    const foldersIdArr = computed(() => bookmarksStore.bookmarks.map((e) => ({ [e.title]: e.id })));
+    const foldersArr = ref();
+    const foldersIdArr = ref();
 
     const id = ref();
     const parentId = ref();
@@ -242,7 +242,11 @@
     function onClickDelete() {
         emits(EMITS.CLOSE);
 
-        bookmarksStore.remove_bookmark(props.data.id);
+        if (props.data && props.data.url) {
+            bookmarksStore.remove_bookmark(props.data.id);
+        } else {
+            bookmarksStore.remove_bookmarkFolder(props.data.id);
+        }
     }
 
     async function onClickSave() {
@@ -280,9 +284,6 @@
                 createBookmarkResponse = await bookmarksStore
                     .create_bookmark(findFolderResponse[0].id, titleTxt.value, urlTxt.value);
             }
-            // slideToFolderId = foldersIdArr.value
-            // eslint-disable-next-line no-prototype-builtins
-            // .find((item) => item.hasOwnProperty(folderStr))[folderStr];
         } else {
             // if folder does NOT exist
             // then create a new folder
@@ -301,7 +302,6 @@
                 // if bookmark is a new bookmark then create a new bookmark
                 createBookmarkResponse = await bookmarksStore
                     .create_bookmark(createFolderResponse.id, titleTxt.value, urlTxt.value);
-                // slideToFolderId = createBookmarkResponse.parentId;
             }
         }
 
@@ -346,7 +346,17 @@
         base64Image.value = base64Response;
     }
 
+    watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async () => {
+        const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+        foldersArr.value = bookmarks[0].children.flatMap((e) => e.title);
+        foldersIdArr.value = bookmarks[0].children.map((e) => ({ [e.title]: e.id }));
+    });
+
     onMounted(async () => {
+        const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+        foldersArr.value = bookmarks[0].children.flatMap((e) => e.title);
+        foldersIdArr.value = bookmarks[0].children.map((e) => ({ [e.title]: e.id }));
+
         const slctDisabled = !bookmarksStore.bookmarks
             || bookmarksStore.bookmarks.length === 0;
 

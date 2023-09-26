@@ -18,7 +18,6 @@
     import { useBookmarksStore } from '@stores/bookmarks';
     import { FOLDER, EMITS } from '@/constants';
     import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
-
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
 
@@ -120,15 +119,16 @@
 
             bookmarksStore.set_syncStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
         }
+
+        emit(EMITS.BOOKMARKS_UPDATED, 'created');
     }
 
     async function onRemoved(event) {
         const bookmark = utils.getStoredBookmarkById(event);
 
         if (bookmarksStore.rootId === event) {
-
             // if root folder is deleted then simply delete everything
-            const rootDel = await bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id);
+            await bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id);
 
             bookmarksStore.rootId = null;
 
@@ -141,6 +141,8 @@
             bookmarksStore.set_syncStorage({
                 sliderIndex: bookmarksStore.sliderIndex,
             });
+
+            emit(EMITS.BOOKMARKS_UPDATED, 'removed');
 
             return;
         }
@@ -171,6 +173,8 @@
                 sliderIndex: bookmarksStore.sliderIndex,
             });
         }
+
+        emit(EMITS.BOOKMARKS_UPDATED, 'removed');
     }
     async function onChanged(event) {
         // ensure that bookmark is ours in ROOT folder
@@ -200,7 +204,9 @@
                             title: results[0].title,
                         },
                     });
+
                     emit(EMITS.ICON_UPDATE, event);
+
                     bookmarksStore.editBase64Image = null;
                 }
             })
@@ -225,6 +231,8 @@
             bookmark.url = bookmarkResponse.url;
             bookmark.title = bookmarkResponse.title;
         }
+
+        emit(EMITS.BOOKMARKS_UPDATED, 'changed');
     }
 
     async function onMoved(event) {
@@ -248,6 +256,8 @@
             .findIndex(e => e.children.find(a => a.id === event));
 
         bookmarksStore.set_syncStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
+
+        emit(EMITS.BOOKMARKS_UPDATED, 'moved');
     }
 
     // force event trigger if bookmark data is not updated

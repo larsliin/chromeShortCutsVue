@@ -18,4 +18,5 @@ export const EMITS = Object.freeze({
     CHANGED: 'changed',
     IMAGES_IMPORT: 'imagesImport',
     ICON_UPDATE: 'iconUpdate',
+    BOOKMARKS_UPDATED: 'bookmarksUpdated',
 });

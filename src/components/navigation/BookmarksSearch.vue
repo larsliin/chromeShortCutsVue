@@ -1,63 +1,84 @@
 <template>
     <div class="wrapper">
-        <v-combobox
-            :items="bookmarks"
-            label="Search"
-            single-line
+        <v-text-field
+            label="Filter"
             clearable
             density="compact"
             variant="solo"
-            :disabled="!bookmarksStore.bookmarks
-                || bookmarksStore.bookmarks.length === 0"
+            :disabled="!isEnabled"
             v-model="bookmarkSearch"
-            @update:modelValue="onUpdate($event)">
-        </v-combobox>
+            @update:modelValue="onUpdate($event)"
+            @click:clear="onClear($event)">
+        </v-text-field>
     </div>
 </template>
 
 <script setup>
     import { ref, onMounted, watch } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useUtils } from '@/shared/utils/utils';
+    import useEventsBus from '@cmp/eventBus';
+    import { EMITS } from '@/constants';
 
-    const utils = useUtils();
+    const { bus } = useEventsBus();
 
     const bookmarksStore = useBookmarksStore();
 
     const bookmarkSearch = ref();
-    const bookmarks = ref();
 
-    function onUpdate(event) {
-        if (event && event.title) {
-            window.location.href = event.value;
-        }
+    async function onClear() {
+        const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+
+        bookmarksStore.bookmarks = bookmarksResponse[0].children;
     }
 
-    async function load() {
-        const bookmarksFlapMap = await utils.getBookmarksAsFlatArr();
-        if (bookmarksFlapMap) {
-            bookmarks.value = bookmarksFlapMap.map((e) => ({ title: e.title, value: e.url }));
-        } else {
-            bookmarks.value = undefined;
+    // Filter the data
+    async function onUpdate(event = '') {
+        const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+
+        bookmarksStore.sliderIndex = 0;
+
+        if (!event) {
+            bookmarksStore.bookmarks = bookmarksResponse[0].children;
+
+            return;
         }
+
+        const filteredData = bookmarksResponse[0].children.map((item) => {
+            if (item.children) {
+                // eslint-disable-next-line no-param-reassign
+                item.children = item.children
+                    .filter((child) => child.title.toLowerCase()
+                        .includes(event.toLowerCase()) && !child.children);
+                return item.children.length > 0 ? item : null;
+            }
+            return null;
+        }).filter(Boolean);
+
+        bookmarksStore.bookmarks = filteredData;
     }
 
-    watch(() => bookmarksStore.bookmarks, async () => {
-        load();
+    const isEnabled = ref(false);
+
+    watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async (action) => {
+        const response = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+
+        isEnabled.value = !!response[0].children.length;
+
+        if (action[0] === 'moved') {
+            bookmarkSearch.value = '';
+        }
     });
 
-    onMounted(() => {
-        load();
+    onMounted(async () => {
+        const response = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+
+        isEnabled.value = !!response[0].children.length;
     });
 
 </script>
 
 <style scoped lang="scss">
-.wrapper {
-    // bottom: 0;
-    // left: 20px;
-    // position: absolute;
-    width: 220px;
-    //z-index: 999;
-}
+    .wrapper {
+        width: 220px;
+    }
 </style>

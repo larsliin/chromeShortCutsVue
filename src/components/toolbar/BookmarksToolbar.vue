@@ -13,7 +13,6 @@
             icon="mdi-wrench"
             @click="dialogSettings = true"></v-btn>
     </div>
-
     <Teleport to="body">
         <template>
             <v-row justify="center">

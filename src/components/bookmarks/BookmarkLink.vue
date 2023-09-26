@@ -100,11 +100,11 @@
         display: flex;
         flex-direction: column;
         margin-bottom: 4px;
+        margin-top: 25px;
         outline-color: #01a1f6;
         outline-offset: 14px;
-        margin-top: 25px;
-        width: 90px;
         text-decoration: none;
+        width: 90px;
     }
 
     .bookmark-edit {
@@ -112,10 +112,10 @@
         cursor: pointer;
         display: none;
         font-size: 18px;
+        padding: 5px 10px;
         position: absolute;
         right: 0px;
         top: 0;
-        padding: 5px 10px;
     }
 
     .bookmark-edit:hover {
