@@ -114,7 +114,7 @@
         padding: 5px 10px;
         position: absolute;
         right: 0px;
-        top: 0;
+        top: -10px;
     }
 
     .bookmark-edit:hover {

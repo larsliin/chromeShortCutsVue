@@ -5,7 +5,6 @@ import getters from './_getters';
 // eslint-disable-next-line
 export const useBookmarksStore = defineStore('bookmarksStore', {
     state: () => ({
-        transition: true,
         arrowNavigation: false,
         bookmarks: null,
         dragStart: false,
@@ -15,6 +14,8 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         rootId: null,
         searchNavigation: false,
         sliderIndex: null,
+        titleInputActive: false,
+        transition: true,
     }),
     actions,
     getters,

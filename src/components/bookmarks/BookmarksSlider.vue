@@ -29,6 +29,10 @@
     const sliderPosition = computed(() => `translateX(${bookmarksStore.sliderIndex * -100}%)`);
 
     function onKeydown(event) {
+        if (bookmarksStore.titleInputActive) {
+            return;
+        }
+
         if (event.keyCode === 39) {
             utils.setSliderIndex(Math.min(
                 bookmarksStore.sliderIndex + 1,

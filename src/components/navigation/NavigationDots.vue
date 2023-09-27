@@ -1,12 +1,22 @@
 <template>
     <div class="navigation-outer">
         <div class="navigation-header-container animated">
-            <h3 class="navigation-header"
+            <!-- <h3 class="navigation-header"
                 v-for="(bookmark, index) in bookmarksStore.bookmarks"
                 :key="index"
                 :class="{active: bookmarksStore.sliderIndex === index}">
                 {{ bookmark.title }}
-            </h3>
+            </h3> -->
+            <div
+                class="navigation-header"
+                v-for="(bookmark, index) in bookmarksStore.bookmarks"
+                :key="index"
+                :class="{ active: bookmarksStore.sliderIndex === index }">
+                <InputEdit
+                    class=""
+                    :enabled="bookmarksStore.sliderIndex === index"
+                    :value="bookmark.title" />
+            </div>
         </div>
         <div class="navigation-container">
             <button class="navigation-item"
@@ -24,6 +34,7 @@
 <script setup>
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/utils/utils';
+    import InputEdit from '@/components/fields/InputEdit.vue';
 
     const utils = useUtils();
 
@@ -87,7 +98,7 @@
 
     .navigation-header-container {
         display: flex;
-        height: 35px;
+        height: 45px;
         justify-content: center;
         position: relative;
         user-select: none;
@@ -104,6 +115,7 @@
     .navigation-header-container .navigation-header.active {
         opacity: 1;
         transition-delay: 0.15s !important;
+        z-index: 1;
     }
 
     .navigation-header-container.no-delay .navigation-header.active {
