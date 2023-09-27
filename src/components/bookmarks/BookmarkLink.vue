@@ -99,7 +99,6 @@
         color: rgba(var(--v-theme-on-surface),var(--v-high-emphasis-opacity));
         display: flex;
         flex-direction: column;
-        margin-bottom: 4px;
         margin-top: 25px;
         outline-color: #01a1f6;
         outline-offset: 14px;
