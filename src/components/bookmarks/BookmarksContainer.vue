@@ -41,28 +41,15 @@
     async function update() {
         if (bookmarksStore.dragStart) {
             bookmarksStore.dragStart = false;
+
             return;
         }
 
         const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+
         const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse);
 
         bookmarksStore.bookmarks = bookmarks[0].children;
-
-        // slide to active folder index
-        bookmarksStore.sliderIndex = Math.min(
-            bookmarksStore.sliderIndex,
-            bookmarksStore.bookmarks.length - 1,
-        );
-
-        bookmarksStore.sliderIndex = Math.max(
-            bookmarksStore.sliderIndex,
-            0,
-        );
-
-        bookmarksStore.set_syncStorage({
-            sliderIndex: bookmarksStore.sliderIndex,
-        });
     }
 
     function setChromeEventListeners() {
@@ -114,10 +101,9 @@
             }
             folder.children.push(bookmarkResponse);
 
-            bookmarksStore.sliderIndex = bookmarksStore.bookmarks
+            const index = bookmarksStore.bookmarks
                 .findIndex(e => e.id === folder.id);
-
-            bookmarksStore.set_syncStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
+            utils.setSliderIndex(index, true);
         }
 
         emit(EMITS.BOOKMARKS_UPDATED, 'created');
@@ -136,11 +122,7 @@
 
             await utils.deleteLocalStoreImages();
 
-            bookmarksStore.sliderIndex = 0;
-
-            bookmarksStore.set_syncStorage({
-                sliderIndex: bookmarksStore.sliderIndex,
-            });
+            utils.setSliderIndex(0, true);
 
             emit(EMITS.BOOKMARKS_UPDATED, 'removed');
 
@@ -168,10 +150,7 @@
         }
 
         if (bookmarksStore.sliderIndex >= bookmarksStore.bookmarks.length) {
-            bookmarksStore.sliderIndex = bookmarksStore.bookmarks.length - 1;
-            bookmarksStore.set_syncStorage({
-                sliderIndex: bookmarksStore.sliderIndex,
-            });
+            utils.setSliderIndex(bookmarksStore.bookmarks.length - 1, true);
         }
 
         emit(EMITS.BOOKMARKS_UPDATED, 'removed');
@@ -252,10 +231,10 @@
 
         await update();
 
-        bookmarksStore.sliderIndex = bookmarksStore.bookmarks
+        const index = bookmarksStore.bookmarks
             .findIndex(e => e.children.find(a => a.id === event));
 
-        bookmarksStore.set_syncStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
+        utils.setSliderIndex(index, true);
 
         emit(EMITS.BOOKMARKS_UPDATED, 'moved');
     }

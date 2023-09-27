@@ -2,6 +2,7 @@
     <div class="toolbar d-flex" v-if="ready">
         <div>
             <v-btn
+                class="add-bookmark-btn"
                 :color="'primary'"
                 size="large"
                 @click="dialogAddOpen = true">Add Bookmark</v-btn>
@@ -94,6 +95,10 @@
 </script>
 
 <style scoped lang="scss">
+    .add-bookmark-btn.v-btn.v-btn--density-default {
+        height: calc(var(--v-btn-height) + 3px);
+    }
+
     .toolbar {
         $breakpoint: 540px;
 
@@ -108,6 +113,7 @@
             }
 
         > div:first-child {
+            align-items: center;
             display: flex;
             flex: 1;
         }

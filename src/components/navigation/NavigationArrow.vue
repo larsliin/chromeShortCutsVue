@@ -13,6 +13,9 @@
 <script setup>
     import { ref, onMounted, watch } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
+    import { useUtils } from '@/shared/utils/utils';
+
+    const utils = useUtils();
 
     const props = defineProps({
         direction: {
@@ -28,14 +31,12 @@
     function onClick() {
         if (props.direction === 'left'
             && bookmarksStore.sliderIndex > 0) {
-            bookmarksStore.sliderIndex -= 1;
+            utils.setSliderIndex(bookmarksStore.sliderIndex - 1, true);
         }
         if (props.direction === 'right'
             && bookmarksStore.sliderIndex < bookmarksStore.bookmarks.length - 1) {
-            bookmarksStore.sliderIndex += 1;
+            utils.setSliderIndex(bookmarksStore.sliderIndex + 1, true);
         }
-
-        bookmarksStore.set_syncStorage({ sliderIndex: bookmarksStore.sliderIndex });
     }
 
     function toggleEnabled() {

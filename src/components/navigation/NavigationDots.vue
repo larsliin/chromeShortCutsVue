@@ -23,13 +23,14 @@
 
 <script setup>
     import { useBookmarksStore } from '@stores/bookmarks';
+    import { useUtils } from '@/shared/utils/utils';
+
+    const utils = useUtils();
 
     const bookmarksStore = useBookmarksStore();
 
     function onClick(index) {
-        bookmarksStore.sliderIndex = index;
-
-        bookmarksStore.set_syncStorage({ sliderIndex: bookmarksStore.sliderIndex });
+        utils.setSliderIndex(index, true);
     }
 </script>
 

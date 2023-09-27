@@ -1,8 +1,9 @@
 <template>
     <div class="folders-outer">
         <BIconStarFill class="folders-background" />
-        <div class="folders-container animated d-flex"
-            :style="{transform: sliderPosition}">
+        <div class="folders-container d-flex"
+            :class="{' animated': bookmarksStore.transition}"
+            :style="{ transform: sliderPosition }">
             <template
                 v-for="(bookmark, index) in bookmarksStore.bookmarks"
                 :key="bookmark.id">
@@ -15,14 +16,35 @@
 </template>
 
 <script setup>
-    import { computed } from 'vue';
+    import { computed, onMounted } from 'vue';
     import BookmarksSlide from '@/components/bookmarks/BookmarksSlide.vue';
     import { BIconStarFill } from 'bootstrap-icons-vue';
     import { useBookmarksStore } from '@stores/bookmarks';
+    import { useUtils } from '@/shared/utils/utils';
+
+    const utils = useUtils();
 
     const bookmarksStore = useBookmarksStore();
 
     const sliderPosition = computed(() => `translateX(${bookmarksStore.sliderIndex * -100}%)`);
+
+    function onKeydown(event) {
+        if (event.keyCode === 39) {
+            utils.setSliderIndex(Math.min(
+                bookmarksStore.sliderIndex + 1,
+                bookmarksStore.bookmarks.length - 1,
+            ), true);
+        }
+
+        if (event.keyCode === 37) {
+            utils.setSliderIndex(Math.max(bookmarksStore.sliderIndex - 1, 0), true);
+        }
+    }
+
+    onMounted(() => {
+        document.addEventListener('keydown', onKeydown);
+        document.hasFocus();
+    });
 </script>
 
 <style scoped lang="scss">

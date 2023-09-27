@@ -89,6 +89,8 @@ export function useUtils() {
     async function deleteAllBookmarks() {
         const bookmarksStore = useBookmarksStore();
 
+        const that = this;
+
         // fetch all bookmarks
         if (!bookmarksStore.rootId) {
             return;
@@ -107,8 +109,7 @@ export function useUtils() {
 
         Promise.all(promiseArr)
             .then(() => {
-                bookmarksStore.sliderIndex = 0;
-                bookmarksStore.set_syncStorage({ sliderIndex: 0 });
+                that.setSliderIndex(0, true);
 
                 bookmarksStore.bookmarks = [];
             })
@@ -119,6 +120,7 @@ export function useUtils() {
 
     function getStoredBookmarkById(id) {
         const bookmarksStore = useBookmarksStore();
+
         return bookmarksStore.bookmarks.reduce((result, item) => {
             const child = item.children && item.children.find((bookmark) => bookmark.id === id);
             return child || result;
@@ -135,28 +137,45 @@ export function useUtils() {
 
         if (rootFolder) {
             bookmarksStore.rootId = rootFolder.id;
+
             await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: rootFolder.id });
         } else {
             // if root folder does not exist then create root and home folders
             const createRootResponse = await bookmarksStore
                 .create_bookmark(2, FOLDER.ROOT.label);
             bookmarksStore.rootId = createRootResponse.id;
-            await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: createRootResponse.id });
-            bookmarksStore.sliderIndex = 0;
-        }
 
-        bookmarksStore
-            .set_localStorage({ sliderIndex: Math.max(bookmarksStore.sliderIndex, 0) });
+            await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: createRootResponse.id });
+
+            this.setSliderIndex(0, true);
+        }
+    }
+
+    async function setSliderIndex(index, setLocalStorage) {
+        const bookmarksStore = useBookmarksStore();
+
+        let indexAdjusted;
+        if (bookmarksStore.bookmarks && bookmarksStore.bookmarks.length > 0) {
+            indexAdjusted = Math.min(indexAdjusted, bookmarksStore.bookmarks.length - 1);
+        }
+        indexAdjusted = Math.max(index, 0);
+
+        bookmarksStore.sliderIndex = indexAdjusted;
+
+        if (setLocalStorage) {
+            await bookmarksStore.set_syncStorage({ sliderIndex: bookmarksStore.sliderIndex });
+        }
     }
 
     return {
-        getStoredBookmarkById,
-        getBookmarksAsFlatArr,
-        deleteLocalStoreImages,
-        getDomainFromUrl,
-        isValidURL,
-        getBase64ImageFromUrl,
-        deleteAllBookmarks,
         buildRootFolder,
+        deleteAllBookmarks,
+        deleteLocalStoreImages,
+        getBase64ImageFromUrl,
+        getBookmarksAsFlatArr,
+        getDomainFromUrl,
+        getStoredBookmarkById,
+        isValidURL,
+        setSliderIndex,
     };
 }

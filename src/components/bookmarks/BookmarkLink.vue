@@ -80,7 +80,7 @@
 
     .bookmark {
         display: inline-block;
-        margin: 10px;
+        margin: 0 10px 16px;
     }
 
     .bookmark-title-container {

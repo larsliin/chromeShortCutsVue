@@ -18,7 +18,7 @@
                                 hide-details="auto"
                                 v-model="enableArrowNavigation"></v-switch>
                             <v-switch
-                                label="Enable Search"
+                                label="Enable Filtering"
                                 color="info"
                                 hide-details="auto"
                                 v-model="enableSearchNavigation"></v-switch>
