@@ -11,13 +11,17 @@
             @blur="onBlur()"
             @keydown="onChange($event)" />
         <!-- https://pictogrammers.com/library/mdi/ -->
-        <div class="edit-button">
+        <v-btn
+            class="edit-button"
+            icon="mdi-square-edit-outline"
+            @click="onIconClick()"></v-btn>
+
+        <!-- <div class="edit-button"
+            @click="onIconClick()">
             <v-icon
-                class="icon"
                 size="small"
-                icon="mdi-square-edit-outline"
-                @click="onIconClick()"></v-icon>
-        </div>
+                icon="mdi-square-edit-outline"></v-icon>
+        </div> -->
         <span ref="textwidth" class="text-width">{{ model }}</span>
     </div>
 </template>
@@ -58,6 +62,8 @@
     }
 
     function onIconClick() {
+        input.value.setSelectionRange(0, 0);
+
         input.value.focus();
     }
 
@@ -69,25 +75,24 @@
 
 <style scoped lang="scss">
     .wrapper:hover .edit-button {
-        display: block;
+        visibility: visible;
     }
 
     .edit-button {
-        background-color: #fff;
-        border-radius: 50%;
-        box-shadow: 0 2px 2px 1px rgba(0, 0, 0, .15);
-        display: none;
-        font-size: 14px;
-        line-height: 0;
-        padding: 5px;
+        aspect-ratio: 1;
+        font-size: 11px;
+        height: auto;
+        margin-left: -6px;
+        padding-top: 1px;
         position: absolute;
-        right: -22px;
-        top: 3px;
+        top: 7px;
+        visibility: hidden;
+        width: 25px;
     }
 
     .input {
-        border-radius: 6px;
-        border: none;
+        border-radius: 4px;
+        border: 1px solid transparent;
         color: var(--yellow);
         font-size: 16px;
         font-weight: 700;
@@ -98,18 +103,18 @@
 
         &:focus {
             background-color: #fff;
-            box-shadow: 0 2px 2px 2px rgba(0, 0, 0, .15);
+            border: 1px solid rgba(0,0,0,.12);
+            box-shadow: 0 2px 3px 0px rgba(0, 0, 0, 0.2);
             outline: none;
 
             + .edit-button {
-                display: none !important;
+                visibility: hidden;
             }
         }
 
         &.enabled {
             pointer-events: initial;
         }
-
     }
 
     .text-width {
