@@ -3,6 +3,7 @@
         <v-text-field
             hide-details="auto"
             label="Filter"
+            append-inner-icon="mdi-magnify"
             clearable
             density="compact"
             variant="solo"
