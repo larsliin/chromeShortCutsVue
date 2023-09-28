@@ -15,13 +15,6 @@
             class="edit-button"
             icon="mdi-square-edit-outline"
             @click="onIconClick()"></v-btn>
-
-        <!-- <div class="edit-button"
-            @click="onIconClick()">
-            <v-icon
-                size="small"
-                icon="mdi-square-edit-outline"></v-icon>
-        </div> -->
         <span ref="textwidth" class="text-width">{{ model }}</span>
     </div>
 </template>
@@ -57,6 +50,11 @@
     }
 
     function onChange(event) {
+        if (event.keyCode === 13) {
+            input.value.blur();
+            return;
+        }
+
         const add = event.keyCode === 8 ? 0 : 20;
         inputWidth.value = `${textwidth.value.clientWidth + add}px`;
     }
@@ -75,7 +73,8 @@
 
 <style scoped lang="scss">
     .wrapper:hover .edit-button {
-        visibility: visible;
+        opacity: 1;
+        transition-delay: .5s;
     }
 
     .edit-button {
@@ -86,7 +85,8 @@
         padding-top: 1px;
         position: absolute;
         top: 7px;
-        visibility: hidden;
+        opacity: 0;
+        transition: opacity .05s;
         width: 25px;
     }
 
@@ -108,7 +108,7 @@
             outline: none;
 
             + .edit-button {
-                visibility: hidden;
+                opacity: 0;
             }
         }
 
