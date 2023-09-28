@@ -78,6 +78,7 @@
                             <v-col
                                 cols="12">
                                 <BookmarkIcon
+                                    :loading="isIconLoading"
                                     :image="base64Image" />
                             </v-col>
                         </v-row>
@@ -183,8 +184,10 @@
     const folderTxt = ref('');
     const titleTxt = ref('');
     const urlTxt = ref('');
+    const isIconLoading = ref(false);
 
     async function fetchClearBitImage(imageUrl) {
+        isIconLoading.value = true;
         try {
             const response = await utils.getBase64ImageFromUrl(imageUrl);
             if (response === 'error') {
@@ -192,7 +195,9 @@
             } else {
                 base64Image.value = response;
             }
+            isIconLoading.value = false;
         } catch (error) {
+            isIconLoading.value = false;
             console.error(error);
         }
     }
