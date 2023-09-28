@@ -46,7 +46,7 @@
     import useEventsBus from '@cmp/eventBus';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import BookmarksSearch from '@/components/navigation/BookmarksSearch.vue';
+    import BookmarksSearch from '@/components/fields/BookmarksSearch.vue';
 
     const bookmarksStore = useBookmarksStore();
 

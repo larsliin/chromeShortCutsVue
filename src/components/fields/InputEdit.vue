@@ -1,5 +1,7 @@
 <template>
-    <div class="wrapper">
+    <div class="wrapper"
+        @mouseleave="onMouseLeave()"
+        @mouseenter="onMouseEnter()">
         <input
             ref="input"
             type="input"
@@ -12,6 +14,7 @@
             @keydown="onChange($event)" />
         <!-- https://pictogrammers.com/library/mdi/ -->
         <v-btn
+            v-if="showEditButton"
             class="edit-button"
             icon="mdi-square-edit-outline"
             @click="onIconClick()"></v-btn>
@@ -40,6 +43,26 @@
     const inputWidth = ref(0);
     const textwidth = ref();
     const input = ref();
+    const showEditButton = ref();
+    let throttleTimer = null;
+
+    function onMouseEnter() {
+        if (throttleTimer) {
+            clearTimeout(throttleTimer);
+            throttleTimer = null;
+        }
+        throttleTimer = setTimeout(() => {
+            showEditButton.value = true;
+        }, 500);
+    }
+
+    function onMouseLeave() {
+        if (throttleTimer) {
+            clearTimeout(throttleTimer);
+            throttleTimer = null;
+        }
+        showEditButton.value = false;
+    }
 
     function onBlur() {
         const { id } = bookmarksStore.bookmarks[bookmarksStore.sliderIndex];
@@ -72,22 +95,21 @@
 </script>
 
 <style scoped lang="scss">
-    .wrapper:hover .edit-button {
-        opacity: 1;
-        transition-delay: .5s;
-    }
+    // .wrapper:hover .edit-button {
+    //     opacity: 1;
+    //     transition-delay: .5s;
+    // }
 
     .edit-button {
         aspect-ratio: 1;
-        font-size: 11px;
+        font-size: 8px;
         height: auto;
-        margin-left: -6px;
-        padding-top: 1px;
+        margin-left: -5px;
         position: absolute;
-        top: 7px;
-        opacity: 0;
+        top: 9px;
+        // opacity: 0;
         transition: opacity .05s;
-        width: 25px;
+        width: 20px;
     }
 
     .input {

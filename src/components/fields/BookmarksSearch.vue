@@ -37,6 +37,8 @@
         bookmarksStore.bookmarks = bookmarksResponse[0].children;
     }
 
+    let throttleTimer = null;
+
     // Filter the data
     async function onUpdate(event = '') {
         bookmarksStore.transition = false;
@@ -78,7 +80,12 @@
 
         utils.setSliderIndex(sliderIndex, true);
 
-        setTimeout(() => {
+        if (throttleTimer) {
+            clearTimeout(throttleTimer);
+            throttleTimer = null;
+        }
+
+        throttleTimer = setTimeout(() => {
             bookmarksStore.transition = true;
         }, 100);
     }
