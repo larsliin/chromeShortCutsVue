@@ -39,10 +39,6 @@
         },
     });
 
-    const model = ref(props.value);
-    const inputWidth = ref(0);
-    const textwidth = ref();
-    const input = ref();
     const showEditButton = ref();
     let throttleTimer = null;
 
@@ -64,6 +60,8 @@
         showEditButton.value = false;
     }
 
+    const model = ref(props.value);
+
     function onBlur() {
         const { id } = bookmarksStore.bookmarks[bookmarksStore.sliderIndex];
 
@@ -71,6 +69,10 @@
 
         bookmarksStore.titleInputActive = false;
     }
+
+    const input = ref();
+    const inputWidth = ref(0);
+    const textwidth = ref();
 
     function onChange(event) {
         if (event.keyCode === 13) {
@@ -95,11 +97,6 @@
 </script>
 
 <style scoped lang="scss">
-    // .wrapper:hover .edit-button {
-    //     opacity: 1;
-    //     transition-delay: .5s;
-    // }
-
     .edit-button {
         aspect-ratio: 1;
         font-size: 8px;

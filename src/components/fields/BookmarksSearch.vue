@@ -15,9 +15,7 @@
 </template>
 
 <script setup>
-    import {
-        ref, onMounted, watch,
-    } from 'vue';
+    import { ref, onMounted, watch } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
     import { EMITS } from '@/constants';

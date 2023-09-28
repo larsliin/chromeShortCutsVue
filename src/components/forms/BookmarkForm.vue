@@ -193,7 +193,7 @@
                 base64Image.value = response;
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error(error);
         }
     }
 
@@ -297,7 +297,6 @@
 
                 // move to the newly created folder
                 await moveToFolder(folderStr, createFolderResponse.id);
-                // slideToFolderId = createFolderResponse.id;
             } else {
                 // if bookmark is a new bookmark then create a new bookmark
                 createBookmarkResponse = await bookmarksStore
