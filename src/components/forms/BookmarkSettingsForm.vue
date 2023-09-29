@@ -28,8 +28,8 @@
                         <v-col
                             cols="12">
 
-                            <span class="text-h6 mb-2 d-block">
-                                Import and export bookmarks and icons</span>
+                            <h6 class="text-h6 mb-2 d-block">
+                                Import and export bookmarks</h6>
                             <p
                                 class="text-body-1 mb-5">
                                 Import bookmarks data file
@@ -61,6 +61,8 @@
                     <v-row>
                         <v-col
                             cols="12">
+                            <h6 class="text-h6 mt-2 mb-2 d-block">
+                                Import and export bookmark icons</h6>
                             <p
                                 class="text-body-1 mb-2">
                                 Import icons data file
@@ -108,10 +110,37 @@
             </v-card-actions>
         </v-form>
     </v-card>
+    <v-dialog
+        v-model="errorDialog"
+        width="auto">
+        <v-card>
+            <v-card-title>
+                <h3 class="text-h5 mt-4 ml-2 mr-2">
+                    Import Error
+                </h3>
+            </v-card-title>
+            <v-card-text>
+                <p class="text-body-1">
+                    The selected import file is malformed.<br />
+                    Please export a new version and try again.
+                </p>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn
+                    class="float-right"
+                    color="primary"
+                    variant="text"
+                    @click="errorDialog = false">
+                    Close
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
 </template>
 
 <script setup>
-    import { ref, onMounted } from 'vue';
+    import { ref, onMounted, watch } from 'vue';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
@@ -130,7 +159,11 @@
     const enableSearchNavigation = ref();
 
     const bookmarksFileImport = ref();
+    const isBookmarksFileValid = ref(false);
+    const errorDialog = ref(false);
+
     const iconsFileImport = ref();
+    const isIconsFileValid = ref();
 
     function clearFileInput() {
         iconsFileImport.value = null;
@@ -178,7 +211,10 @@
     // update global store bookmarks obj with the latest imported bookmarks
     async function updateBookmarksStore() {
         const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+
         bookmarksStore.bookmarks = bookmarksResponse[0].children;
+
+        emit(EMITS.BOOKMARKS_UPDATED, 'import');
     }
 
     // save imported images
@@ -301,7 +337,7 @@
 
     function onClickSave() {
         // import
-        if (bookmarksFileImport.value) {
+        if (bookmarksFileImport.value && isBookmarksFileValid.value) {
             const reader = new FileReader();
             reader.onload = onBookmarksImportReaderLoad;
             reader.readAsText(bookmarksFileImport.value[0]);
@@ -332,6 +368,72 @@
 
         emits(EMITS.SAVE);
     }
+
+    function isImportBookmarksFileValid(obj) {
+        const arr = [
+            obj.some((e) => e.title),
+            obj.some((e) => e.children),
+            obj.some((e) => e.id),
+            obj.some((e) => e.parentId),
+        ];
+
+        if (obj.children) {
+            const bookmarksFlatArray = obj.flatMap((e) => e.children);
+
+            if (bookmarksFlatArray.length) {
+                arr.push(bookmarksFlatArray.some((e) => e.url));
+                arr.push(bookmarksFlatArray.some((e) => e.title));
+                arr.push(bookmarksFlatArray.some((e) => e.parentId));
+                arr.push(bookmarksFlatArray.some((e) => e.id));
+            }
+        }
+
+        return !arr.includes(false);
+    }
+
+    function isImportIconsFileValid(obj) {
+        const arr = [
+            obj.some((e) => e.id),
+            obj.some((e) => e.image),
+            obj.some((e) => e.parentId),
+            obj.some((e) => e.title),
+            obj.some((e) => e.url),
+        ];
+
+        return !arr.includes(false);
+    }
+
+    watch(bookmarksFileImport, (newVal) => {
+        if (newVal) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const importBookmarks = JSON.parse(e.target.result);
+
+                isBookmarksFileValid.value = isImportBookmarksFileValid(importBookmarks);
+
+                if (!isBookmarksFileValid.value) {
+                    errorDialog.value = true;
+                }
+            };
+            reader.readAsText(bookmarksFileImport.value[0]);
+        }
+    });
+
+    watch(iconsFileImport, (newVal) => {
+        if (newVal) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const importIcons = JSON.parse(e.target.result);
+
+                isIconsFileValid.value = isImportIconsFileValid(importIcons);
+
+                if (!isIconsFileValid.value) {
+                    errorDialog.value = true;
+                }
+            };
+            reader.readAsText(iconsFileImport.value[0]);
+        }
+    });
 
     onMounted(async () => {
         enableArrowNavigation.value = bookmarksStore.arrowNavigation;

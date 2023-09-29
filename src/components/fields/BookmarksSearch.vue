@@ -16,7 +16,9 @@
 </template>
 
 <script setup>
-    import { ref, onMounted, watch } from 'vue';
+    import {
+        ref, onMounted, watch, nextTick,
+    } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
     import { EMITS } from '@/constants';
@@ -95,6 +97,8 @@
         if (!bookmarksStore.rootId) {
             return;
         }
+
+        await nextTick();
 
         const response = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
 

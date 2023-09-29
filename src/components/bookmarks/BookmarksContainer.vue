@@ -105,7 +105,6 @@
                 .findIndex(e => e.id === folder.id);
             utils.setSliderIndex(index, true);
         }
-
         emit(EMITS.BOOKMARKS_UPDATED, 'created');
     }
 
