@@ -1,8 +1,8 @@
 {
 	"manifest_version": 3,
-	"name": "Custom Start Page",
+	"name": "MyShortcuts",
 	"version": "1.0",
-	"description": "Change the start page of the Chrome browser to a custom page",
+	"description": "Add your most used shortcuts to your new tab",
 	"permissions": [
 		"bookmarks",
 		"storage",
@@ -15,5 +15,12 @@
 	},
 	"background": {
 		"service_worker": "background.js"
-	}
+	},
+	"action": {
+		"default_popup": "popup.html"
+	},
+	"icons": {
+		"48": "icons/48.png",
+		"128": "icons/128.png"
+	  }
 }

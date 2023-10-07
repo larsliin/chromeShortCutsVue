@@ -8,6 +8,7 @@ import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
 import App from './App.vue';
+import App2 from './AppPopup.vue';
 
 const emitter = mitt();
 
@@ -22,7 +23,9 @@ const vuetify = createVuetify({
 });
 
 const app = createApp(App);
-
 app.config.globalProperties.emitter = emitter;
-
 app.use(pinia).use(vuetify).mount('#app');
+
+const app2 = createApp(App2);
+app2.config.globalProperties.emitter = emitter;
+app2.use(pinia).use(vuetify).mount('#app2');

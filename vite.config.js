@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'url';
+import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -40,5 +41,12 @@ export default defineConfig({
     },
     build: {
         chunkSizeWarningLimit: 1600,
+        rollupOptions: {
+            input: {
+                newtab: resolve(__dirname, 'index.html'),
+                popup: resolve(__dirname, 'popup.html'),
+              },
+        },
+
     },
 });
