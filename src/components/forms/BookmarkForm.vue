@@ -270,9 +270,7 @@
         // check if there is any existing folders with that folder name in our root folder
         const findFolderResponse = await bookmarksStore
             .get_folderByTitle(getRootIdResponse, folderStr);
-        // debugger;
         let createBookmarkResponse;
-        // let slideToFolderId;
 
         bookmarksStore.editBase64Image = base64Image.value;
 
@@ -364,7 +362,7 @@
         const slctDisabled = !bookmarksStore.bookmarks
             || bookmarksStore.bookmarks.length === 0;
 
-        if (!slctDisabled) {
+        if (!slctDisabled && !bookmarksStore.popup) {
             folderSlct.value = bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title;
         }
 
