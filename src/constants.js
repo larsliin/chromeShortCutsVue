@@ -4,6 +4,7 @@ export const FOLDER = Object.freeze({
     ROOT: new UiFolder(
         'MyShortcuts',
         'root',
+        '2',
     ),
     HOME: new UiFolder(
         'Home',

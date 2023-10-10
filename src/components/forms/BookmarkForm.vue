@@ -121,7 +121,7 @@
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn
-                    v-if="data"
+                    v-if="data && data.id"
                     variant="tonal"
                     color="red"
                     @click="onClickDelete()">
@@ -362,7 +362,7 @@
         const slctDisabled = !bookmarksStore.bookmarks
             || bookmarksStore.bookmarks.length === 0;
 
-        if (!slctDisabled && !bookmarksStore.popup) {
+        if (!slctDisabled) {
             folderSlct.value = bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title;
         }
 

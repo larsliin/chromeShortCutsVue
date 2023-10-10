@@ -1,7 +1,5 @@
 <template>
-    <div class="wrapper"
-        @mouseleave="onMouseLeave()"
-        @mouseenter="onMouseEnter()">
+    <div class="wrapper">
         <input
             ref="input"
             type="input"
@@ -12,12 +10,6 @@
             @focus="bookmarksStore.titleInputActive = true"
             @blur="onBlur()"
             @keydown="onChange($event)" />
-        <!-- https://pictogrammers.com/library/mdi/ -->
-        <v-btn
-            v-if="showEditButton"
-            class="edit-button"
-            icon="mdi-square-edit-outline"
-            @click="onIconClick()"></v-btn>
         <span ref="textwidth" class="text-width">{{ model }}</span>
     </div>
 </template>
@@ -38,27 +30,6 @@
             default: true,
         },
     });
-
-    const showEditButton = ref();
-    let throttleTimer = null;
-
-    function onMouseEnter() {
-        if (throttleTimer) {
-            clearTimeout(throttleTimer);
-            throttleTimer = null;
-        }
-        throttleTimer = setTimeout(() => {
-            showEditButton.value = true;
-        }, 500);
-    }
-
-    function onMouseLeave() {
-        if (throttleTimer) {
-            clearTimeout(throttleTimer);
-            throttleTimer = null;
-        }
-        showEditButton.value = false;
-    }
 
     const model = ref(props.value);
 
@@ -84,12 +55,6 @@
         inputWidth.value = `${textwidth.value.clientWidth + add}px`;
     }
 
-    function onIconClick() {
-        input.value.setSelectionRange(0, 0);
-
-        input.value.focus();
-    }
-
     onMounted(() => {
         inputWidth.value = `${textwidth.value.clientWidth + 20}px`;
     });
@@ -97,16 +62,10 @@
 </script>
 
 <style scoped lang="scss">
-    .edit-button {
-        aspect-ratio: 1;
-        font-size: 8px;
-        height: auto;
-        margin-left: -5px;
-        position: absolute;
-        top: 9px;
-        // opacity: 0;
-        transition: opacity .05s;
-        width: 20px;
+    .wrapper:hover  {
+        .input {
+            border: 1px solid rgba(0,0,0,.12);
+        }
     }
 
     .input {
@@ -121,14 +80,9 @@
         width: auto;
 
         &:focus {
-            background-color: #fff;
             border: 1px solid rgba(0,0,0,.12);
             box-shadow: 0 2px 3px 0px rgba(0, 0, 0, 0.2);
             outline: none;
-
-            + .edit-button {
-                opacity: 0;
-            }
         }
 
         &.enabled {

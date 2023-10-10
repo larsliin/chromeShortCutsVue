@@ -28,7 +28,9 @@
     const bookmarksStore = useBookmarksStore();
 
     async function isBookmarkInScope(id) {
-        const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+        const rootFolderResponse = await bookmarksStore
+            .get_folderByTitle(FOLDER.ROOT.parentId, FOLDER.ROOT.label);
+        const bookmarksResponse = await bookmarksStore.get_bookmarks(rootFolderResponse[0].id);
         const bookmarks = bookmarksResponse[0];
 
         const folderIds = bookmarks.children.map((e) => e.id);
@@ -244,7 +246,10 @@
         onChanged(id[0]);
     });
 
-    async function init() {
+async function init() {
+    const rootFolderResponse = await bookmarksStore
+            .get_folderByTitle(FOLDER.ROOT.parentId, FOLDER.ROOT.label);
+
         const slideIndexResponse = await bookmarksStore.get_syncStorage('sliderIndex');
 
         if (typeof slideIndexResponse === 'number') {

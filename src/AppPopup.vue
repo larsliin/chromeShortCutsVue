@@ -10,6 +10,9 @@
     import BookmarkForm from '@/components/forms/BookmarkForm.vue';
     import { FOLDER } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
+    import { useUtils } from '@/shared/utils/utils';
+
+    const utils = useUtils();
 
     const bookmarksStore = useBookmarksStore();
 
@@ -31,7 +34,8 @@
     }
 
     async function getBookmarks() {
-        const rootFolderResponse = await bookmarksStore.get_folderByTitle('2', FOLDER.ROOT.label);
+        const rootFolderResponse = await bookmarksStore
+            .get_folderByTitle(FOLDER.ROOT.parentId, FOLDER.ROOT.label);
 
         bookmarksStore.rootId = rootFolderResponse[0].id;
 
@@ -41,6 +45,16 @@
     }
 
     onMounted(async () => {
+        const slideIndexResponse = await bookmarksStore.get_syncStorage('sliderIndex');
+
+        if (typeof slideIndexResponse === 'number') {
+            bookmarksStore.sliderIndex = slideIndexResponse;
+        } else {
+            bookmarksStore.sliderIndex = 0;
+        }
+
+        await utils.buildRootFolder();
+
         await getBookmarks();
 
         // eslint-disable-next-line no-undef

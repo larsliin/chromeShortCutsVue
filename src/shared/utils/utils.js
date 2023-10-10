@@ -130,7 +130,7 @@ export function useUtils() {
     async function buildRootFolder() {
         const bookmarksStore = useBookmarksStore();
 
-        const rootFolderResponse = await bookmarksStore.get_bookmarks('2');
+        const rootFolderResponse = await bookmarksStore.get_bookmarks(FOLDER.ROOT.parentId);
 
         const rootFolder = rootFolderResponse[0]
             .children.find((e) => e.title === FOLDER.ROOT.label);
