@@ -1,12 +1,6 @@
 <template>
     <div class="navigation-outer">
         <div class="navigation-header-container animated">
-            <!-- <h3 class="navigation-header"
-                v-for="(bookmark, index) in bookmarksStore.bookmarks"
-                :key="index"
-                :class="{active: bookmarksStore.sliderIndex === index}">
-                {{ bookmark.title }}
-            </h3> -->
             <div
                 class="navigation-header"
                 v-for="(bookmark, index) in bookmarksStore.bookmarks"

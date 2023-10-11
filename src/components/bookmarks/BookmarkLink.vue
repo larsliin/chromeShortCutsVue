@@ -4,7 +4,7 @@
         <a
             class="bookmark-link"
             :tabindex="tabIndex"
-            :class="{ 'folder': !link }"
+            :class="[link ? '' : 'folder', size]"
             draggable="true"
             :href="link"
             :id="id"
@@ -44,6 +44,7 @@
         },
         title: String,
         link: String,
+        size: String,
     });
 
     const image = ref();
@@ -83,17 +84,6 @@
         margin: 0 10px 16px;
     }
 
-    .bookmark-title-container {
-        display: inline-block;
-        line-height: 1.15;
-        margin: 15px 0 0;
-        max-width: 100%;
-        overflow: hidden;
-        padding-bottom: 0;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
     .bookmark-link {
         align-items: center;
         color: rgba(var(--v-theme-on-surface),var(--v-high-emphasis-opacity));
@@ -104,6 +94,26 @@
         outline-offset: 14px;
         text-decoration: none;
         width: 90px;
+
+        &.small {
+            width: 75px;
+
+            .bookmark-image-container {
+                width: 75px;
+                padding: 6px;
+            }
+        }
+    }
+
+    .bookmark-title-container {
+        display: inline-block;
+        line-height: 1.15;
+        margin: 15px 0 0;
+        max-width: 100%;
+        overflow: hidden;
+        padding-bottom: 0;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .bookmark-edit {

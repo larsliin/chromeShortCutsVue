@@ -12,6 +12,7 @@
                 <template #item="{element}">
                     <li>
                         <BookmarkLink
+                            :size="size"
                             :tabIndex="slideindex === bookmarksStore.sliderIndex ? '1' : '-1'"
                             :id="element.id"
                             :key="element.id"
@@ -26,7 +27,7 @@
 </template>
 
 <script setup>
-    import { nextTick } from 'vue';
+    import { nextTick, computed } from 'vue';
     import BookmarkLink from '@/components/bookmarks/BookmarkLink.vue';
     import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
@@ -39,6 +40,13 @@
             type: Array,
             default: () => [],
         },
+    });
+
+    const size = computed(() => {
+        if (props.bookmarks.length > 14) {
+            return 'small';
+        }
+        return 'normal';
     });
 
     function onDragStart() {
