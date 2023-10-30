@@ -1,23 +1,27 @@
 <template>
     <span class="bookmark-image-container"
-        :class="{ 'dimmed': folder}">
-        <v-icon v-if="folder"
-            icon="mdi-folder-open" />
-        <template v-else-if="image">
-            <span class="bookmark-image-overlay" ></span>
-            <span class="bookmark-image"
-                :style="{ 'background-image': `url(${image})` }"></span>
-        </template>
-        <BIconStarFill v-else />
+        :class="{ 'dimmed': folder }">
         <span
-            v-if="loading"
-            class="bookmark-imager-spinner">
-            <div class="lds-ring">
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-            </div>
+            class="visibility-toggle"
+            :class="{ hide }">
+            <v-icon v-if="folder"
+                icon="mdi-folder-open" />
+            <template v-else-if="image">
+                <span class="bookmark-image-overlay" ></span>
+                <span class="bookmark-image"
+                    :style="{ 'background-image': `url(${image})` }"></span>
+            </template>
+            <BIconStarFill v-else />
+            <span
+                v-if="loading"
+                class="bookmark-image-spinner">
+                <div class="lds-ring">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </span>
         </span>
     </span>
 </template>
@@ -29,10 +33,24 @@
         folder: Boolean,
         image: String,
         loading: Boolean,
+        hide: Boolean,
     });
 </script>
 
 <style scoped lang="scss">
+
+.visibility-toggle{
+        position: relative;
+        width: 100%;
+        height: 100%;
+        opacity: 1;
+        transition: opacity .25s;
+    }
+
+    .hide {
+        opacity: 0;
+    }
+
     .lds-ring {
         background-color: rgba(255, 255, 255, 0.8);
         display: inline-block;

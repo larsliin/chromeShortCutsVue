@@ -13,9 +13,15 @@
                         <v-col
                             cols="12">
                             <v-switch
+                                label="Use accordion navigation"
+                                color="info"
+                                hide-details="auto"
+                                v-model="enableAccordionNavigation"></v-switch>
+                            <v-switch
                                 label="Enable Arrov Navigation"
                                 color="info"
                                 hide-details="auto"
+                                :disabled="enableAccordionNavigation"
                                 v-model="enableArrowNavigation"></v-switch>
                             <v-switch
                                 label="Enable Filtering"
@@ -156,6 +162,7 @@
 
     const form = ref();
     const enableArrowNavigation = ref();
+    const enableAccordionNavigation = ref();
     const enableSearchNavigation = ref();
 
     const bookmarksFileImport = ref();
@@ -349,6 +356,19 @@
             reader.readAsText(iconsFileImport.value[0]);
         }
 
+        bookmarksStore.accordionNavigation = enableAccordionNavigation.value;
+
+        if (enableAccordionNavigation.value) {
+            bookmarksStore.delete_syncStorageItem('accordionNavigation');
+            bookmarksStore.set_syncStorage({ accordion: [bookmarksStore.sliderIndex] });
+        } else {
+            bookmarksStore.set_syncStorage({ accordionNavigation: 'disabled' });
+            bookmarksStore.delete_syncStorageItem('accordion');
+
+            bookmarksStore.sliderIndex = 0;
+            bookmarksStore.set_syncStorage({ sliderIndex: 0 });
+        }
+
         // arrow navigation
         bookmarksStore.arrowNavigation = enableArrowNavigation.value;
 
@@ -438,5 +458,6 @@
     onMounted(async () => {
         enableArrowNavigation.value = bookmarksStore.arrowNavigation;
         enableSearchNavigation.value = bookmarksStore.searchNavigation;
+        enableAccordionNavigation.value = bookmarksStore.accordionNavigation;
     });
 </script>

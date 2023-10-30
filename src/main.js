@@ -18,8 +18,20 @@ const vuetify = createVuetify({
     components,
     directives,
     theme: {
-        defaultTheme: 'light',
-      },
+        themes: {
+            light: {
+                colors: {
+                    primary: '#003354',
+                    secondary: '#91BED4',
+                    accent: '#82B1FF',
+                    error: '#FF5252',
+                    info: '#2196F3',
+                    success: '#4CAF50',
+                    warning: '#FB8C00',
+                },
+            },
+        },
+    },
 });
 
 const app = createApp(App);

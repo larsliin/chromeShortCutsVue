@@ -1,6 +1,5 @@
 <template>
     <div class="folders-outer">
-        <BIconStarFill class="folders-background" />
         <div class="folders-container d-flex"
             :class="{' animated': bookmarksStore.transition}"
             :style="{ transform: sliderPosition }">
@@ -18,7 +17,6 @@
 <script setup>
     import { computed, onMounted } from 'vue';
     import BookmarksSlide from '@/components/bookmarks/BookmarksSlide.vue';
-    import { BIconStarFill } from 'bootstrap-icons-vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/utils/utils';
 
@@ -53,23 +51,8 @@
 
 <style scoped lang="scss">
 .folders-outer {
-    background: #f0f0f0;
-    background: radial-gradient(circle at 100% 100%, #cfcfcf 0%, #fff 100%);
     display: block;
-    height: 100vh;
-    overflow: hidden;
-    width: 100vw;
-}
-
-.folders-background {
-    color: var(--yellow);
-    display: block;
-    font-size: 600px;
-    left: 50%;
-    opacity: .05;
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
+     height: 100vh;
 }
 
 .folders-container {

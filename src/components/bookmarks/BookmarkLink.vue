@@ -1,6 +1,5 @@
 <template>
-    <span class="bookmark relative inline-block"
-        v-if="ready">
+    <span class="bookmark relative inline-block">
         <a
             class="bookmark-link"
             :tabindex="tabIndex"
@@ -10,6 +9,7 @@
             :id="id"
             :aria-label="title">
             <BookmarkIcon
+                :hide="!ready"
                 :folder="!link"
                 :image="image" />
             <span class="bookmark-title-container">{{ title }}</span>
@@ -81,7 +81,7 @@
 
     .bookmark {
         display: inline-block;
-        margin: 0 10px 16px;
+        margin: 0 10px 8px;
     }
 
     .bookmark-link {
@@ -102,12 +102,15 @@
                 width: 75px;
                 padding: 6px;
             }
+
+            .bookmark-title-container {
+                font-size: 11px;
+            }
         }
     }
 
     .bookmark-title-container {
         display: inline-block;
-        line-height: 1.15;
         margin: 15px 0 0;
         max-width: 100%;
         overflow: hidden;

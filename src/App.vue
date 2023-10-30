@@ -12,7 +12,6 @@
 </script>
 
 <style>
-    @import "./scss/global.scss";
     @import "./scss/colors.scss";
     @import "./scss/typography.scss";
 

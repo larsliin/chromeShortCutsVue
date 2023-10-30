@@ -63,6 +63,5 @@
 </script>
 
 <style>
-    @import "./scss/global.scss";
     @import "./scss/typography.scss";
 </style>

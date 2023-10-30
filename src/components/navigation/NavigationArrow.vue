@@ -70,7 +70,7 @@
         position: absolute;
         text-align: center;
         top: 50%;
-        transform-origin: 20px;
+
         margin-top: -70px;
         transition: opacity 0.15s, left 0.15s, right 0.15s, transform .15s, box-shadow .15s;
         box-shadow: 0px 0 0 0px rgba(0, 0, 0, 0);
@@ -102,6 +102,7 @@
             left: -20px;
             padding-left: 30px;
             text-align: left;
+            transform-origin: left;
 
             &:hover:enabled {
                 left: 0;
@@ -113,9 +114,30 @@
             padding-right: 30px;
             right: -20px;
             text-align: right;
+            transform-origin: right;
 
             &:hover:enabled {
                 right: 0;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            width: 160px;
+            height: 200px;
+            font-size: 50px;
+            margin-top: -100px;
+            background-color: rgba(255, 255, 255, .35);
+
+            &.left {
+                border-radius: 0 100px 100px 0;
+                left: -20px;
+                padding-left: 30px;
+            }
+
+            &.right {
+                border-radius: 100px 0 0 100px;
+                padding-right: 30px;
+                right: -20px;
             }
         }
     }

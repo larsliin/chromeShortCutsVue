@@ -90,7 +90,6 @@
                 padding: 0;
                 margin: 0 5px;
                 display: inline;
-                line-height: 0;
                 position: relative;
             }
         }

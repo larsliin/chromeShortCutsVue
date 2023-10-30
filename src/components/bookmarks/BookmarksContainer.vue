@@ -1,25 +1,36 @@
 <template>
     <div class="bookmarks-slider" v-if="bookmarksStore.bookmarks">
-        <BookmarksSlider />
-        <NavigationDots v-if="bookmarksStore.bookmarks && bookmarksStore.bookmarks.length > 1" />
-        <NavigationArrow
-            v-if="bookmarksStore.arrowNavigation && bookmarksStore.bookmarks.length > 1"
-            direction="left" />
-        <NavigationArrow
-            v-if="bookmarksStore.arrowNavigation && bookmarksStore.bookmarks.length > 1"
-            direction="right" />
+        <div class="background">
+            <BIconStarFill class="folders-background" />
+        </div>
+        <template v-if="bookmarksStore.accordionNavigation">
+            <BookmarksAccordion />
+        </template>
+        <template v-else>
+            <BookmarksSlider />
+            <NavigationDots
+                v-if="bookmarksStore.bookmarks && bookmarksStore.bookmarks.length > 1" />
+            <NavigationArrow
+                v-if="bookmarksStore.arrowNavigation && bookmarksStore.bookmarks.length > 1"
+                direction="left" />
+            <NavigationArrow
+                v-if="bookmarksStore.arrowNavigation && bookmarksStore.bookmarks.length > 1"
+                direction="right" />
+        </template>
     </div>
 </template>
 
 <script setup>
     import { onMounted, watch } from 'vue';
     import BookmarksSlider from '@/components/bookmarks/BookmarksSlider.vue';
+    import BookmarksAccordion from '@/components/bookmarks/BookmarksAccordion.vue';
     import NavigationDots from '@/components/navigation/NavigationDots.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { FOLDER, EMITS } from '@/constants';
     import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
+    import { BIconStarFill } from 'bootstrap-icons-vue';
 
     const utils = useUtils();
 
@@ -246,8 +257,22 @@
         onChanged(id[0]);
     });
 
-async function init() {
-    const rootFolderResponse = await bookmarksStore
+    watch(() => bookmarksStore.accordionNavigation, (val) => {
+        toggleOverflowHidden();
+    });
+
+    function toggleOverflowHidden() {
+        if (bookmarksStore.accordionNavigation) {
+            document.getElementsByTagName('html')[0].classList.remove('overflow-hidden');
+            document.getElementsByTagName('body')[0].classList.remove('overflow-hidden');
+        } else {
+            document.getElementsByTagName('html')[0].classList.add('overflow-hidden');
+            document.getElementsByTagName('body')[0].classList.add('overflow-hidden');
+        }
+    }
+
+    async function init() {
+        await bookmarksStore
             .get_folderByTitle(FOLDER.ROOT.parentId, FOLDER.ROOT.label);
 
         const slideIndexResponse = await bookmarksStore.get_syncStorage('sliderIndex');
@@ -258,14 +283,19 @@ async function init() {
             bookmarksStore.sliderIndex = 0;
         }
 
+        const accordionNavigationResponse = await bookmarksStore.get_syncStorage('accordionNavigation');
+        bookmarksStore.accordionNavigation = !accordionNavigationResponse;
+
         const enableSearchResponse = await bookmarksStore.get_syncStorage('searchNavigation');
         bookmarksStore.searchNavigation = !enableSearchResponse;
 
         const arrowNavigationResponse = await bookmarksStore.get_syncStorage('arrowNavigation');
-
         bookmarksStore.arrowNavigation = arrowNavigationResponse === undefined;
 
+        toggleOverflowHidden();
+
         await utils.buildRootFolder();
+
         await getBookmarks();
     }
 
@@ -276,8 +306,28 @@ async function init() {
 </script>
 
 <style scoped lang="scss">
+
+    .background {
+        position: fixed;
+        width: 100vw;
+        height: 100vh;
+        background: #f0f0f0;
+        background: radial-gradient(circle at 100% 100%, #cfcfcf 0%, #fff 100%);
+    }
+
+    .folders-background {
+        color: var(--yellow);
+        display: block;
+        font-size: 600px;
+        left: 50%;
+        opacity: .05;
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
     .bookmarks-slider {
         $breakpoint: 540px;
+
 
         position: relative;
         width: $breakpoint;
