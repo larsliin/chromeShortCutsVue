@@ -1,19 +1,21 @@
 <template>
-    <div class="toolbar d-flex" v-if="ready">
-        <div>
-            <v-btn
-                class="add-bookmark-btn"
-                :color="'primary'"
-                size="large"
-                @click="dialogAddOpen = true">Add Bookmark</v-btn>
-            <BookmarksSearch
-                class="ml-5"
-                v-if="bookmarksStore.searchNavigation" />
-        </div>
+
+    <div class="nav-container nav-container-left">
+        <v-btn
+            class="add-bookmark-btn"
+            :color="'primary'"
+            size="large"
+            @click="dialogAddOpen = true">Add Bookmark</v-btn>
+        <BookmarksSearch
+            class="ml-5"
+            v-if="bookmarksStore.searchNavigation" />
+    </div>
+    <div class="nav-container nav-container-right">
         <v-btn
             icon="mdi-wrench"
             @click="dialogSettings = true"></v-btn>
     </div>
+
     <Teleport to="body">
         <template>
             <v-row justify="center">
@@ -99,23 +101,18 @@
         height: calc(var(--v-btn-height) + 3px);
     }
 
-    .toolbar {
-        $breakpoint: 540px;
-
-        padding: 20px;
+    .nav-container {
         position: fixed;
-        width: 100%;
-        z-index: 999;
-        width: $breakpoint;
+        top: 20px;
+        display: flex;
+        z-index: 9;
 
-        @media (min-width: $breakpoint) {
-                width: 100%;
-            }
+        &-left {
+            left: 20px;
+        }
 
-        > div:first-child {
-            align-items: center;
-            display: flex;
-            flex: 1;
+        &-right {
+            right: 20px;
         }
     }
 </style>

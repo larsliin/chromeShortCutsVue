@@ -1,5 +1,7 @@
 <template>
-    <div class="bookmarks-slider" v-if="bookmarksStore.bookmarks">
+    <div class="bookmarks-container"
+        v-if="bookmarksStore.bookmarks"
+        :class="bookmarksStore.accordionNavigation ? 'accordion' : 'slider'">
         <div class="background">
             <BIconStarFill class="folders-background" />
         </div>
@@ -325,9 +327,8 @@
         top: 50%;
         transform: translate(-50%, -50%);
     }
-    .bookmarks-slider {
+    .bookmarks-container {
         $breakpoint: 540px;
-
 
         position: relative;
         width: $breakpoint;

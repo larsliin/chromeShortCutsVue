@@ -9,28 +9,36 @@
                 variant="popout"
                 multiple
                 @update:modelValue="onUpdate($event)">
-                <v-expansion-panel
-                    v-for="(bookmark, index) in bookmarksStore.bookmarks"
-                    :key="bookmark.id"
-                    eager>
-                    <v-expansion-panel-title>
-                        {{ bookmark.title }}
-                    </v-expansion-panel-title>
-                    <v-expansion-panel-text>
-                        <BookmarksSlide
-                            :slideindex="index"
-                            :bookmarks="bookmark.children" />
-                    </v-expansion-panel-text>
-                </v-expansion-panel>
+                <draggable
+                    tag="div"
+                    item-key="id"
+                    ghost-class="ghost"
+                    :animation="200"
+                    :list="bookmarksStore.bookmarks"
+                    @end="onDragEnd($event, element)">
+                    <template #item="{element}">
+                        <v-expansion-panel
+                            eager>
+                            <v-expansion-panel-title>
+                                {{ element.title }}
+                            </v-expansion-panel-title>
+                            <v-expansion-panel-text>
+                                <BookmarksSlide
+                                    :slideindex="index"
+                                    :bookmarks="element.children" />
+                            </v-expansion-panel-text>
+                        </v-expansion-panel>
+                    </template>
+                </draggable>
             </v-expansion-panels>
         </div>
     </div>
 </template>
 
 <script setup>
-    import { onMounted, ref } from 'vue';
+    import { onMounted, ref, nextTick } from 'vue';
     import BookmarksSlide from '@/components/bookmarks/BookmarksSlide.vue';
-
+    import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const bookmarksStore = useBookmarksStore();
@@ -39,6 +47,16 @@
 
     function onUpdate(e) {
         bookmarksStore.set_syncStorage({ accordion: e });
+    }
+
+    async function onDragEnd(event) {
+        const bookmark = bookmarksStore.bookmarks[event.newIndex];
+
+        const index = event.newIndex > event.oldIndex ? event.newIndex + 1 : event.newIndex;
+
+        await nextTick();
+
+        bookmarksStore.reorder_bookmark(bookmark.id, index);
     }
 
     onMounted(async () => {
@@ -63,16 +81,63 @@
     .folders-container {
         height: 100%;
         max-width: 1024px;
-        padding: 100px 40px;
+        width: 100%;
+        padding: 100px 20px;
         align-items: flex-start;
     }
 
     .expansion-panels {
         padding-bottom: 40px;
+
+        > div {
+            width: 100%;
+        }
     }
 
     :deep(.v-expansion-panel-text__wrapper) {
         padding-top: 16px;
+    }
+
+    .v-expansion-panels > div{
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        list-style-type: none;
+        padding: 0;
+        width: 100%;
+        position: relative;
+        z-index: 1;
+    }
+
+    .v-expansion-panels--variant-popout > div > .v-expansion-panel {
+        max-width: calc(100% - 32px);
+    }
+
+    .v-expansion-panels--variant-popout > div > .v-expansion-panel--active {
+    max-width: calc(100% + 16px);
+}
+
+    .v-expansion-panels:not(.v-expansion-panels--variant-accordion) > div > :not(:first-child):not(:last-child):not(.v-expansion-panel--active):not(.v-expansion-panel--after-active) {
+        border-top-left-radius: 0 !important;
+        border-top-right-radius: 0 !important;
+    }
+
+    .v-expansion-panels:not(.v-expansion-panels--variant-accordion) > div > :not(:first-child):not(:last-child):not(.v-expansion-panel--active):not(.v-expansion-panel--before-active) {
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+    }
+    .v-expansion-panels--variant-inset > .v-expansion-panel {
+        max-width: 100%;
+    }
+
+    .v-expansion-panels:not(.v-expansion-panels--variant-accordion) > div > :first-child:not(:last-child):not(.v-expansion-panel--active):not(.v-expansion-panel--before-active) {
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+    }
+
+    .v-expansion-panels:not(.v-expansion-panels--variant-accordion) > div > :last-child:not(:first-child):not(.v-expansion-panel--active):not(.v-expansion-panel--after-active) {
+        border-top-left-radius: 0 !important;
+        border-top-right-radius: 0 !important;
     }
 
 </style>

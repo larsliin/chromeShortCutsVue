@@ -39,11 +39,14 @@
 
 <style scoped lang="scss">
     .visibility-toggle{
-        position: relative;
-        width: 100%;
+        align-items: center;
+        display: flex;
         height: 100%;
+        justify-content: center;
         opacity: 1;
+        position: relative;
         transition: opacity .25s;
+        width: 100%;
     }
 
     .hide {

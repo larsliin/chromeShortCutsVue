@@ -1,5 +1,5 @@
 <template>
-    <div class="folder">
+    <div class="folder" :class="{'folder-max-height': !bookmarksStore.accordionNavigation}">
         <div class="folder-inner" v-if="bookmarks">
             <draggable
                 tag="ul"
@@ -32,8 +32,6 @@
     import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
 
-    const bookmarksStore = useBookmarksStore();
-
     const props = defineProps({
         slideindex: Number,
         bookmarks: {
@@ -42,8 +40,10 @@
         },
     });
 
+    const bookmarksStore = useBookmarksStore();
+
     const size = computed(() => {
-        if (props.bookmarks.length > 14) {
+        if (props.bookmarks.length > 14 || bookmarksStore.accordionNavigation) {
             return 'small';
         }
         return 'normal';
@@ -67,8 +67,11 @@
 <style scoped lang="scss">
     .folder {
         flex: 0 0 100%;
-        max-height: calc(100vh - 200px);
-        overflow-y: auto;
+
+        &-max-height {
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
 
         &-inner {
             display: flex;
