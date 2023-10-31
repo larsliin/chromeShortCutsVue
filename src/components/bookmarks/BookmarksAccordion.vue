@@ -71,4 +71,8 @@
         padding-bottom: 40px;
     }
 
+    :deep(.v-expansion-panel-text__wrapper) {
+        padding-top: 16px;
+    }
+
 </style>

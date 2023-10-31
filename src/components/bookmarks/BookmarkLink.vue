@@ -81,7 +81,7 @@
 
     .bookmark {
         display: inline-block;
-        margin: 0 10px 8px;
+        margin: 0 0 8px;
     }
 
     .bookmark-link {
@@ -89,7 +89,7 @@
         color: rgba(var(--v-theme-on-surface),var(--v-high-emphasis-opacity));
         display: flex;
         flex-direction: column;
-        margin-top: 25px;
+        margin-top: 28px;
         outline-color: #01a1f6;
         outline-offset: 14px;
         text-decoration: none;
@@ -124,9 +124,9 @@
         cursor: pointer;
         display: none;
         font-size: 18px;
-        padding: 5px 10px;
+        padding: 5px 5px;
         position: absolute;
-        right: 0px;
+        right: -5px;
         top: -10px;
     }
 

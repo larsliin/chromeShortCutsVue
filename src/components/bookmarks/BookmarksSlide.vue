@@ -88,7 +88,7 @@
 
             li {
                 padding: 0;
-                margin: 0 5px;
+                margin: 0 10px 5px;
                 display: inline;
                 position: relative;
             }

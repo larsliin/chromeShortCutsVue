@@ -38,8 +38,7 @@
 </script>
 
 <style scoped lang="scss">
-
-.visibility-toggle{
+    .visibility-toggle{
         position: relative;
         width: 100%;
         height: 100%;
