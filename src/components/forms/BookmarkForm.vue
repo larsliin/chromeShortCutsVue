@@ -362,16 +362,18 @@
         const slctDisabled = !bookmarksStore.bookmarks
             || bookmarksStore.bookmarks.length === 0;
 
-        if (!slctDisabled) {
-            folderSlct.value = bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title;
-        }
-
         if (props.data) {
             id.value = props.data.id;
             parentId.value = props.data.parentId;
             titleTxt.value = props.data.title;
             urlTxt.value = props.data.url;
             base64Image.value = props.data.image;
+        }
+
+        if (!slctDisabled) {
+            const parentIndex = bookmarks[0].children
+                .findIndex((e) => e.id === props.data.parentId);
+            folderSlct.value = bookmarksStore.bookmarks[parentIndex].title;
         }
 
         if (slctDisabled) {

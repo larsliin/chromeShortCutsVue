@@ -19,7 +19,9 @@
                         <v-expansion-panel
                             eager>
                             <v-expansion-panel-title>
-                                {{ element.title }}
+                                <span>
+                                    {{ element.title }}
+                                </span>
                             </v-expansion-panel-title>
                             <v-expansion-panel-text>
                                 <BookmarksSlide
