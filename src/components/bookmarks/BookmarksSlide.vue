@@ -1,5 +1,9 @@
 <template>
-    <div class="folder" :class="{'folder-max-height': !bookmarksStore.accordionNavigation}">
+    <div class="folder"
+        :class="{
+            'folder-max-height': !bookmarksStore.accordionNavigation,
+            'slider': !bookmarksStore.accordionNavigation
+        }">
         <div class="folder-inner" v-if="bookmarks">
             <draggable
                 tag="ul"
@@ -86,7 +90,7 @@
             margin: 0 auto;
             margin: 0;
             max-width: 1024px;
-            padding: 0 40px;
+            padding: 0;
             width: 100%;
 
             li {
@@ -94,6 +98,12 @@
                 margin: 0 10px 5px;
                 display: inline;
                 position: relative;
+            }
+        }
+
+        &.slider {
+            ul {
+                padding: 0 40px;
             }
         }
     }

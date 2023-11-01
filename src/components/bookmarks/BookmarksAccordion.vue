@@ -1,6 +1,5 @@
 <template>
     <div class="folders-outer">
-
         <div class="folders-container d-flex">
             <v-expansion-panels
                 class="expansion-panels"
