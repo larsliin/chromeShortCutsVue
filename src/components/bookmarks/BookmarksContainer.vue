@@ -24,8 +24,8 @@
 
 <script setup>
     import { onMounted, watch } from 'vue';
-    import BookmarksSlider from '@/components/bookmarks/BookmarksSlider.vue';
-    import BookmarksAccordion from '@/components/bookmarks/BookmarksAccordion.vue';
+    import BookmarksSlider from '@/components/bookmarks/slider/BookmarksSlider.vue';
+    import BookmarksAccordion from '@/components/bookmarks/accordion/BookmarksAccordion.vue';
     import NavigationDots from '@/components/navigation/NavigationDots.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { FOLDER, EMITS } from '@/constants';

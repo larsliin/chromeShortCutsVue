@@ -16,7 +16,7 @@
 
 <script setup>
     import { computed, onMounted } from 'vue';
-    import BookmarksSlide from '@/components/bookmarks/BookmarksSlide.vue';
+    import BookmarksSlide from '@/components/bookmarks/slider/BookmarksSlide.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/utils/utils';
 

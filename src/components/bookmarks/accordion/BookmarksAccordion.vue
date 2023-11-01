@@ -18,11 +18,7 @@
                     <template #item="{element}">
                         <v-expansion-panel
                             eager>
-                            <v-expansion-panel-title>
-                                <span>
-                                    {{ element.title }}
-                                </span>
-                            </v-expansion-panel-title>
+                            <BookmarksAccordionTitle :bookmark="element" />
                             <v-expansion-panel-text>
                                 <BookmarksSlide
                                     :slideindex="index"
@@ -38,7 +34,9 @@
 
 <script setup>
     import { onMounted, ref, nextTick } from 'vue';
-    import BookmarksSlide from '@/components/bookmarks/BookmarksSlide.vue';
+    import BookmarksSlide from '@/components/bookmarks/slider/BookmarksSlide.vue';
+    import BookmarksAccordionTitle
+        from '@/components/bookmarks/accordion/BookmarksAccordionTitle.vue';
     import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
 
@@ -118,12 +116,20 @@
     max-width: calc(100% + 16px);
 }
 
-    .v-expansion-panels:not(.v-expansion-panels--variant-accordion) > div > :not(:first-child):not(:last-child):not(.v-expansion-panel--active):not(.v-expansion-panel--after-active) {
+    .v-expansion-panels:not(
+        .v-expansion-panels--variant-accordion
+    ) > div > :not(:first-child):not(:last-child):not(
+        .v-expansion-panel--active
+    ):not(.v-expansion-panel--after-active) {
         border-top-left-radius: 0 !important;
         border-top-right-radius: 0 !important;
     }
 
-    .v-expansion-panels:not(.v-expansion-panels--variant-accordion) > div > :not(:first-child):not(:last-child):not(.v-expansion-panel--active):not(.v-expansion-panel--before-active) {
+    .v-expansion-panels:not(
+        .v-expansion-panels--variant-accordion
+    ) > div > :not(:first-child):not(:last-child):not(
+        .v-expansion-panel--active
+    ):not(.v-expansion-panel--before-active) {
         border-bottom-left-radius: 0 !important;
         border-bottom-right-radius: 0 !important;
     }
@@ -131,12 +137,20 @@
         max-width: 100%;
     }
 
-    .v-expansion-panels:not(.v-expansion-panels--variant-accordion) > div > :first-child:not(:last-child):not(.v-expansion-panel--active):not(.v-expansion-panel--before-active) {
+    .v-expansion-panels:not(
+        .v-expansion-panels--variant-accordion
+    ) > div > :first-child:not(:last-child):not(
+        .v-expansion-panel--active
+    ):not(.v-expansion-panel--before-active) {
         border-bottom-left-radius: 0 !important;
         border-bottom-right-radius: 0 !important;
     }
 
-    .v-expansion-panels:not(.v-expansion-panels--variant-accordion) > div > :last-child:not(:first-child):not(.v-expansion-panel--active):not(.v-expansion-panel--after-active) {
+    .v-expansion-panels:not(
+        .v-expansion-panels--variant-accordion
+    ) > div > :last-child:not(:first-child):not(
+        .v-expansion-panel--active
+    ):not(.v-expansion-panel--after-active) {
         border-top-left-radius: 0 !important;
         border-top-right-radius: 0 !important;
     }

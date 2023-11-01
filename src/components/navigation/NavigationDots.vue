@@ -7,9 +7,10 @@
                 :key="index"
                 :class="{ active: bookmarksStore.sliderIndex === index }">
                 <InputEdit
-                    class=""
+                    :style="'slider'"
                     :enabled="bookmarksStore.sliderIndex === index"
-                    :value="bookmark.title" />
+                    :value="bookmark.title"
+                    :id="bookmark.id" />
             </div>
         </div>
         <div class="navigation-container">

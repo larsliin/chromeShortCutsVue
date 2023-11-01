@@ -4,9 +4,10 @@
             ref="input"
             type="input"
             class="input"
-            :class="{ 'enabled': enabled }"
+            :class="[ enabled ? 'enabled' : '', style ]"
             :style="{width: inputWidth}"
             v-model="model"
+            @click.stop="onClick($event)"
             @focus="bookmarksStore.titleInputActive = true"
             @blur="onBlur()"
             @keydown="onChange($event)" />
@@ -21,6 +22,11 @@
     const bookmarksStore = useBookmarksStore();
 
     const props = defineProps({
+        style: String,
+        id: {
+            type: String,
+            required: true,
+        },
         value: {
             type: String,
             required: true,
@@ -34,9 +40,7 @@
     const model = ref(props.value);
 
     function onBlur() {
-        const { id } = bookmarksStore.bookmarks[bookmarksStore.sliderIndex];
-
-        bookmarksStore.update_bookmark(id, { title: model.value });
+        bookmarksStore.update_bookmark(props.id, { title: model.value });
 
         bookmarksStore.titleInputActive = false;
     }
@@ -51,13 +55,19 @@
             return;
         }
 
-        const add = event.keyCode === 8 ? 0 : 20;
+        let add = event.keyCode === 8 ? 0 : 20;
+        add = props.style === 'slider' ? add : 0;
         inputWidth.value = `${textwidth.value.clientWidth + add}px`;
     }
 
     onMounted(() => {
-        inputWidth.value = `${textwidth.value.clientWidth + 20}px`;
+        const add = props.style === 'slider' ? 20 : 0;
+        inputWidth.value = `${textwidth.value.clientWidth + add}px`;
     });
+
+    function onClick(event) {
+        event.preventDefault();
+    }
 
 </script>
 
@@ -71,17 +81,23 @@
     .input {
         border-radius: 4px;
         border: 1px solid transparent;
-        color: var(--yellow);
         font-size: 16px;
-        font-weight: 700;
         padding: 6px;
         pointer-events: none;
-        text-align: center;
         width: auto;
 
+        &.slider {
+            color: var(--yellow);
+            font-weight: 700;
+            text-align: center;
+
+            &:focus {
+                border: 1px solid rgba(0,0,0,.12);
+                box-shadow: 0 2px 3px 0px rgba(0, 0, 0, 0.2);
+            }
+        }
+
         &:focus {
-            border: 1px solid rgba(0,0,0,.12);
-            box-shadow: 0 2px 3px 0px rgba(0, 0, 0, 0.2);
             outline: none;
         }
 
