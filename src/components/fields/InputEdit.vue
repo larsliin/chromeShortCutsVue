@@ -1,9 +1,9 @@
 <template>
     <div class="wrapper">
         <input
+            class="input"
             ref="input"
             type="input"
-            class="input"
             :class="[ enabled ? 'enabled' : '', style ]"
             :style="{width: inputWidth}"
             v-model="model"

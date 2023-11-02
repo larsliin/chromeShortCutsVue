@@ -1,10 +1,10 @@
 <template>
     <v-expansion-panel-title>
-        <!-- https://pictogrammers.com/library/mdi/ -->
         <button
             class="button"
             :class="{ active }"
             @click.stop="onButtonClick($event)">
+            <!-- https://pictogrammers.com/library/mdi/ -->
             <v-icon
                 class="icon"
                 size="small"
@@ -43,6 +43,7 @@
 
     function onButtonClick() {
         active.value = true;
+        inputWidth.value = `${textwidth.value.clientWidth + 0}px`;
         input.value.focus();
     }
 
@@ -61,7 +62,7 @@
             input.value.blur();
         }
 
-        const add = event.keyCode === 8 ? 0 : 6;
+        const add = event.keyCode === 8 ? -6 : 6;
         await nextTick();
         inputWidth.value = `${textwidth.value.clientWidth + add}px`;
     }
@@ -71,7 +72,7 @@
     }
 
     onMounted(() => {
-        inputWidth.value = `${textwidth.value.clientWidth + 6}px`;
+        inputWidth.value = `${textwidth.value.clientWidth + 0}px`;
     });
 
 </script>

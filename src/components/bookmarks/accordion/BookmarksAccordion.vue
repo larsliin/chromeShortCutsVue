@@ -3,8 +3,9 @@
         <div class="folders-container d-flex">
             <v-expansion-panels
                 class="expansion-panels"
-                v-if="panels && bookmarksStore.bookmarks"
-                v-model="panels"
+                v-if="panelsModel && bookmarksStore.bookmarks"
+                ref="expansionPanels"
+                v-model="panelsModel"
                 variant="popout"
                 multiple
                 @update:modelValue="onUpdate($event)">
@@ -42,7 +43,8 @@
 
     const bookmarksStore = useBookmarksStore();
 
-    const panels = ref();
+    const panelsModel = ref();
+    const expansionPanels = ref();
 
     function onUpdate(e) {
         bookmarksStore.set_syncStorage({ accordion: e });
@@ -56,15 +58,27 @@
         await nextTick();
 
         bookmarksStore.reorder_bookmark(bookmark.id, index);
+
+        // update active panels array
+        const panelsSelector = expansionPanels.value.$el.querySelectorAll('.v-expansion-panel');
+
+        const arr = [];
+        panelsSelector.forEach((element, i) => {
+            const isOpen = element.classList.contains('v-expansion-panel--active');
+            if (isOpen) {
+                arr.push(i);
+            }
+        });
+        bookmarksStore.set_syncStorage({ accordion: arr });
     }
 
     onMounted(async () => {
         const accordionResponse = await bookmarksStore.get_syncStorage('accordion');
 
         if (accordionResponse) {
-            panels.value = Array.from(accordionResponse);
+            panelsModel.value = Array.from(accordionResponse);
         } else {
-            panels.value = [];
+            panelsModel.value = [];
         }
     });
 </script>
