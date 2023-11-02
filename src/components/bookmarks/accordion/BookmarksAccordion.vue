@@ -1,6 +1,20 @@
 <template>
     <div class="folders-outer">
-        <div class="folders-container d-flex">
+        <div class="folders-container">
+            <div class="expansion-panels-toggle">
+                <v-btn
+                    class="expansion-panels-toggle-btn mb-2"
+                    size="small"
+                    icon="mdi-unfold-less-horizontal"
+                    :disabled="panelsModel.length === 0"
+                    @click="onUnfoldAllClick()"></v-btn>
+                <v-btn
+                    class="expansion-panels-toggle-btn"
+                    size="small"
+                    icon="mdi-unfold-more-horizontal"
+                    :disabled="panelsModel.length === bookmarksStore.bookmarks.length"
+                    @click="onFoldAllClick()"></v-btn>
+            </div>
             <v-expansion-panels
                 class="expansion-panels"
                 v-if="panelsModel && bookmarksStore.bookmarks"
@@ -34,7 +48,9 @@
 </template>
 
 <script setup>
-    import { onMounted, ref, nextTick } from 'vue';
+    import {
+        onMounted, ref, nextTick,
+    } from 'vue';
     import BookmarksSlide from '@/components/bookmarks/slider/BookmarksSlide.vue';
     import BookmarksAccordionTitle
         from '@/components/bookmarks/accordion/BookmarksAccordionTitle.vue';
@@ -72,6 +88,21 @@
         bookmarksStore.set_syncStorage({ accordion: arr });
     }
 
+    function onUnfoldAllClick() {
+        panelsModel.value = [];
+
+        bookmarksStore.set_syncStorage({ accordion: [] });
+    }
+
+    function onFoldAllClick() {
+        const panelsSelector = expansionPanels.value.$el.querySelectorAll('.v-expansion-panel');
+        const arr = [...Array(panelsSelector.length).keys()];
+
+        panelsModel.value = arr;
+
+        bookmarksStore.set_syncStorage({ accordion: arr });
+    }
+
     onMounted(async () => {
         const accordionResponse = await bookmarksStore.get_syncStorage('accordion');
 
@@ -84,7 +115,6 @@
 </script>
 
 <style scoped lang="scss">
-
     .folders-outer {
         display: flex;
         height: 100vh;
@@ -92,11 +122,24 @@
     }
 
     .folders-container {
+        align-items: flex-start;
+        display: flex;
+        flex-direction: column;
         height: 100%;
         max-width: 1024px;
-        width: 100%;
         padding: 100px 20px;
-        align-items: flex-start;
+        width: 100%;
+    }
+
+    .expansion-panels-toggle {
+        z-index: 9;
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+
+        &-btn {
+            display: block;
+        }
     }
 
     .expansion-panels {
@@ -127,8 +170,8 @@
     }
 
     .v-expansion-panels--variant-popout > div > .v-expansion-panel--active {
-    max-width: calc(100% + 16px);
-}
+        max-width: calc(100% + 16px);
+    }
 
     .v-expansion-panels:not(
         .v-expansion-panels--variant-accordion

@@ -129,6 +129,7 @@
         if (bookmarksStore.rootId === event) {
             // if root folder is deleted then simply delete everything
             await bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id);
+            await bookmarksStore.delete_syncStorageItem('accordion');
 
             bookmarksStore.rootId = null;
 

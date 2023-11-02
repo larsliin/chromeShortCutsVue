@@ -197,13 +197,15 @@
         const localStorageItems = await bookmarksStore.get_localStorageAll(null);
         const localStorageItemsImageArr = Object.values(localStorageItems).filter((e) => e.image);
 
-        // add images to each bookmar in exported bookmarks to
+        // add images to each bookmark in exported bookmarks to
         localStorageItemsImageArr.forEach((localitem) => {
             const bookmark = exportBookmarks
                 .map((outerItem) => outerItem.children.find((child) => child.id === localitem.id))
                 .filter((childItem) => childItem !== undefined)[0];
 
-            bookmark.image = localitem.image;
+            if (bookmark) {
+                bookmark.image = localitem.image;
+            }
         });
 
         // run exporter

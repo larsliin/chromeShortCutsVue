@@ -18,6 +18,7 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         titleInputActive: false,
         transition: true,
         popup: false,
+        panelsModel: [],
     }),
     actions,
     getters,

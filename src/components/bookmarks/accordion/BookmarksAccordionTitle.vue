@@ -6,7 +6,7 @@
             @click.stop="onButtonClick($event)">
             <!-- https://pictogrammers.com/library/mdi/ -->
             <v-icon
-                class="icon"
+                class="icon-edit"
                 size="small"
                 icon="mdi-file-edit-outline"></v-icon>
         </button>
@@ -22,6 +22,10 @@
             @keyup.stop="keyUp($event)"
             v-model="model" />
         <span ref="textwidth" class="text-width">{{ model }}</span>
+        <v-icon
+            size="large"
+            class="icon-drag"
+            icon="mdi-drag-horizontal"></v-icon>
     </v-expansion-panel-title>
 </template>
 
@@ -80,8 +84,12 @@
 <style scoped lang="scss">
     .input {
         border: 1px solid transparent;
+        max-width: calc(48% - 30px);
+        overflow: hidden;
         padding: 4px 6px;
         pointer-events: none;
+        text-overflow: ellipsis;
+        white-space: nowrap;
 
         &.active {
             pointer-events: initial;
@@ -114,11 +122,23 @@
             .button {
                 opacity: .5;
             }
+
+            .icon-drag {
+                opacity: .75;
+            }
         }
     }
 
-    .icon {
+    .icon-edit {
         height: 15px;
+    }
+
+    .icon-drag {
+        left: 50%;
+        opacity: .15;
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
     }
 
     .text-width {

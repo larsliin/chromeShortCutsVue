@@ -249,6 +249,7 @@
 
         if (props.data && props.data.url) {
             bookmarksStore.remove_bookmark(props.data.id);
+            bookmarksStore.delete_localStorageItem(props.data.id);
         } else {
             bookmarksStore.remove_bookmarkFolder(props.data.id);
         }
@@ -370,7 +371,7 @@
             base64Image.value = props.data.image;
         }
 
-        if (!slctDisabled) {
+        if (!slctDisabled && props.data) {
             const parentIndex = bookmarks[0].children
                 .findIndex((e) => e.id === props.data.parentId);
             folderSlct.value = bookmarksStore.bookmarks[parentIndex].title;
