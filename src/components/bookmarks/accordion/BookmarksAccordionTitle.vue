@@ -113,6 +113,7 @@
 
     :deep(.v-expansion-panel-title__overlay) {
         pointer-events: none;
+        background-color: rgb(var(--v-theme-primary));
     }
 
     .v-expansion-panel-title {

@@ -78,13 +78,13 @@
     }
 
     .navigation-item.active .navigation-item-border{
-        border-color: var(--yellow);
+        border-color: rgb(var(--v-theme-primary));
         border-radius: 50%;
         transform: scale(1.5);
     }
 
     .navigation-item-inner {
-        background-color: var(--yellow);
+        background-color: rgb(var(--v-theme-primary));
         border-radius: 50%;
         height: 12px;
         margin: 3px;
@@ -100,7 +100,7 @@
     }
 
     .navigation-header-container .navigation-header {
-        color: var(--yellow);
+        color: rgb(var(--v-theme-primary));
         margin: 0;
         opacity: 0;
         position: absolute;

@@ -62,7 +62,7 @@
 <style scoped lang="scss">
 .navigation {
     &-arrow {
-        color: var(--yellow);
+        color: rgb(var(--v-theme-primary));
         font-size: 40px;
         height: 140px;
         background-color: rgba(255, 255, 255, .75);

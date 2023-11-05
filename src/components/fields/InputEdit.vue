@@ -87,8 +87,6 @@
         width: auto;
 
         &.slider {
-            color: var(--yellow);
-            font-weight: 700;
             text-align: center;
 
             &:focus {

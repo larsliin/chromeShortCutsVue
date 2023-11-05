@@ -2,9 +2,7 @@
     <div class="bookmarks-container"
         v-if="bookmarksStore.bookmarks"
         :class="bookmarksStore.accordionNavigation ? 'accordion' : 'slider'">
-        <div class="background">
-            <BIconStarFill class="folders-background" />
-        </div>
+        <BookmarksSliderBackground />
         <template v-if="bookmarksStore.accordionNavigation">
             <BookmarksAccordion />
         </template>
@@ -27,12 +25,12 @@
     import BookmarksSlider from '@/components/bookmarks/slider/BookmarksSlider.vue';
     import BookmarksAccordion from '@/components/bookmarks/accordion/BookmarksAccordion.vue';
     import NavigationDots from '@/components/navigation/NavigationDots.vue';
+    import BookmarksSliderBackground from '@/components/bookmarks/BookmarksSliderBackground.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { FOLDER, EMITS } from '@/constants';
     import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
-    import { BIconStarFill } from 'bootstrap-icons-vue';
 
     const utils = useUtils();
 
@@ -309,25 +307,6 @@
 </script>
 
 <style scoped lang="scss">
-
-    .background {
-        position: fixed;
-        width: 100vw;
-        height: 100vh;
-        background: #f0f0f0;
-        background: radial-gradient(circle at 100% 100%, #cfcfcf 0%, #fff 100%);
-    }
-
-    .folders-background {
-        color: var(--yellow);
-        display: block;
-        font-size: 600px;
-        left: 50%;
-        opacity: .05;
-        position: absolute;
-        top: 50%;
-        transform: translate(-50%, -50%);
-    }
     .bookmarks-container {
         $breakpoint: 540px;
 

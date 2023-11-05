@@ -1,7 +1,9 @@
 <template>
     <div class="folders-outer">
         <div class="folders-container">
-            <div class="expansion-panels-toggle">
+            <div
+                class="expansion-panels-toggle"
+                v-if="panelsModel">
                 <v-btn
                     class="expansion-panels-toggle-btn mb-2"
                     size="small"
