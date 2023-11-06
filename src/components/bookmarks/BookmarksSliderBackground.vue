@@ -1,51 +1,29 @@
 <template>
-    <div class="background">
-        <template v-for="(item, index) in arr" :key="index">
-            <BIconStarFill class="folders-background" :style="{
-                left: `${item.x}%`,
-                top: `${item.y}%`,
-                transform: `scale(${item.scale}) rotate(${item.rotation}deg) translate(-50%, -50%)`,
-                opacity: item.opacity,
-            }" />
-        </template>
+    <div class="background" :class="{ dark: bookmarksStore.enableDarkMode }">
     </div>
 </template>
 
 <script setup>
-    import { onMounted, ref } from 'vue';
-    import { BIconStarFill } from 'bootstrap-icons-vue';
+    import { useBookmarksStore } from '@stores/bookmarks';
 
-    const arr = ref([]);
-    // eslint-disable-next-line no-unused-vars
-    const props = defineProps({
-    });
-
-    onMounted(() => {
-        const length = Math.round(Math.random() * 3) + 3;
-        for (let index = 0; index < length; index += 1) {
-            const scale = (Math.round(Math.random() * 100)) / 100;
-            console.log(1 + (5 * scale));
-            const obj = {
-                x: Math.round(Math.random() * 100),
-                y: Math.round(Math.random() * 100),
-                scale: 1 + (3 * scale),
-                opacity: 0.05 + (0.5 * scale),
-                rotation: Math.round(Math.random() * 360),
-            };
-            arr.value.push(obj);
-        }
-        console.log(arr.value);
-    });
+    const bookmarksStore = useBookmarksStore();
 
 </script>
 
 <style scoped lang="scss">
     .background {
         background: #f0f0f0;
-        background: radial-gradient(circle at 100% 100%, #cfcfcf 0%, #fff 100%);
+        background: radial-gradient(circle at 100% 100%, var(--blue-lighter) 0%, #fff 100%);
         height: 100vh;
         position: fixed;
         width: 100vw;
+
+        &.dark {
+            background: radial-gradient(circle at 100% 100%,
+            var(--darkmode-100) 0%,
+            var(--darkmode-200) 100%);
+
+        }
     }
 
     .folders-background {

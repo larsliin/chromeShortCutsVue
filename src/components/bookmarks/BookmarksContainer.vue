@@ -31,6 +31,9 @@
     import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
+    import { useTheme } from 'vuetify';
+
+    const theme = useTheme();
 
     const utils = useUtils();
 
@@ -283,6 +286,11 @@
         } else {
             bookmarksStore.sliderIndex = 0;
         }
+
+        const darkModeResponse = await bookmarksStore.get_syncStorage('darkMode');
+        bookmarksStore.enableDarkMode = !!darkModeResponse;
+
+        theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
 
         const accordionNavigationResponse = await bookmarksStore.get_syncStorage('accordionNavigation');
         bookmarksStore.accordionNavigation = !accordionNavigationResponse;

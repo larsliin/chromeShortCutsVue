@@ -6,7 +6,7 @@
                 :color="'primary'"
                 size="large"
                 @click="dialogAddOpen = true">Add Bookmark</v-btn>
-            <BookmarksSearch
+            <BookmarksFilter
                 class="ml-5"
                 v-if="bookmarksStore.searchNavigation" />
         </div>
@@ -48,7 +48,7 @@
     import useEventsBus from '@cmp/eventBus';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import BookmarksSearch from '@/components/fields/BookmarksSearch.vue';
+    import BookmarksFilter from '@/components/fields/BookmarksFilter.vue';
 
     const bookmarksStore = useBookmarksStore();
 

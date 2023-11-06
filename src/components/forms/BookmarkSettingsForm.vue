@@ -13,6 +13,11 @@
                         <v-col
                             cols="12">
                             <v-switch
+                                label="Dark Mode"
+                                color="info"
+                                hide-details="auto"
+                                v-model="enableDarkMode"></v-switch>
+                            <v-switch
                                 label="Use accordion navigation"
                                 color="info"
                                 hide-details="auto"
@@ -33,7 +38,6 @@
                     <v-row>
                         <v-col
                             cols="12">
-
                             <h6 class="text-h6 mb-2 d-block">
                                 Import and export bookmarks</h6>
                             <p
@@ -151,6 +155,9 @@
     import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
+    import { useTheme } from 'vuetify';
+
+    const theme = useTheme();
 
     const utils = useUtils();
 
@@ -162,6 +169,7 @@
 
     const form = ref();
     const enableArrowNavigation = ref();
+    const enableDarkMode = ref();
     const enableAccordionNavigation = ref();
     const enableSearchNavigation = ref();
 
@@ -358,6 +366,15 @@
             reader.readAsText(iconsFileImport.value[0]);
         }
 
+        bookmarksStore.enableDarkMode = enableDarkMode.value;
+
+        if (enableDarkMode.value) {
+            bookmarksStore.set_syncStorage({ darkMode: true });
+        } else {
+            bookmarksStore.delete_syncStorageItem('darkMode');
+        }
+        theme.global.name.value = enableDarkMode.value ? 'dark' : 'light';
+
         bookmarksStore.accordionNavigation = enableAccordionNavigation.value;
 
         if (enableAccordionNavigation.value) {
@@ -461,5 +478,6 @@
         enableArrowNavigation.value = bookmarksStore.arrowNavigation;
         enableSearchNavigation.value = bookmarksStore.searchNavigation;
         enableAccordionNavigation.value = bookmarksStore.accordionNavigation;
+        enableDarkMode.value = bookmarksStore.enableDarkMode;
     });
 </script>

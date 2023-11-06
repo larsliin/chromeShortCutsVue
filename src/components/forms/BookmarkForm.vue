@@ -113,6 +113,12 @@
                                     @click="base64Image = null">
                                     Clear
                                 </v-btn>
+                                <p class="clearbit-note mt-1">
+                                    <a href="https://clearbit.com"
+                                        :class="{ dark: bookmarksStore.enableDarkMode }">
+                                        Generated logos provided by Clearbit
+                                    </a>
+                                </p>
                             </v-col>
                         </v-row>
                     </template>
@@ -178,7 +184,6 @@
     const parentId = ref();
     const imageFile = ref();
     const base64Image = ref();
-    const clearbitFile = ref();
     const form = ref();
     const folderSlct = ref();
     const folderTxt = ref('');
@@ -198,7 +203,6 @@
             isIconLoading.value = false;
         } catch (error) {
             isIconLoading.value = false;
-            console.error(error);
         }
     }
 
@@ -343,7 +347,6 @@
     async function onImageInpChange(event) {
         // eslint-disable-next-line prefer-destructuring
         imageFile.value = event.target.files[0];
-        clearbitFile.value = null;
 
         const base64Response = await getBase64Data(imageFile.value);
         base64Image.value = base64Response;
@@ -385,5 +388,14 @@
 <style>
     .inp-file {
         display: none;
+    }
+
+    .clearbit-note {
+        font-size: 12px;
+        visibility: hidden;
+    }
+
+    a.dark {
+        color: var(--darkmode-400);
     }
 </style>

@@ -18,6 +18,7 @@ const vuetify = createVuetify({
     components,
     directives,
     theme: {
+        dark: true,
         themes: {
             light: {
                 colors: {
@@ -30,6 +31,15 @@ const vuetify = createVuetify({
                     warning: '#FB8C00',
                 },
             },
+            dark: {
+                dark: true,
+                variables: {},
+                colors: {
+                    primary: '#91BED4',
+                    anchor: '#f00',
+                    secondary: '#f00',
+                },
+              },
         },
     },
 });

@@ -1,6 +1,6 @@
 <template>
     <span class="bookmark-image-container"
-        :class="{ 'dimmed': folder }">
+        :class="{ 'dimmed': folder, dark: bookmarksStore.enableDarkMode }">
         <span
             class="visibility-toggle"
             :class="{ hide }">
@@ -28,6 +28,9 @@
 
 <script setup>
     import { BIconStarFill } from 'bootstrap-icons-vue';
+    import { useBookmarksStore } from '@stores/bookmarks';
+
+    const bookmarksStore = useBookmarksStore();
 
     defineProps({
         folder: Boolean,
@@ -126,6 +129,11 @@
         transform-origin: center right;
         transition: all 0.05s;
         width: 90px;
+
+        &.dark {
+            background-color: var(--darkmode-300);
+            box-shadow: none;
+        }
 
         &.dimmed {
             color: var(--grey);

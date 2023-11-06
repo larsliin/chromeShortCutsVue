@@ -4,7 +4,11 @@
             class="input"
             ref="input"
             type="input"
-            :class="[ enabled ? 'enabled' : '', style ]"
+            :class="[
+                enabled ? 'enabled' : '',
+                style,
+                bookmarksStore.enableDarkMode ? 'dark' : ''
+            ]"
             :style="{width: inputWidth}"
             v-model="model"
             @click.stop="onClick($event)"
@@ -75,6 +79,10 @@
     .wrapper:hover  {
         .input {
             border: 1px solid rgba(0,0,0,.12);
+
+            &.dark {
+                border: 1px solid var(--darkmode-300);
+            }
         }
     }
 
@@ -92,6 +100,11 @@
             &:focus {
                 border: 1px solid rgba(0,0,0,.12);
                 box-shadow: 0 2px 3px 0px rgba(0, 0, 0, 0.2);
+
+                &.dark {
+                    border: 1px solid var(--darkmode-400);
+                    box-shadow: 0 2px 3px 0px rgba(255, 255, 255, 0.2);
+                }
             }
         }
 
