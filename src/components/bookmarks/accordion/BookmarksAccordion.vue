@@ -64,8 +64,24 @@
     const panelsModel = ref();
     const expansionPanels = ref();
 
-    function onUpdate(e) {
-        bookmarksStore.set_syncStorage({ accordion: e });
+    // store in local synced-storage the open accordion items
+    // because sorting may have changed, we use the item
+    // index instead of the accordion model
+    async function onUpdate() {
+        await nextTick();
+
+        const panelsSelector = expansionPanels.value.$el.querySelectorAll('.v-expansion-panel');
+        const arr2 = [];
+
+        panelsSelector.forEach((element, i) => {
+            const isOpen = element.classList.contains('v-expansion-panel--active');
+
+            if (isOpen) {
+                arr2.push(i);
+            }
+        });
+
+        bookmarksStore.set_syncStorage({ accordion: arr2 });
     }
 
     async function onDragEnd(event) {
@@ -75,6 +91,7 @@
 
         await nextTick();
 
+        // update bookmarks order
         bookmarksStore.reorder_bookmark(bookmark.id, index);
 
         // update active panels array
@@ -83,11 +100,32 @@
         const arr = [];
         panelsSelector.forEach((element, i) => {
             const isOpen = element.classList.contains('v-expansion-panel--active');
+
             if (isOpen) {
                 arr.push(i);
             }
         });
         bookmarksStore.set_syncStorage({ accordion: arr });
+
+        // update accordion items classes
+        const panelsCollection = expansionPanels.value
+            .$el.getElementsByClassName('v-expansion-panel');
+
+        panelsCollection.forEach((elem, i) => {
+            elem.classList.remove('v-expansion-panel--active');
+            elem.classList.remove('v-expansion-panel--before-active');
+            elem.classList.remove('v-expansion-panel--after-active');
+
+            if (!arr.includes(i) && arr.includes(i + 1)) {
+                elem.classList.add('v-expansion-panel--before-active');
+            }
+            if (arr.includes(i)) {
+                elem.classList.add('v-expansion-panel--active');
+            }
+            if (!arr.includes(i) && arr.includes(i - 1)) {
+                elem.classList.add('v-expansion-panel--after-active');
+            }
+        });
     }
 
     function onUnfoldAllClick() {

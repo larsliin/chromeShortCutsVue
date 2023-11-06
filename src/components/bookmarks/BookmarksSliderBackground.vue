@@ -4,7 +4,8 @@
             <BIconStarFill class="folders-background" :style="{
                 left: `${item.x}%`,
                 top: `${item.y}%`,
-                transform: `scale(${item.scale}) rotate(${item.rotation}deg) translate(-50%, -50%) perspective(400px)`,
+                transform: `scale(${item.scale}) rotate(${item.rotation}deg) translate(-50%, -50%)`,
+                opacity: item.opacity,
             }" />
         </template>
     </div>
@@ -22,10 +23,13 @@
     onMounted(() => {
         const length = Math.round(Math.random() * 3) + 3;
         for (let index = 0; index < length; index += 1) {
+            const scale = (Math.round(Math.random() * 100)) / 100;
+            console.log(1 + (5 * scale));
             const obj = {
                 x: Math.round(Math.random() * 100),
                 y: Math.round(Math.random() * 100),
-                scale: (Math.round(Math.random() * 500) / 100) + 1,
+                scale: 1 + (3 * scale),
+                opacity: 0.05 + (0.5 * scale),
                 rotation: Math.round(Math.random() * 360),
             };
             arr.value.push(obj);
@@ -48,9 +52,9 @@
         color: var(--yellow);
         display: block;
         filter: blur(2.5px);
-        font-size: 60px;
+        font-size: 30px;
         left: 50%;
-        opacity: 1;
+        opacity: .75;
         position: absolute;
         top: 50%;
         transform: translate(-50%, -50%);
