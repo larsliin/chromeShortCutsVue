@@ -14,7 +14,7 @@
             class="input"
             type="text"
             ref="input"
-            :class="{ active }"
+            :class="[ active, bookmarksStore.enableDarkMode ? 'dark' : '']"
             :style="{width: inputWidth}"
             @click.stop="onInputClick($event)"
             @blur.stop="onBlur($event)"
@@ -98,6 +98,10 @@
         &:focus {
             outline: none;
             border: 1px solid rgba(0,0,0,.12);
+
+            &.dark {
+                border: 1px solid var(--darkmode-300);
+            }
         }
     }
 
