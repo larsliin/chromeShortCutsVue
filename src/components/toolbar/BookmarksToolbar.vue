@@ -22,19 +22,63 @@
                 <v-dialog
                     v-model="dialogAddOpen"
                     persistent
-                    width="850">
+                    width="800">
                     <BookmarkForm
                         :data="editBookmarkData"
+                        @clearbitError="onClearbitError($event)"
                         @close="dialogAddOpen = false"
                         @save="dialogAddOpen = false" />
                 </v-dialog>
                 <v-dialog
                     v-model="dialogSettings"
                     persistent
-                    width="850">
+                    width="800">
                     <BookmarkSettingsForm
                         @close="dialogSettings = false"
                         @save="dialogSettings = false" />
+                </v-dialog>
+            </v-row>
+        </template>
+    </Teleport>
+    <Teleport to="body">
+        <template>
+            <v-row justify="center">
+                <v-dialog
+                    v-model="showClearbitError"
+                    persistent
+                    width="450">
+                    <v-card>
+                        <v-card-text>
+                            <div class="text-center">
+                                <!-- https://pictogrammers.com/library/mdi/ -->
+                                <v-icon
+                                    class="error-icon"
+                                    size="large"
+                                    icon="mdi-alert-circle-outline"></v-icon>
+                            </div>
+                            <p class="text-body-1 mt-3 mb-3">
+                                The icon generator service could not recognize the provided domain
+                            </p>
+                            <p class="text-body-1 mt-3 mb-3 text-center">
+                                <template v-if="showClearbitDomain">
+                                    {{ utils.getDomainFromUrl(showClearbitDomain) }}
+                                </template>
+                            </p>
+                            <p class="text-body-1 mt-3">
+                                Please upload an icon manually by clicking the Browse button
+                            </p>
+                        </v-card-text>
+                        <v-spacer class="mt-2 mb-2" />
+                        <v-divider></v-divider>
+                        <v-card-actions>
+                            <v-spacer  class="mt-2 mb-2" />
+                            <v-btn
+                                variant="text"
+                                @click="showClearbitError = false; showClearbitDomain = undefined">
+                                Close
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
                 </v-dialog>
             </v-row>
         </template>
@@ -49,6 +93,9 @@
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarksFilter from '@/components/fields/BookmarksFilter.vue';
+    import { useUtils } from '@/shared/utils/utils';
+
+    const utils = useUtils();
 
     const bookmarksStore = useBookmarksStore();
 
@@ -58,7 +105,15 @@
     const dialogSettings = ref(false);
     const ready = ref(false);
 
+    const showClearbitError = ref(false);
+    const showClearbitDomain = ref();
+
     const editBookmarkData = ref();
+
+    function onClearbitError(event) {
+        showClearbitDomain.value = event;
+        showClearbitError.value = true;
+    }
 
     watch(() => bus.value.get(EMITS.EDIT), (id) => {
         const promiseArr = [
@@ -124,5 +179,10 @@
         > div:first-child {
             flex: 1;
         }
+    }
+
+    .error-icon {
+        color: rgb(var(--v-theme-error));
+        font-size: 60px;
     }
 </style>

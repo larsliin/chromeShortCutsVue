@@ -100,13 +100,13 @@
                                             accept=".jpg, .jpeg, .gif, .png, .svg"
                                             @change="onImageInpChange($event)" />
                                         <v-btn
-                                            color="blue-darken-1"
+                                            color="blue-darken-1 mr-3 mb-3"
                                             variant="tonal"
                                             @click="onClickFindImage()">
                                             Browse
                                         </v-btn>
                                         <v-btn
-                                            class="ml-5"
+                                            class="mr-3 mb-3"
                                             color="blue-darken-1"
                                             variant="tonal"
                                             :disabled="!urlTxt"
@@ -114,8 +114,7 @@
                                             Generate
                                         </v-btn>
                                         <v-btn
-                                            class="ml-5"
-                                            color="blue-darken-1"
+                                            color="blue-darken-1 mb-3"
                                             variant="tonal"
                                             :disabled="!base64Image"
                                             @click="base64Image = null">
@@ -127,6 +126,14 @@
                                                 Generated logos provided by Clearbit
                                             </a>
                                         </p>
+                                    </v-col>
+                                    <v-col cols="12">
+                                        <template v-if="showClearbitError && bookmarksStore.popup">
+                                            <span class="clearbit-error">
+                                                The icon generator service
+                                                could not recognize the provided domain
+                                            </span>
+                                        </template>
                                     </v-col>
                                 </v-row>
                             </template>
@@ -157,6 +164,7 @@
             </v-card-actions>
         </v-form>
     </v-card>
+
 </template>
 
 <script setup>
@@ -174,8 +182,11 @@
     const utils = useUtils();
 
     const tabs = ref();
+    const showClearbitError = ref(false);
 
-    const emits = defineEmits([EMITS.CLOSE, EMITS.SAVE]);
+    const emits = defineEmits([
+        EMITS.CLOSE, EMITS.SAVE, EMITS.CLEARBIT_ERROR,
+    ]);
 
     const props = defineProps({
         data: Object,
@@ -207,7 +218,8 @@
         try {
             const response = await utils.getBase64ImageFromUrl(imageUrl);
             if (response === 'error') {
-                //
+                showClearbitError.value = true;
+                emits(EMITS.CLEARBIT_ERROR, urlTxt.value);
             } else {
                 base64Image.value = response;
             }
@@ -228,6 +240,8 @@
 
             fetchClearBitImage(imageUrl);
         }
+
+        showClearbitError.value = false;
     }
 
     // force event trigger if bookmark data is not updated but image has changed
@@ -396,17 +410,22 @@
         }
     });
 </script>
-<style>
+<style scoped lang="scss">
     .inp-file {
         display: none;
     }
 
     .clearbit-note {
         font-size: 12px;
-        visibility: hidden;
+        // visibility: hidden;
     }
 
     a.dark {
         color: var(--darkmode-400);
     }
+
+    .clearbit-error {
+        color: rgb(var(--v-theme-error));
+    }
+
 </style>

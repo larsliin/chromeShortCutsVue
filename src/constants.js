@@ -21,4 +21,5 @@ export const EMITS = Object.freeze({
     ICON_UPDATE: 'iconUpdate',
     BOOKMARKS_UPDATED: 'bookmarksUpdated',
     BOOKMARK_CREATED: 'bookmarkCreated',
+    CLEARBIT_ERROR: 'clearbitError',
 });

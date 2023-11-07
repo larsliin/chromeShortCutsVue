@@ -13,9 +13,9 @@
             </template>
             <BIconStarFill v-else />
             <span
-                v-if="loading"
-                class="bookmark-image-spinner">
-                <div class="lds-ring">
+                v-if="loading">
+                <div class="lds-ring"
+                    :class="{ dark: bookmarksStore.enableDarkMode }">
                     <div></div>
                     <div></div>
                     <div></div>
@@ -65,6 +65,10 @@
         top: 0;
         width: 100%;
         z-index: 1;
+
+        &.dark {
+            background-color: var(--darkmode-300);
+        }
     }
 
     .lds-ring div {
