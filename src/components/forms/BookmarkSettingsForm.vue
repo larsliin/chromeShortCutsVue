@@ -17,7 +17,9 @@
                                     cols="12">
                                     <p
                                         class="text-body-1 mb-5">
-                                        Import bookmarks data file
+                                        Import bookmarks data file <ToolTip
+                                            :tooltip="`Select bookmarks JSON
+                                            data file for importing bookmarks.`" />
                                     </p>
                                     <v-file-input
                                         @click:clear="clearFileInput()"
@@ -48,7 +50,12 @@
                                     cols="12">
                                     <p
                                         class="text-body-1 mb-2">
-                                        Import icons data file
+                                        Import icons data file <ToolTip
+                                            :tooltip="`Select a JSON data file to import
+                                            bookmark icons. This is useful<br />for importing
+                                            icons on other devices that share the same<br />
+                                            Google account, as icons are not synced across
+                                            devices.`" />
                                     </p>
                                     <v-file-input
                                         @click:clear="clearFileInput()"
@@ -80,27 +87,45 @@
                             <v-row>
                                 <v-col
                                     cols="12">
-                                    <v-switch
-                                        label="Dark Mode"
-                                        color="info"
-                                        hide-details="auto"
-                                        v-model="enableDarkMode"></v-switch>
-                                    <v-switch
-                                        label="Use accordion navigation"
-                                        color="info"
-                                        hide-details="auto"
-                                        v-model="enableAccordionNavigation"></v-switch>
-                                    <v-switch
-                                        label="Enable Arrov Navigation"
-                                        color="info"
-                                        hide-details="auto"
-                                        :disabled="enableAccordionNavigation"
-                                        v-model="enableArrowNavigation"></v-switch>
-                                    <v-switch
-                                        label="Enable Filtering"
-                                        color="info"
-                                        hide-details="auto"
-                                        v-model="enableSearchNavigation"></v-switch>
+                                    <div class="switch-container">
+                                        <v-switch
+                                            label="Dark Mode"
+                                            color="info"
+                                            hide-details="auto"
+                                            v-model="enableDarkMode"></v-switch>
+                                        <ToolTip
+                                            tooltip="Switch to Dark Mode theme" />
+                                    </div>
+                                    <div class="switch-container">
+                                        <v-switch
+                                            label="Use accordion layout"
+                                            color="info"
+                                            hide-details="auto"
+                                            v-model="enableAccordionNavigation"></v-switch>
+                                        <ToolTip
+                                            tooltip="Toggle between Slider and Accordion layout" />
+                                    </div>
+                                    <div class="switch-container">
+                                        <v-switch
+                                            label="Enable Arrow Navigation"
+                                            color="info"
+                                            hide-details="auto"
+                                            :disabled="enableAccordionNavigation"
+                                            v-model="enableArrowNavigation"></v-switch>
+                                        <ToolTip
+                                            :tooltip="`Enable slider side arrows navigation.
+                                            This switch will be disabled if Accordion Layout
+                                            is enabled`" />
+                                    </div>
+                                    <div class="switch-container">
+                                        <v-switch
+                                            label="Enable Filtering"
+                                            color="info"
+                                            hide-details="auto"
+                                            v-model="enableSearchNavigation"></v-switch>
+                                        <ToolTip
+                                            tooltip="Enable filtering field in toolbar" />
+                                    </div>
                                 </v-col>
                             </v-row>
                         </v-col>
@@ -160,6 +185,7 @@
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
     import { useTheme } from 'vuetify';
+    import ToolTip from '@/components/fields/ToolTip.vue';
 
     const theme = useTheme();
 
@@ -485,3 +511,13 @@
         enableDarkMode.value = bookmarksStore.enableDarkMode;
     });
 </script>
+<style lang="scss" scoped>
+    .switch-container {
+        display: flex;
+        align-items: center;
+
+        > div:first-child {
+            flex-grow: 0;
+        }
+    }
+</style>
