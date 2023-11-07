@@ -22,7 +22,7 @@
                 <v-dialog
                     v-model="dialogAddOpen"
                     persistent
-                    width="450">
+                    width="850">
                     <BookmarkForm
                         :data="editBookmarkData"
                         @close="dialogAddOpen = false"
@@ -31,7 +31,7 @@
                 <v-dialog
                     v-model="dialogSettings"
                     persistent
-                    width="800">
+                    width="850">
                     <BookmarkSettingsForm
                         @close="dialogSettings = false"
                         @save="dialogSettings = false" />

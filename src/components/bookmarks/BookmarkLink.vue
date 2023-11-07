@@ -15,6 +15,7 @@
             <span class="bookmark-title-container">{{ title }}</span>
         </a>
         <button class="bookmark-edit"
+            :class="{ dark: bookmarksStore.enableDarkMode }"
             @click="emit(EMITS.EDIT, id)">
             <!-- https://pictogrammers.com/library/mdi/ -->
             <v-icon size="small" icon="mdi-dots-horizontal"></v-icon>
@@ -128,10 +129,18 @@
         position: absolute;
         right: -5px;
         top: -10px;
+
+        &.dark {
+            color: var(--darkmode-300);
+        }
     }
 
     .bookmark-edit:hover {
         color: #000;
+
+        &.dark {
+            color: var(--darkmode-500);
+        }
     }
 
     .bookmark:hover .bookmark-edit {

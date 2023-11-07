@@ -12,116 +12,126 @@
                     </v-row>
                     <v-row>
                         <v-col
-                            cols="12">
-                            <v-tabs
-                                v-model="tabs"
-                                color="primary"
-                                grow>
-                                <v-tab
-                                    :disabled="!bookmarksStore.bookmarks
-                                        || bookmarksStore.bookmarks.length === 0"
-                                    :value="1">
-                                    Existing Folder
-                                </v-tab>
-                                <v-tab
-                                    :value="2">
-                                    Create New Folder
-                                </v-tab>
-                            </v-tabs>
-                            <v-autocomplete
-                                v-if="tabs === 1"
-                                :items="foldersArr"
-                                label="Select Folder"
-                                single-line
-                                :rules="[rules.required]"
-                                :disabled="!bookmarksStore.bookmarks
-                                    || bookmarksStore.bookmarks.length === 0"
-                                v-model="folderSlct">
-                            </v-autocomplete>
-                            <v-text-field
-                                v-else
-                                label="Bookmark Folder Name"
-                                :rules="[rules.required]"
-                                v-model="folderTxt">
-                            </v-text-field>
+                            cols="6">
+                            <v-row>
+                                <v-col
+                                    cols="12">
+                                    <v-tabs
+                                        v-model="tabs"
+                                        color="primary"
+                                        grow>
+                                        <v-tab
+                                            :disabled="!bookmarksStore.bookmarks
+                                                || bookmarksStore.bookmarks.length === 0"
+                                            :value="1">
+                                            Folder
+                                        </v-tab>
+                                        <v-tab
+                                            :value="2">
+                                            New Folder
+                                        </v-tab>
+                                    </v-tabs>
+                                    <v-autocomplete
+                                        v-if="tabs === 1"
+                                        :items="foldersArr"
+                                        label="Select Folder"
+                                        single-line
+                                        :rules="[rules.required]"
+                                        :disabled="!bookmarksStore.bookmarks
+                                            || bookmarksStore.bookmarks.length === 0"
+                                        v-model="folderSlct">
+                                    </v-autocomplete>
+                                    <v-text-field
+                                        v-else
+                                        label="Bookmark Folder Name"
+                                        :rules="[rules.required]"
+                                        v-model="folderTxt">
+                                    </v-text-field>
+                                </v-col>
+                            </v-row>
+                            <template v-if="!data || (data && data.url)">
+                                <v-row>
+                                    <v-col
+                                        cols="12">
+                                        <v-text-field
+                                            v-model="titleTxt"
+                                            :rules="[rules.required]"
+                                            label="Bookmark Title">
+                                        </v-text-field>
+                                    </v-col>
+                                </v-row>
+                                <v-row>
+                                    <v-col
+                                        cols="12">
+                                        <v-text-field
+                                            v-model="urlTxt"
+                                            label="Bookmark URL"
+                                            hint="bookmark link"
+                                            :rules="[rules.required, rules.urlvalid]">
+                                        </v-text-field>
+                                    </v-col>
+                                </v-row>
+                            </template>
+                        </v-col>
+                        <v-col
+                            cols="6">
+                            <template v-if="!data || (data && data.url)">
+                                <v-row>
+                                    <v-col
+                                        cols="12">
+                                        <span class="text-h6">Icon</span>
+                                    </v-col>
+                                </v-row>
+                                <v-row>
+                                    <v-col
+                                        cols="12">
+                                        <BookmarkIcon
+                                            :loading="isIconLoading"
+                                            :image="base64Image" />
+                                    </v-col>
+                                </v-row>
+                                <v-row>
+                                    <v-col
+                                        cols="12">
+                                        <input
+                                            class="inp-file"
+                                            type="file"
+                                            id="inp_image"
+                                            accept=".jpg, .jpeg, .gif, .png, .svg"
+                                            @change="onImageInpChange($event)" />
+                                        <v-btn
+                                            color="blue-darken-1"
+                                            variant="tonal"
+                                            @click="onClickFindImage()">
+                                            Browse
+                                        </v-btn>
+                                        <v-btn
+                                            class="ml-5"
+                                            color="blue-darken-1"
+                                            variant="tonal"
+                                            :disabled="!urlTxt"
+                                            @click="getClearbitImage()">
+                                            Generate
+                                        </v-btn>
+                                        <v-btn
+                                            class="ml-5"
+                                            color="blue-darken-1"
+                                            variant="tonal"
+                                            :disabled="!base64Image"
+                                            @click="base64Image = null">
+                                            Clear
+                                        </v-btn>
+                                        <p class="clearbit-note mt-1">
+                                            <a href="https://clearbit.com"
+                                                :class="{ dark: bookmarksStore.enableDarkMode }">
+                                                Generated logos provided by Clearbit
+                                            </a>
+                                        </p>
+                                    </v-col>
+                                </v-row>
+                            </template>
                         </v-col>
                     </v-row>
-                    <template v-if="!data || (data && data.url)">
-                        <v-row>
-                            <v-col
-                                cols="12">
-                                <v-text-field
-                                    v-model="titleTxt"
-                                    :rules="[rules.required]"
-                                    label="Bookmark Title">
-                                </v-text-field>
-                            </v-col>
-                        </v-row>
-                        <v-row>
-                            <v-col
-                                cols="12">
-                                <v-text-field
-                                    v-model="urlTxt"
-                                    label="Bookmark URL"
-                                    hint="bookmark link"
-                                    :rules="[rules.required, rules.urlvalid]">
-                                </v-text-field>
-                            </v-col>
-                        </v-row>
-                        <v-row>
-                            <v-col
-                                cols="12">
-                                <span class="text-h6">Icon</span>
-                            </v-col>
-                        </v-row>
-                        <v-row>
-                            <v-col
-                                cols="12">
-                                <BookmarkIcon
-                                    :loading="isIconLoading"
-                                    :image="base64Image" />
-                            </v-col>
-                        </v-row>
-                        <v-row>
-                            <v-col
-                                cols="12">
-                                <input
-                                    class="inp-file"
-                                    type="file"
-                                    id="inp_image"
-                                    accept=".jpg, .jpeg, .gif, .png, .svg"
-                                    @change="onImageInpChange($event)" />
-                                <v-btn
-                                    color="blue-darken-1"
-                                    variant="tonal"
-                                    @click="onClickFindImage()">
-                                    Browse
-                                </v-btn>
-                                <v-btn
-                                    class="ml-5"
-                                    color="blue-darken-1"
-                                    variant="tonal"
-                                    :disabled="!urlTxt"
-                                    @click="getClearbitImage()">
-                                    Generate
-                                </v-btn>
-                                <v-btn
-                                    class="ml-5"
-                                    color="blue-darken-1"
-                                    variant="tonal"
-                                    :disabled="!base64Image"
-                                    @click="base64Image = null">
-                                    Clear
-                                </v-btn>
-                                <p class="clearbit-note mt-1">
-                                    <a href="https://clearbit.com"
-                                        :class="{ dark: bookmarksStore.enableDarkMode }">
-                                        Generated logos provided by Clearbit
-                                    </a>
-                                </p>
-                            </v-col>
-                        </v-row>
-                    </template>
                 </v-container>
             </v-card-text>
             <v-card-actions>
@@ -134,9 +144,10 @@
                     Delete
                 </v-btn>
                 <v-btn
+                    v-if="!bookmarksStore.popup"
                     variant="text"
                     @click="$emit(EMITS.CLOSE)">
-                    Close
+                    Cancel
                 </v-btn>
                 <v-btn
                     variant="text"
