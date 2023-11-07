@@ -11,94 +11,98 @@
                     </v-row>
                     <v-row>
                         <v-col
-                            cols="12">
-                            <v-switch
-                                label="Dark Mode"
-                                color="info"
-                                hide-details="auto"
-                                v-model="enableDarkMode"></v-switch>
-                            <v-switch
-                                label="Use accordion navigation"
-                                color="info"
-                                hide-details="auto"
-                                v-model="enableAccordionNavigation"></v-switch>
-                            <v-switch
-                                label="Enable Arrov Navigation"
-                                color="info"
-                                hide-details="auto"
-                                :disabled="enableAccordionNavigation"
-                                v-model="enableArrowNavigation"></v-switch>
-                            <v-switch
-                                label="Enable Filtering"
-                                color="info"
-                                hide-details="auto"
-                                v-model="enableSearchNavigation"></v-switch>
+                            cols="6">
+                            <v-row>
+                                <v-col
+                                    cols="12">
+                                    <p
+                                        class="text-body-1 mb-5">
+                                        Import bookmarks data file
+                                    </p>
+                                    <v-file-input
+                                        @click:clear="clearFileInput()"
+                                        :disabled="iconsFileImport"
+                                        label="Bookmarks Data File"
+                                        prepend-icon="mdi-download"
+                                        v-model="bookmarksFileImport"></v-file-input>
+                                </v-col>
+                            </v-row>
+                            <v-row>
+                                <v-col
+                                    cols="12">
+                                    <p
+                                        class="text-body-1 mb-2">
+                                        Export bookmarks data file
+                                    </p>
+                                    <v-btn
+                                        color="blue-darken-1"
+                                        variant="tonal"
+                                        prepend-icon="mdi-upload"
+                                        @click="onClickExportBookmarks()">
+                                        Export Bookmarks
+                                    </v-btn>
+                                </v-col>
+                            </v-row>
+                            <v-row>
+                                <v-col
+                                    cols="12">
+                                    <p
+                                        class="text-body-1 mb-2">
+                                        Import icons data file
+                                    </p>
+                                    <v-file-input
+                                        @click:clear="clearFileInput()"
+                                        :disabled="bookmarksFileImport"
+                                        label="Icons Data File input"
+                                        prepend-icon="mdi-download"
+                                        v-model="iconsFileImport"></v-file-input>
+                                </v-col>
+                            </v-row>
+                            <v-row>
+                                <v-col
+                                    cols="12">
+                                    <p
+                                        class="text-body-1 mb-5">
+                                        Export icons data file
+                                    </p>
+                                    <v-btn
+                                        color="blue-darken-1"
+                                        variant="tonal"
+                                        prepend-icon="mdi-upload"
+                                        @click="onClickExportIcons()">
+                                        Export Icons
+                                    </v-btn>
+                                </v-col>
+                            </v-row>
                         </v-col>
-                    </v-row>
-                    <v-row>
                         <v-col
-                            cols="12">
-                            <h6 class="text-h6 mb-2 d-block">
-                                Import and export bookmarks</h6>
-                            <p
-                                class="text-body-1 mb-5">
-                                Import bookmarks data file
-                            </p>
-                            <v-file-input
-                                @click:clear="clearFileInput()"
-                                :disabled="iconsFileImport"
-                                label="Bookmarks Data File"
-                                prepend-icon="mdi-download"
-                                v-model="bookmarksFileImport"></v-file-input>
-                        </v-col>
-                    </v-row>
-                    <v-row>
-                        <v-col
-                            cols="12">
-                            <p
-                                class="text-body-1 mb-2">
-                                Export bookmarks data file
-                            </p>
-                            <v-btn
-                                color="blue-darken-1"
-                                variant="tonal"
-                                prepend-icon="mdi-upload"
-                                @click="onClickExportBookmarks()">
-                                Export Bookmarks
-                            </v-btn>
-                        </v-col>
-                    </v-row>
-                    <v-row>
-                        <v-col
-                            cols="12">
-                            <h6 class="text-h6 mt-2 mb-2 d-block">
-                                Import and export bookmark icons</h6>
-                            <p
-                                class="text-body-1 mb-2">
-                                Import icons data file
-                            </p>
-                            <v-file-input
-                                @click:clear="clearFileInput()"
-                                :disabled="bookmarksFileImport"
-                                label="Icons Data File input"
-                                prepend-icon="mdi-download"
-                                v-model="iconsFileImport"></v-file-input>
-                        </v-col>
-                    </v-row>
-                    <v-row>
-                        <v-col
-                            cols="12">
-                            <p
-                                class="text-body-1 mb-5">
-                                Export icons data file
-                            </p>
-                            <v-btn
-                                color="blue-darken-1"
-                                variant="tonal"
-                                prepend-icon="mdi-upload"
-                                @click="onClickExportIcons()">
-                                Export Icons
-                            </v-btn>
+                            cols="6">
+                            <v-row>
+                                <v-col
+                                    cols="12">
+                                    <v-switch
+                                        label="Dark Mode"
+                                        color="info"
+                                        hide-details="auto"
+                                        v-model="enableDarkMode"></v-switch>
+                                    <v-switch
+                                        label="Use accordion navigation"
+                                        color="info"
+                                        hide-details="auto"
+                                        v-model="enableAccordionNavigation"></v-switch>
+                                    <v-switch
+                                        label="Enable Arrov Navigation"
+                                        color="info"
+                                        hide-details="auto"
+                                        :disabled="enableAccordionNavigation"
+                                        v-model="enableArrowNavigation"></v-switch>
+                                    <v-switch
+                                        label="Enable Filtering"
+                                        color="info"
+                                        hide-details="auto"
+                                        v-model="enableSearchNavigation"></v-switch>
+                                </v-col>
+                            </v-row>
                         </v-col>
                     </v-row>
                 </v-container>

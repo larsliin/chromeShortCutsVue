@@ -31,7 +31,7 @@
                 <v-dialog
                     v-model="dialogSettings"
                     persistent
-                    width="450">
+                    width="800">
                     <BookmarkSettingsForm
                         @close="dialogSettings = false"
                         @save="dialogSettings = false" />
