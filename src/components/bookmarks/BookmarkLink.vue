@@ -1,19 +1,30 @@
 <template>
     <span class="bookmark relative inline-block">
-        <a
-            class="bookmark-link"
-            :tabindex="tabIndex"
-            :class="[link ? '' : 'folder', size]"
-            draggable="true"
-            :href="link"
-            :id="id"
-            :aria-label="title">
-            <BookmarkIcon
-                :hide="!ready"
-                :folder="!link"
-                :image="image" />
-            <span class="bookmark-title-container">{{ title }}</span>
-        </a>
+        <v-tooltip
+            :disabled="!bookmarksStore.bookmarkTooltip"
+            class="tooltip"
+            location="bottom center" origin="auto"
+            open-delay="500"
+            transition="none">
+            <template v-slot:activator="{ props }">
+                <a
+                    v-bind="props"
+                    class="bookmark-link"
+                    :tabindex="tabIndex"
+                    :class="[link ? '' : 'folder', size]"
+                    draggable="true"
+                    :href="link"
+                    :id="id"
+                    :aria-label="title">
+                    <BookmarkIcon
+                        :hide="!ready"
+                        :folder="!link"
+                        :image="image" />
+                    <span class="bookmark-title-container">{{ title }}</span>
+                </a>
+            </template>
+            <span v-html="title"></span>
+        </v-tooltip>
         <button class="bookmark-edit"
             :class="{ dark: bookmarksStore.enableDarkMode }"
             @click="emit(EMITS.EDIT, id)">
@@ -24,9 +35,7 @@
 </template>
 
 <script setup>
-    import {
-        ref, onMounted, watch,
-    } from 'vue';
+    import { ref, onMounted, watch } from 'vue';
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
@@ -163,5 +172,11 @@
     }
     .bookmark-link:active .bookmark-image-overlay {
         opacity: 1;
+    }
+
+</style>
+<style lang="scss">
+    .tooltip .v-overlay__content {
+        transform: translateY(-35px);
     }
 </style>

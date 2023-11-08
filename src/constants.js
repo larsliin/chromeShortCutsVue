@@ -16,6 +16,8 @@ export const EMITS = Object.freeze({
     CLOSE: 'close',
     SAVE: 'save',
     EDIT: 'edit',
+    RENAME: 'rename',
+    DELETE: 'delete',
     CHANGED: 'changed',
     IMAGES_IMPORT: 'imagesImport',
     ICON_UPDATE: 'iconUpdate',

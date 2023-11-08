@@ -56,7 +56,7 @@
                                     size="large"
                                     icon="mdi-alert-circle-outline"></v-icon>
                             </div>
-                            <p class="text-body-1 mt-3 mb-3">
+                            <p class="text-center text-body-1 mt-3 mb-3">
                                 The icon generator service could not recognize the provided domain
                             </p>
                             <p class="text-body-1 mt-3 mb-3 text-center">
@@ -64,7 +64,7 @@
                                     {{ utils.getDomainFromUrl(showClearbitDomain) }}
                                 </template>
                             </p>
-                            <p class="text-body-1 mt-3">
+                            <p class="text-center text-body-1 mt-3">
                                 Please upload an icon manually by clicking the Browse button
                             </p>
                         </v-card-text>

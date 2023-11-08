@@ -126,6 +126,16 @@
                                         <ToolTip
                                             tooltip="Enable filtering field in toolbar" />
                                     </div>
+                                    <div class="switch-container">
+                                        <v-switch
+                                            label="Enable Bookmark Tooltip"
+                                            color="info"
+                                            hide-details="auto"
+                                            v-model="enableBookmarkTooltip"></v-switch>
+                                        <ToolTip
+                                            :tooltip="`Shows a delayed tooltip
+                                            when hovering a bookmark`" />
+                                    </div>
                                 </v-col>
                             </v-row>
                         </v-col>
@@ -202,6 +212,7 @@
     const enableDarkMode = ref();
     const enableAccordionNavigation = ref();
     const enableSearchNavigation = ref();
+    const enableBookmarkTooltip = ref();
 
     const bookmarksFileImport = ref();
     const isBookmarksFileValid = ref(false);
@@ -435,6 +446,14 @@
             bookmarksStore.set_syncStorage({ searchNavigation: 'disabled' });
         }
 
+        bookmarksStore.bookmarkTooltip = enableBookmarkTooltip.value;
+
+        if (enableBookmarkTooltip.value) {
+            bookmarksStore.delete_syncStorageItem('bookmarkTooltip');
+        } else {
+            bookmarksStore.set_syncStorage({ bookmarkTooltip: 'disabled' });
+        }
+
         emits(EMITS.SAVE);
     }
 
@@ -509,6 +528,7 @@
         enableSearchNavigation.value = bookmarksStore.searchNavigation;
         enableAccordionNavigation.value = bookmarksStore.accordionNavigation;
         enableDarkMode.value = bookmarksStore.enableDarkMode;
+        enableBookmarkTooltip.value = bookmarksStore.bookmarkTooltip;
     });
 </script>
 <style lang="scss" scoped>
