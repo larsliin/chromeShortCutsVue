@@ -2,7 +2,8 @@
     <div class="bookmarks-container"
         v-if="bookmarksStore.bookmarks"
         :class="bookmarksStore.accordionNavigation ? 'accordion' : 'slider'">
-        <BookmarksSliderBackground />
+        <BookmarksBackground />
+        <BookmarkAddLarge />
         <template v-if="bookmarksStore.accordionNavigation">
             <BookmarksAccordion />
         </template>
@@ -25,13 +26,14 @@
     import BookmarksSlider from '@/components/bookmarks/slider/BookmarksSlider.vue';
     import BookmarksAccordion from '@/components/bookmarks/accordion/BookmarksAccordion.vue';
     import NavigationDots from '@/components/navigation/NavigationDots.vue';
-    import BookmarksSliderBackground from '@/components/bookmarks/BookmarksSliderBackground.vue';
+    import BookmarksBackground from '@/components/bookmarks/BookmarksBackground.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { FOLDER, EMITS, ARGS } from '@/constants';
     import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
     import { useTheme } from 'vuetify';
+    import BookmarkAddLarge from '@/components/bookmarks/BookmarkAddLarge.vue';
 
     const theme = useTheme();
 

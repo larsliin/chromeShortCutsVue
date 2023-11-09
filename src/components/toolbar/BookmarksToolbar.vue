@@ -137,6 +137,10 @@
             });
     });
 
+    watch(() => bus.value.get(EMITS.CLICK_BACKGROUND), () => {
+        dialogAddOpen.value = true;
+    });
+
     watch(dialogAddOpen, (val) => {
         if (!val) {
             // wait with resetting until modal has finished close animation

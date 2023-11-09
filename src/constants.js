@@ -22,6 +22,7 @@ export const EMITS = Object.freeze({
     CONFIRM: 'confirm',
     DELETE: 'delete',
     EDIT: 'edit',
+    CLICK_BACKGROUND: 'clickBackground',
     ICON_UPDATE: 'iconUpdate',
     IMAGES_IMPORT: 'imagesImport',
     BOOKMARKS_IMPORT: 'bookmarksImport',

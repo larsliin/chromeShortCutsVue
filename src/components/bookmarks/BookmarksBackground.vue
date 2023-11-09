@@ -7,7 +7,6 @@
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const bookmarksStore = useBookmarksStore();
-
 </script>
 
 <style scoped lang="scss">
@@ -22,7 +21,6 @@
             background: radial-gradient(circle at 100% 100%,
             var(--darkmode-100) 0%,
             var(--darkmode-200) 100%);
-
         }
     }
 
