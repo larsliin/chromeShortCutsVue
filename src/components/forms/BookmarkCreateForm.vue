@@ -79,12 +79,6 @@
                                 <v-row>
                                     <v-col
                                         cols="12">
-                                        <span class="text-h6">Icon</span>
-                                    </v-col>
-                                </v-row>
-                                <v-row>
-                                    <v-col
-                                        cols="12">
                                         <BookmarkIcon
                                             :loading="isIconLoading"
                                             :image="base64Image" />
@@ -120,12 +114,7 @@
                                             @click="base64Image = null">
                                             Clear
                                         </v-btn>
-                                        <p class="clearbit-note mt-1">
-                                            <a href="https://clearbit.com"
-                                                :class="{ dark: bookmarksStore.enableDarkMode }">
-                                                Generated logos provided by Clearbit
-                                            </a>
-                                        </p>
+
                                     </v-col>
                                     <v-col cols="12">
                                         <template v-if="showClearbitError && bookmarksStore.popup">
@@ -142,6 +131,14 @@
                 </v-container>
             </v-card-text>
             <v-card-actions>
+                <div class="ml-6">
+                    <p class="clearbit-note">
+                        <a href="https://clearbit.com"
+                            :class="{ dark: bookmarksStore.enableDarkMode }">
+                            Generated logos provided by Clearbit
+                        </a>
+                    </p>
+                </div>
                 <v-spacer></v-spacer>
                 <v-btn
                     v-if="data && data.id"
@@ -152,11 +149,13 @@
                 </v-btn>
                 <v-btn
                     v-if="!bookmarksStore.popup"
+                    color="blue-darken-1"
                     variant="text"
                     @click="$emit(EMITS.CLOSE)">
                     Cancel
                 </v-btn>
                 <v-btn
+                    color="blue-darken-1"
                     variant="text"
                     @click="onClickSave()">
                     Save

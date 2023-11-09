@@ -55,6 +55,10 @@
         }
     }
 
+    .navigation-header {
+        display: flex;
+    }
+
     .navigation-container {
         display: flex;
         justify-content: center;

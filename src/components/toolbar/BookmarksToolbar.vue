@@ -23,7 +23,7 @@
                     v-model="dialogAddOpen"
                     persistent
                     width="800">
-                    <BookmarkForm
+                    <BookmarkCreateForm
                         :data="editBookmarkData"
                         @clearbitError="onClearbitError($event)"
                         @close="dialogAddOpen = false"
@@ -87,7 +87,7 @@
 
 <script setup>
     import { ref, watch, onMounted } from 'vue';
-    import BookmarkForm from '@/components/forms/BookmarkForm.vue';
+    import BookmarkCreateForm from '@/components/forms/BookmarkCreateForm.vue';
     import BookmarkSettingsForm from '@/components/forms/BookmarkSettingsForm.vue';
     import useEventsBus from '@cmp/eventBus';
     import { EMITS } from '@/constants';

@@ -21,7 +21,6 @@
             class="icon-drag"
             icon="mdi-drag-horizontal"></v-icon>
     </v-expansion-panel-title>
-
     <Teleport to="body">
         <template>
             <v-row justify="center">
@@ -29,35 +28,11 @@
                     v-model="showConfirmDelete"
                     persistent
                     width="450">
-                    <v-card>
-                        <v-card-text>
-                            <div class="text-center">
-                                <!-- https://pictogrammers.com/library/mdi/ -->
-                                <h5 class="text-h5">Confirm Delete</h5>
-                            </div>
-                            <p class="text-center text-body-1 mt-3 mb-3">
-                                Deleting {{ bookmark.title }} will permanently erase its contents
-                            </p>
-                        </v-card-text>
-                        <v-spacer class="mt-2 mb-2" />
-                        <v-divider></v-divider>
-                        <v-card-actions>
-                            <v-spacer  class="mt-2 mb-2" />
-                            <div>
-                                <v-btn
-                                    variant="text"
-                                    @click="showConfirmDelete = false">
-                                    Cancel
-                                </v-btn>
-                                <v-btn
-                                    variant="tonal"
-                                    color="red"
-                                    @click="onConfirmDelete()">
-                                    Delete
-                                </v-btn>
-                            </div>
-                        </v-card-actions>
-                    </v-card>
+                    <BookmarkConfirmDelete
+                        :title="model"
+                        :id="bookmark.id"
+                        @cancel="showConfirmDelete = false"
+                        @confirm="onDeleteConfirm($event)" />
                 </v-dialog>
             </v-row>
         </template>
@@ -65,12 +40,21 @@
 </template>
 
 <script setup>
-    import { ref, onMounted, nextTick } from 'vue';
+    import {
+        ref, onMounted, nextTick,
+    } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkFoldout
         from '@/components/bookmarks/BookmarkFoldout.vue';
+    import BookmarkConfirmDelete
+        from '@/components/forms/BookmarkConfirmDelete.vue';
+    import { EMITS } from '@/constants';
 
     const bookmarksStore = useBookmarksStore();
+
+    const emits = defineEmits([
+        EMITS.DELETE,
+    ]);
 
     const props = defineProps({
         bookmark: Object,
@@ -90,12 +74,13 @@
     const showConfirmDelete = ref(false);
 
     function onDelete() {
-        console.log('open');
         showConfirmDelete.value = true;
     }
 
-    function onConfirmDelete() {
+    function onDeleteConfirm() {
         showConfirmDelete.value = false;
+
+        emits(EMITS.DELETE, props.bookmark.id);
 
         bookmarksStore.remove_bookmarkFolder(props.bookmark.id);
     }

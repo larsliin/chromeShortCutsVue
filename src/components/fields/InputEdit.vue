@@ -4,8 +4,11 @@
             class="input"
             ref="input"
             type="input"
+            tabindex="-1"
+            :readonly="!active"
             :class="[
                 enabled ? 'enabled' : '',
+                active ? 'active' : '',
                 style,
                 bookmarksStore.enableDarkMode ? 'dark' : ''
             ]"
@@ -15,13 +18,40 @@
             @focus="bookmarksStore.titleInputActive = true"
             @blur="onBlur()"
             @keydown="onChange($event)" />
+        <div class="foldout">
+            <BookmarkFoldout
+                class="foldout"
+                @delete="onDelete()"
+                @rename="onRename()" />
+        </div>
         <span ref="textwidth" class="text-width">{{ model }}</span>
     </div>
+
+    <Teleport to="body">
+        <template>
+            <v-row justify="center">
+                <v-dialog
+                    v-model="showConfirmDelete"
+                    persistent
+                    width="450">
+                    <BookmarkConfirmDelete
+                        :title="model"
+                        :id="id"
+                        @cancel="showConfirmDelete = false"
+                        @confirm="onDeleteConfirm()" />
+                </v-dialog>
+            </v-row>
+        </template>
+    </Teleport>
 </template>
 
     <script setup>
     import { ref, onMounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
+    import BookmarkFoldout
+        from '@/components/bookmarks/BookmarkFoldout.vue';
+    import BookmarkConfirmDelete
+        from '@/components/forms/BookmarkConfirmDelete.vue';
 
     const bookmarksStore = useBookmarksStore();
 
@@ -42,16 +72,36 @@
     });
 
     const model = ref(props.value);
+    const active = ref(false);
+    const input = ref();
+    const inputWidth = ref(0);
+    const textwidth = ref();
+
+    function onRename() {
+        active.value = true;
+        inputWidth.value = `${textwidth.value.clientWidth + 0}px`;
+        input.value.focus();
+    }
+
+    const showConfirmDelete = ref(false);
+
+    function onDelete() {
+        showConfirmDelete.value = true;
+    }
+
+    function onDeleteConfirm() {
+        showConfirmDelete.value = false;
+
+        bookmarksStore.remove_bookmarkFolder(props.id);
+    }
 
     function onBlur() {
+        active.value = false;
+
         bookmarksStore.update_bookmark(props.id, { title: model.value });
 
         bookmarksStore.titleInputActive = false;
     }
-
-    const input = ref();
-    const inputWidth = ref(0);
-    const textwidth = ref();
 
     function onChange(event) {
         if (event.keyCode === 13) {
@@ -59,13 +109,13 @@
             return;
         }
 
-        let add = event.keyCode === 8 ? 0 : 20;
+        let add = event.keyCode === 8 ? 0 : 10;
         add = props.style === 'slider' ? add : 0;
         inputWidth.value = `${textwidth.value.clientWidth + add}px`;
     }
 
     onMounted(() => {
-        const add = props.style === 'slider' ? 20 : 0;
+        const add = props.style === 'slider' ? 10 : 0;
         inputWidth.value = `${textwidth.value.clientWidth + add}px`;
     });
 
@@ -76,19 +126,19 @@
 </script>
 
 <style scoped lang="scss">
-    .wrapper:hover  {
-        .input {
-            border: 1px solid rgba(0,0,0,.12);
+     .wrapper  {
+        display: flex;
+        position: relative;
 
-            &.dark {
-                border: 1px solid var(--darkmode-300);
-            }
+        &:hover .foldout {
+            opacity: 1;
         }
-    }
+     }
 
     .input {
         border-radius: 4px;
         border: 1px solid transparent;
+        cursor: default;
         font-size: 16px;
         padding: 6px;
         pointer-events: none;
@@ -97,19 +147,21 @@
         &.slider {
             text-align: center;
 
-            &:focus {
+            &.active {
                 border: 1px solid rgba(0,0,0,.12);
-                box-shadow: 0 2px 3px 0px rgba(0, 0, 0, 0.2);
 
                 &.dark {
                     border: 1px solid var(--darkmode-400);
-                    box-shadow: 0 2px 3px 0px rgba(255, 255, 255, 0.2);
                 }
             }
         }
 
         &:focus {
             outline: none;
+        }
+
+        &:focus {
+            cursor: default;
         }
 
         &.enabled {
@@ -127,6 +179,13 @@
         pointer-events: none;
         z-index: -1;
         white-space: nowrap;
+    }
+
+    .foldout {
+        right: 0;
+        position: absolute;
+        transform: translateX(42px);
+        opacity: .25;
     }
 
 </style>

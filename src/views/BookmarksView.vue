@@ -27,7 +27,7 @@
     import NavigationDots from '@/components/navigation/NavigationDots.vue';
     import BookmarksSliderBackground from '@/components/bookmarks/BookmarksSliderBackground.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { FOLDER, EMITS } from '@/constants';
+    import { FOLDER, EMITS, ARGS } from '@/constants';
     import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
@@ -121,7 +121,7 @@
                 .findIndex(e => e.id === folder.id);
             utils.setSliderIndex(index, true);
         }
-        emit(EMITS.BOOKMARKS_UPDATED, 'created');
+        emit(EMITS.BOOKMARKS_UPDATED, ARGS.CREATED);
     }
 
     async function onRemoved(event) {

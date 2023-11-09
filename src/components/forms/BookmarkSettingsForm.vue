@@ -308,17 +308,19 @@
     async function onBookmarksImportReaderLoad(event) {
         bookmarksStore.isImporting = true;
 
-        const importBookmarks = JSON.parse(event.target.result);
-
         await utils.deleteLocalStoreImages();
         await utils.deleteAllBookmarks();
         await utils.buildRootFolder();
+
+        emit(EMITS.BOOKMARKS_IMPORT);
 
         const bookmarksRootResponse = await bookmarksStore.get_bookmarkById(bookmarksStore.rootId);
 
         const map = {};
 
         const foldersPromiseArr = [];
+        const importBookmarks = JSON.parse(event.target.result);
+
         // first create folders for bookmarks
         importBookmarks.forEach((folder) => {
             foldersPromiseArr.push(bookmarksStore

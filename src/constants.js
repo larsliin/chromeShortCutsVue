@@ -13,15 +13,22 @@ export const FOLDER = Object.freeze({
 });
 
 export const EMITS = Object.freeze({
-    CLOSE: 'close',
-    SAVE: 'save',
-    EDIT: 'edit',
-    RENAME: 'rename',
-    DELETE: 'delete',
-    CHANGED: 'changed',
-    IMAGES_IMPORT: 'imagesImport',
-    ICON_UPDATE: 'iconUpdate',
-    BOOKMARKS_UPDATED: 'bookmarksUpdated',
     BOOKMARK_CREATED: 'bookmarkCreated',
+    BOOKMARKS_UPDATED: 'bookmarksUpdated',
+    CANCEL: 'cancel',
+    CHANGED: 'changed',
     CLEARBIT_ERROR: 'clearbitError',
+    CLOSE: 'close',
+    CONFIRM: 'confirm',
+    DELETE: 'delete',
+    EDIT: 'edit',
+    ICON_UPDATE: 'iconUpdate',
+    IMAGES_IMPORT: 'imagesImport',
+    BOOKMARKS_IMPORT: 'bookmarksImport',
+    RENAME: 'rename',
+    SAVE: 'save',
+});
+
+export const ARGS = Object.freeze({
+    CREATED: 'created',
 });

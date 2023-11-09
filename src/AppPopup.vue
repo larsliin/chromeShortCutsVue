@@ -1,5 +1,5 @@
 <template>
-    <BookmarkForm
+    <BookmarkCreateForm
         style="width: 750px;"
         v-if="editBookmarkData"
         :data="editBookmarkData"
@@ -8,7 +8,7 @@
 
 <script setup>
     import { ref, onMounted } from 'vue';
-    import BookmarkForm from '@/components/forms/BookmarkForm.vue';
+    import BookmarkCreateForm from '@/components/forms/BookmarkCreateForm.vue';
     import { FOLDER } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/utils/utils';

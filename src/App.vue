@@ -5,7 +5,7 @@
 
 <script setup>
     import BookmarksToolbar from '@/components/toolbar/BookmarksToolbar.vue';
-    import BookmarksContainer from '@/components/bookmarks/BookmarksContainer.vue';
+    import BookmarksContainer from '@/views/BookmarksView.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const bookmarksStore = useBookmarksStore();

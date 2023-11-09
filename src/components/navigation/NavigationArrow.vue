@@ -2,7 +2,7 @@
     <button
         class="navigation-arrow"
         :disabled="disabled"
-        :class="direction"
+        :class="[ direction, bookmarksStore.enableDarkMode ? 'dark' : '' ]"
         @click="onClick()">
         <!-- https://pictogrammers.com/library/mdi/ -->
         <v-icon size="large" icon="mdi-chevron-right" v-if="direction === 'right'" ></v-icon>
@@ -95,6 +95,14 @@
             opacity: 1;
             transform: scale(1.25);
             box-shadow: 0px 0 20px 0px rgba(0, 0, 0, 0.15);
+        }
+
+        &.dark {
+            &:focus-visible,
+            &:hover:enabled {
+                opacity: .5;
+
+            }
         }
 
         &.left {

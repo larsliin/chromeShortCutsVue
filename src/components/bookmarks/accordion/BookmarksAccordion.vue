@@ -35,7 +35,9 @@
                     <template #item="{element}">
                         <v-expansion-panel
                             eager>
-                            <BookmarksAccordionTitle :bookmark="element" />
+                            <BookmarksAccordionTitle
+                                @delete="onFolderDelete($event)"
+                                :bookmark="element" />
                             <v-expansion-panel-text>
                                 <BookmarksSlide
                                     :slideindex="index"
@@ -51,13 +53,17 @@
 
 <script setup>
     import {
-        onMounted, ref, nextTick,
+        onMounted, ref, nextTick, watch,
     } from 'vue';
     import BookmarksSlide from '@/components/bookmarks/slider/BookmarksSlide.vue';
     import BookmarksAccordionTitle
         from '@/components/bookmarks/accordion/BookmarksAccordionTitle.vue';
     import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
+    import useEventsBus from '@cmp/eventBus';
+    import { EMITS } from '@/constants';
+
+    const { bus } = useEventsBus();
 
     const bookmarksStore = useBookmarksStore();
 
@@ -142,6 +148,19 @@
 
         bookmarksStore.set_syncStorage({ accordion: arr });
     }
+
+    function onFolderDelete(event) {
+        const index = bookmarksStore.bookmarks.findIndex((e) => e.id === event);
+
+        // remove deleted item from accordion open panels
+        if (panelsModel.value.includes(index)) {
+            panelsModel.value = panelsModel.value.filter((e) => e !== index);
+        }
+    }
+
+    watch(() => bus.value.get(EMITS.BOOKMARKS_IMPORT), () => {
+        panelsModel.value = [0];
+    });
 
     onMounted(async () => {
         const accordionResponse = await bookmarksStore.get_syncStorage('accordion');
