@@ -306,7 +306,6 @@
         const bookmarkTooltipResponse = await bookmarksStore.get_syncStorage('bookmarkTooltip');
         bookmarksStore.bookmarkTooltip = bookmarkTooltipResponse === undefined;
 
-
         toggleOverflowHidden();
 
         await utils.buildRootFolder();

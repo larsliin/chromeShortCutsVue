@@ -189,7 +189,9 @@
 </template>
 
 <script setup>
-    import { ref, onMounted, watch } from 'vue';
+    import {
+        ref, onMounted, watch, onUnmounted,
+    } from 'vue';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
@@ -531,6 +533,12 @@
         enableAccordionNavigation.value = bookmarksStore.accordionNavigation;
         enableDarkMode.value = bookmarksStore.enableDarkMode;
         enableBookmarkTooltip.value = bookmarksStore.bookmarkTooltip;
+
+        bookmarksStore.dialogOpen = true;
+    });
+
+    onUnmounted(() => {
+        bookmarksStore.dialogOpen = false;
     });
 </script>
 <style lang="scss" scoped>

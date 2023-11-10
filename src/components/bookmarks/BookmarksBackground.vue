@@ -24,15 +24,4 @@
         }
     }
 
-    .folders-background {
-        color: var(--yellow);
-        display: block;
-        filter: blur(2.5px);
-        font-size: 30px;
-        left: 50%;
-        opacity: .75;
-        position: absolute;
-        top: 50%;
-        transform: translate(-50%, -50%);
-    }
 </style>

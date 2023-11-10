@@ -183,7 +183,7 @@
 
 <script setup>
     import {
-        ref, watch, onMounted,
+        ref, watch, onMounted, onUnmounted,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
@@ -406,6 +406,8 @@
     });
 
     onMounted(async () => {
+        bookmarksStore.dialogOpen = true;
+
         const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
         foldersArr.value = bookmarks[0].children.flatMap((e) => e.title);
         foldersIdArr.value = bookmarks[0].children.map((e) => ({ [e.title]: e.id }));
@@ -430,6 +432,10 @@
         if (slctDisabled) {
             tabs.value = 2;
         }
+    });
+
+    onUnmounted(() => {
+        bookmarksStore.dialogOpen = false;
     });
 </script>
 <style scoped lang="scss">

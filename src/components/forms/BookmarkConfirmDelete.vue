@@ -36,7 +36,11 @@
 </template>
 
 <script setup>
+    import { onMounted, onUnmounted } from 'vue';
     import { EMITS } from '@/constants';
+    import { useBookmarksStore } from '@stores/bookmarks';
+
+    const bookmarksStore = useBookmarksStore();
 
     defineProps({
         title: {
@@ -60,7 +64,12 @@
     function onConfirmDelete() {
         emits(EMITS.CONFIRM);
     }
-</script>
-<style lang="scss" scoped>
 
-</style>
+    onMounted(() => {
+        bookmarksStore.dialogOpen = true;
+    });
+
+    onUnmounted(() => {
+        bookmarksStore.dialogOpen = false;
+    });
+</script>
