@@ -6,7 +6,12 @@
                 <h5 class="text-h5">Confirm Delete</h5>
             </div>
             <p class="text-center text-body-1 mt-3 mb-3">
-                Deleting {{ title }} will also permanently delete its containing bookmarks
+                <template v-if="typeFolder">
+                    Deleting {{ title }} will also permanently delete its containing bookmarks
+                </template>
+                <template v-else>
+                    Are you sure you want to delete {{ title }}?
+                </template>
             </p>
         </v-card-text>
         <v-spacer class="mt-2 mb-2" />
@@ -42,6 +47,7 @@
             type: String,
             required: true,
         },
+        typeFolder: Boolean,
     });
 
     const emits = defineEmits([

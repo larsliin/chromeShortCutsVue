@@ -1,5 +1,6 @@
 <template>
-    <span class="bookmark relative inline-block">
+    <span class="bookmark relative inline-block"
+        :class="{ 'foldout-open': isFoldoutOpen }">
         <v-tooltip
             :disabled="!bookmarksStore.bookmarkTooltip"
             class="tooltip"
@@ -25,13 +26,33 @@
             </template>
             <span v-html="title"></span>
         </v-tooltip>
-        <button class="bookmark-edit"
-            :class="{ dark: bookmarksStore.enableDarkMode }"
-            @click="emit(EMITS.EDIT, id)">
-            <!-- https://pictogrammers.com/library/mdi/ -->
-            <v-icon size="small" icon="mdi-dots-horizontal"></v-icon>
-        </button>
+        <div class="bookmark-edit">
+            <BookmarkFoldout
+                :darkModeBorder="true"
+                :size="'x-small'"
+                :list="list"
+                :show="mouseEnter"
+                @toggle="onToggle($event)"
+                @delete="onDelete()"
+                @edit="emit(EMITS.EDIT, id)" />
+        </div>
     </span>
+    <Teleport to="body">
+        <template>
+            <v-row justify="center">
+                <v-dialog
+                    v-model="showConfirmDelete"
+                    persistent
+                    width="450">
+                    <BookmarkConfirmDelete
+                        :title="title"
+                        :id="id"
+                        @cancel="showConfirmDelete = false"
+                        @confirm="onDeleteConfirm($event)" />
+                </v-dialog>
+            </v-row>
+        </template>
+    </Teleport>
 </template>
 
 <script setup>
@@ -40,6 +61,10 @@
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
     import useEventsBus from '@cmp/eventBus';
+    import BookmarkFoldout
+        from '@/components/bookmarks/BookmarkFoldout.vue';
+    import BookmarkConfirmDelete
+        from '@/components/forms/BookmarkConfirmDelete.vue';
 
     const { emit, bus } = useEventsBus();
 
@@ -57,8 +82,21 @@
         size: String,
     });
 
+    const isFoldoutOpen = ref(false);
     const image = ref();
     const ready = ref(false);
+    const list = ref([
+        {
+            title: 'Edit',
+            icon: 'mdi-rename',
+            event: EMITS.EDIT,
+        },
+        {
+            title: 'Delete',
+            icon: 'mdi-delete-outline',
+            event: EMITS.DELETE,
+        },
+    ]);
 
     const bookmarksStore = useBookmarksStore();
 
@@ -70,6 +108,22 @@
         }
 
         ready.value = true;
+    }
+
+    const showConfirmDelete = ref(false);
+
+    function onDelete() {
+        showConfirmDelete.value = true;
+    }
+
+    function onDeleteConfirm() {
+        showConfirmDelete.value = false;
+
+        bookmarksStore.remove_bookmark(props.id);
+    }
+
+    function onToggle(event) {
+        isFoldoutOpen.value = event;
     }
 
     watch(() => bus.value.get(EMITS.IMAGES_IMPORT), () => {
@@ -92,6 +146,10 @@
     .bookmark {
         display: inline-block;
         margin: 0 0 8px;
+    }
+
+    .foldout {
+        margin-right: 4px;
     }
 
     .bookmark-link {
@@ -119,6 +177,11 @@
         }
     }
 
+    :deep(.v-btn--icon.v-btn--density-default) {
+        width: 28px;
+        height: 28px;
+    }
+
     .bookmark-title-container {
         display: inline-block;
         margin: 15px 0 0;
@@ -130,30 +193,20 @@
     }
 
     .bookmark-edit {
-        color: #aaa;
-        cursor: pointer;
-        display: none;
-        font-size: 18px;
-        padding: 5px 5px;
+        visibility: hidden;
         position: absolute;
-        right: -5px;
-        top: -10px;
-
-        &.dark {
-            color: var(--darkmode-300);
-        }
+        right: -6px;
+        top: -6px;
+        opacity: .5;
     }
 
-    .bookmark-edit:hover {
-        color: #000;
-
-        &.dark {
-            color: var(--darkmode-500);
+    .bookmark {
+        &:hover,
+        &.foldout-open {
+            .bookmark-edit {
+                visibility: visible;
+            }
         }
-    }
-
-    .bookmark:hover .bookmark-edit {
-        display: block;
     }
 
     .bookmark:hover .bookmark-link:not(.folder) .bookmark-image-container {

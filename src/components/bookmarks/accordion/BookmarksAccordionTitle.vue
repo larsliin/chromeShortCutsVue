@@ -1,6 +1,7 @@
 <template>
     <v-expansion-panel-title>
         <BookmarkFoldout
+            :list="list"
             class="foldout"
             @delete="onDelete()"
             @rename="onRename()" />
@@ -8,6 +9,7 @@
             class="input"
             type="text"
             ref="input"
+            tabindex="-1"
             :class="[ active, bookmarksStore.enableDarkMode ? 'dark' : '']"
             :style="{width: inputWidth}"
             @click.stop="onInputClick($event)"
@@ -29,6 +31,7 @@
                     persistent
                     width="450">
                     <BookmarkConfirmDelete
+                        :typeFolder="true"
                         :title="model"
                         :id="bookmark.id"
                         @cancel="showConfirmDelete = false"
@@ -59,6 +62,19 @@
     const props = defineProps({
         bookmark: Object,
     });
+
+    const list = ref([
+        {
+            title: 'Rename',
+            icon: 'mdi-rename',
+            event: EMITS.RENAME,
+        },
+        {
+            title: 'Delete',
+            icon: 'mdi-delete-outline',
+            event: EMITS.DELETE,
+        },
+    ]);
 
     const input = ref();
     const active = ref(false);

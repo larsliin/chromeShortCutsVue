@@ -144,7 +144,7 @@
                     v-if="data && data.id"
                     variant="tonal"
                     color="red"
-                    @click="onClickDelete()">
+                    @click="onDelete()">
                     Delete
                 </v-btn>
                 <v-btn
@@ -163,7 +163,22 @@
             </v-card-actions>
         </v-form>
     </v-card>
-
+    <Teleport to="body">
+        <template>
+            <v-row justify="center">
+                <v-dialog
+                    v-model="showConfirmDelete"
+                    persistent
+                    width="450">
+                    <BookmarkConfirmDelete
+                        :title="titleTxt"
+                        :id="id"
+                        @cancel="showConfirmDelete = false"
+                        @confirm="onDeleteConfirm($event)" />
+                </v-dialog>
+            </v-row>
+        </template>
+    </Teleport>
 </template>
 
 <script setup>
@@ -175,6 +190,8 @@
     import { FOLDER, EMITS } from '@/constants';
     import { useUtils } from '@/shared/utils/utils';
     import useEventsBus from '@cmp/eventBus';
+    import BookmarkConfirmDelete
+        from '@/components/forms/BookmarkConfirmDelete.vue';
 
     const { bus, emit } = useEventsBus();
 
@@ -272,7 +289,13 @@
         }
     }
 
-    function onClickDelete() {
+    const showConfirmDelete = ref(false);
+
+    function onDelete() {
+        showConfirmDelete.value = true;
+    }
+
+    function onDeleteConfirm() {
         emits(EMITS.CLOSE);
 
         if (props.data && props.data.url) {

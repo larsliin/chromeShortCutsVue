@@ -1,18 +1,22 @@
 <template>
     <v-menu
+        :class="{
+            'dark-mode-border': darkModeBorder, 'dark': bookmarksStore.enableDarkMode
+        }"
         location="end bottom"
-        origin="start top">
+        origin="start top"
+        v-model="toggle">
         <template v-slot:activator="{ props }">
             <v-btn
                 class="button"
-                size="small"
+                :size="size"
                 icon="mdi-dots-vertical"
                 v-bind="props"></v-btn>
         </template>
         <v-list
             class="list">
             <v-list-item class="list-item"
-                v-for="(item, i) in items" :key="i">
+                v-for="(item, i) in list" :key="i">
                 <v-list-item-title>
                     <!-- https://pictogrammers.com/library/mdi/ -->
                     <v-btn
@@ -36,25 +40,32 @@
 </template>
 
 <script setup>
-    import { ref } from 'vue';
+    import { ref, watch } from 'vue';
     import { EMITS } from '@/constants';
+    import { useBookmarksStore } from '@stores/bookmarks';
+
+    const bookmarksStore = useBookmarksStore();
 
     const emits = defineEmits([
-        EMITS.DELETE, EMITS.DELETE,
+        EMITS.DELETE,
+        EMITS.RENAME,
+        EMITS.TOGGLE,
+        EMITS.EDIT,
     ]);
 
-    const items = ref([
-        {
-            title: 'Rename',
-            icon: 'mdi-rename',
-            event: EMITS.RENAME,
+    defineProps({
+        list: {
+            type: Array,
+            required: true,
         },
-        {
-            title: 'Delete',
-            icon: 'mdi-delete-outline',
-            event: EMITS.DELETE,
+        size: {
+            type: String,
+            default: 'small',
         },
-    ]);
+        darkModeBorder: Boolean,
+    });
+
+    const toggle = ref();
 
     function onListItemClick(event) {
         switch (event) {
@@ -64,9 +75,16 @@
             case EMITS.DELETE:
                 emits(EMITS.DELETE);
                 break;
+            case EMITS.EDIT:
+                emits(EMITS.EDIT);
+                break;
             default:
         }
     }
+
+    watch(toggle, (newVal) => {
+        emits(EMITS.TOGGLE, newVal);
+    });
 </script>
 
 <style scoped lang="scss">
@@ -107,6 +125,10 @@
     .icon {
         margin-right: 6px;
         display: inline-block;
+    }
+
+    .dark-mode-border.dark :deep(.v-list) {
+        border: 1px solid rgba(255,255,255,.1);
     }
 
 </style>

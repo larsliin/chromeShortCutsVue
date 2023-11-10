@@ -20,6 +20,7 @@
             @keydown="onChange($event)" />
         <div class="foldout">
             <BookmarkFoldout
+                :list="list"
                 class="foldout"
                 @delete="onDelete()"
                 @rename="onRename()" />
@@ -35,6 +36,7 @@
                     persistent
                     width="450">
                     <BookmarkConfirmDelete
+                        :typeFolder="true"
                         :title="model"
                         :id="id"
                         @cancel="showConfirmDelete = false"
@@ -52,6 +54,7 @@
         from '@/components/bookmarks/BookmarkFoldout.vue';
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';
+    import { EMITS } from '@/constants';
 
     const bookmarksStore = useBookmarksStore();
 
@@ -70,6 +73,19 @@
             default: true,
         },
     });
+
+    const list = ref([
+        {
+            title: 'Rename',
+            icon: 'mdi-rename',
+            event: EMITS.RENAME,
+        },
+        {
+            title: 'Delete',
+            icon: 'mdi-delete-outline',
+            event: EMITS.DELETE,
+        },
+    ]);
 
     const model = ref(props.value);
     const active = ref(false);

@@ -28,6 +28,7 @@ export const EMITS = Object.freeze({
     BOOKMARKS_IMPORT: 'bookmarksImport',
     RENAME: 'rename',
     SAVE: 'save',
+    TOGGLE: 'toggle',
 });
 
 export const ARGS = Object.freeze({
