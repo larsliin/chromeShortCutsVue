@@ -163,22 +163,6 @@
             </v-card-actions>
         </v-form>
     </v-card>
-    <Teleport to="body">
-        <template>
-            <v-row justify="center">
-                <v-dialog
-                    v-model="showConfirmDelete"
-                    persistent
-                    width="450">
-                    <BookmarkConfirmDelete
-                        :title="titleTxt"
-                        :id="id"
-                        @cancel="showConfirmDelete = false"
-                        @confirm="onDeleteConfirm($event)" />
-                </v-dialog>
-            </v-row>
-        </template>
-    </Teleport>
 </template>
 
 <script setup>
@@ -190,8 +174,6 @@
     import { FOLDER, EMITS } from '@/constants';
     import { useUtils } from '@/shared/utils/utils';
     import useEventsBus from '@cmp/eventBus';
-    import BookmarkConfirmDelete
-        from '@/components/forms/BookmarkConfirmDelete.vue';
 
     const { bus, emit } = useEventsBus();
 
@@ -201,12 +183,17 @@
     const showClearbitError = ref(false);
 
     const emits = defineEmits([
-        EMITS.CLOSE, EMITS.SAVE, EMITS.CLEARBIT_ERROR,
+        EMITS.CLOSE,
+        EMITS.SAVE,
+        EMITS.CLEARBIT_ERROR,
+        EMITS.DELETE,
     ]);
 
     const props = defineProps({
         data: Object,
+        folderPreSelected: String,
     });
+
     const rules = {
         required: (value) => !!value || 'Field is required',
         // eslint-disable-next-line no-use-before-define
@@ -289,22 +276,20 @@
         }
     }
 
-    const showConfirmDelete = ref(false);
-
     function onDelete() {
-        showConfirmDelete.value = true;
+        emits(EMITS.DELETE, props.data);
     }
 
-    function onDeleteConfirm() {
-        emits(EMITS.CLOSE);
+    // function onDeleteConfirm() {
+    //     emits(EMITS.CLOSE);
 
-        if (props.data && props.data.url) {
-            bookmarksStore.remove_bookmark(props.data.id);
-            bookmarksStore.delete_localStorageItem(props.data.id);
-        } else {
-            bookmarksStore.remove_bookmarkFolder(props.data.id);
-        }
-    }
+    //     if (props.data && props.data.url) {
+    //         bookmarksStore.remove_bookmark(props.data.id);
+    //         bookmarksStore.delete_localStorageItem(props.data.id);
+    //     } else {
+    //         bookmarksStore.remove_bookmarkFolder(props.data.id);
+    //     }
+    // }
 
     async function onClickSave() {
         const formValidation = await form.value.validate();
@@ -423,10 +408,17 @@
             base64Image.value = props.data.image;
         }
 
-        if (!slctDisabled && props.data) {
+        if (!slctDisabled && props.data && props.data.parentId) {
             const parentIndex = bookmarks[0].children
                 .findIndex((e) => e.id === props.data.parentId);
             folderSlct.value = bookmarksStore.bookmarks[parentIndex].title;
+        }
+
+        if (props.folderPreSelected && !props.data) {
+            const folder = bookmarksStore.bookmarks
+                .find((e) => e.id === props.folderPreSelected);
+            const title = folder ? folder.title : null;
+            folderSlct.value = title;
         }
 
         if (slctDisabled) {
@@ -435,7 +427,7 @@
     });
 
     onUnmounted(() => {
-        bookmarksStore.dialogOpen = false;
+        // bookmarksStore.dialogOpen = false;
     });
 </script>
 <style scoped lang="scss">

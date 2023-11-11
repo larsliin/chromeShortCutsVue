@@ -51,6 +51,7 @@
         EMITS.RENAME,
         EMITS.TOGGLE,
         EMITS.EDIT,
+        EMITS.BOOKMARK_ADD,
     ]);
 
     defineProps({
@@ -77,6 +78,9 @@
                 break;
             case EMITS.EDIT:
                 emits(EMITS.EDIT);
+                break;
+            case EMITS.BOOKMARK_ADD:
+                emits(EMITS.BOOKMARK_ADD);
                 break;
             default:
         }

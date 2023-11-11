@@ -25,8 +25,10 @@
                     width="800">
                     <BookmarkCreateForm
                         :data="editBookmarkData"
+                        :folderPreSelected="folderPreSelected"
                         @clearbitError="onClearbitError($event)"
                         @close="dialogAddOpen = false"
+                        @delete="onDelete($event)"
                         @save="dialogAddOpen = false" />
                 </v-dialog>
                 <v-dialog
@@ -83,10 +85,29 @@
             </v-row>
         </template>
     </Teleport>
+    <Teleport to="body">
+        <template>
+            <v-row justify="center">
+                <v-dialog
+                    v-if="deleteConfirmId && showConfirmDelete"
+                    v-model="showConfirmDelete"
+                    persistent
+                    width="450">
+                    <BookmarkConfirmDelete
+                        :title="deleteConfirmTitle"
+                        :id="deleteConfirmId"
+                        @cancel="showConfirmDelete = false"
+                        @confirm="onDeleteConfirm($event)" />
+                </v-dialog>
+            </v-row>
+        </template>
+    </Teleport>
 </template>
 
 <script setup>
-    import { ref, watch, onMounted } from 'vue';
+    import {
+        ref, watch, onMounted,
+    } from 'vue';
     import BookmarkCreateForm from '@/components/forms/BookmarkCreateForm.vue';
     import BookmarkSettingsForm from '@/components/forms/BookmarkSettingsForm.vue';
     import useEventsBus from '@cmp/eventBus';
@@ -94,6 +115,8 @@
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarksFilter from '@/components/fields/BookmarksFilter.vue';
     import { useUtils } from '@/shared/utils/utils';
+    import BookmarkConfirmDelete
+        from '@/components/forms/BookmarkConfirmDelete.vue';
 
     const utils = useUtils();
 
@@ -101,9 +124,13 @@
 
     const { bus } = useEventsBus();
 
+    const showConfirmDelete = ref(false);
     const dialogAddOpen = ref(false);
     const dialogSettings = ref(false);
     const ready = ref(false);
+    const folderPreSelected = ref();
+    const deleteConfirmTitle = ref('');
+    const deleteConfirmId = ref('');
 
     const showClearbitError = ref(false);
     const showClearbitDomain = ref();
@@ -113,6 +140,31 @@
     function onClearbitError(event) {
         showClearbitDomain.value = event;
         showClearbitError.value = true;
+    }
+
+    function onDelete(event) {
+        console.log(event);
+
+        deleteConfirmTitle.value = event.title;
+        deleteConfirmId.value = event.id;
+        showConfirmDelete.value = true;
+    }
+
+    async function onDeleteConfirm(id) {
+        deleteConfirmTitle.value = null;
+        deleteConfirmId.value = null;
+        showConfirmDelete.value = false;
+        dialogAddOpen.value = false;
+
+        const bookmarkResponse = await bookmarksStore.get_bookmarkById(id);
+        const bookmark = bookmarkResponse;
+
+        if (bookmark && bookmark.url) {
+            bookmarksStore.remove_bookmark(bookmark.id);
+            bookmarksStore.delete_localStorageItem(bookmark.id);
+        } else {
+            bookmarksStore.remove_bookmarkFolder(bookmark.id);
+        }
     }
 
     watch(() => bus.value.get(EMITS.EDIT), (id) => {
@@ -137,6 +189,13 @@
             });
     });
 
+    watch(() => bus.value.get(EMITS.BOOKMARK_ADD), (folderId) => {
+        // eslint-disable-next-line prefer-destructuring
+        folderPreSelected.value = folderId[0];
+
+        dialogAddOpen.value = true;
+    });
+
     watch(() => bus.value.get(EMITS.CLICK_BACKGROUND), () => {
         dialogAddOpen.value = true;
     });
@@ -146,6 +205,7 @@
             // wait with resetting until modal has finished close animation
             setTimeout(() => {
                 editBookmarkData.value = null;
+                folderPreSelected.value = null;
             }, 1000);
         }
     });

@@ -13,19 +13,20 @@ export const FOLDER = Object.freeze({
 });
 
 export const EMITS = Object.freeze({
+    BOOKMARK_ADD: 'bookmarkAdd',
     BOOKMARK_CREATED: 'bookmarkCreated',
+    BOOKMARKS_IMPORT: 'bookmarksImport',
     BOOKMARKS_UPDATED: 'bookmarksUpdated',
     CANCEL: 'cancel',
     CHANGED: 'changed',
     CLEARBIT_ERROR: 'clearbitError',
+    CLICK_BACKGROUND: 'clickBackground',
     CLOSE: 'close',
     CONFIRM: 'confirm',
     DELETE: 'delete',
     EDIT: 'edit',
-    CLICK_BACKGROUND: 'clickBackground',
     ICON_UPDATE: 'iconUpdate',
     IMAGES_IMPORT: 'imagesImport',
-    BOOKMARKS_IMPORT: 'bookmarksImport',
     RENAME: 'rename',
     SAVE: 'save',
     TOGGLE: 'toggle',

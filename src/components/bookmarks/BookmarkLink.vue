@@ -47,6 +47,7 @@
                     <BookmarkConfirmDelete
                         :title="title"
                         :id="id"
+                        :bookmark="deleteConfirmBookmark"
                         @cancel="showConfirmDelete = false"
                         @confirm="onDeleteConfirm($event)" />
                 </v-dialog>

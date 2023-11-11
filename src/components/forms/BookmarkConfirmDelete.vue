@@ -42,7 +42,7 @@
 
     const bookmarksStore = useBookmarksStore();
 
-    defineProps({
+    const props = defineProps({
         title: {
             type: String,
             default: '',
@@ -62,7 +62,7 @@
         emits(EMITS.CANCEL);
     }
     function onConfirmDelete() {
-        emits(EMITS.CONFIRM);
+        emits(EMITS.CONFIRM, props.id);
     }
 
     onMounted(() => {

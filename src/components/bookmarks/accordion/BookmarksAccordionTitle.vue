@@ -4,7 +4,8 @@
             :list="list"
             class="foldout"
             @delete="onDelete()"
-            @rename="onRename()" />
+            @rename="onRename()"
+            @bookmarkAdd="onBookmarkAdd()" />
         <input
             class="input"
             type="text"
@@ -52,17 +53,22 @@
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';
     import { EMITS } from '@/constants';
+    import useEventsBus from '@cmp/eventBus';
 
     const bookmarksStore = useBookmarksStore();
 
+    const { emit } = useEventsBus();
+
     const emits = defineEmits([
         EMITS.DELETE,
+        EMITS.BOOKMARK_ADD,
     ]);
 
     const props = defineProps({
         bookmark: Object,
     });
 
+    // https://pictogrammers.com/library/mdi
     const list = ref([
         {
             title: 'Rename',
@@ -70,7 +76,12 @@
             event: EMITS.RENAME,
         },
         {
-            title: 'Delete',
+            title: 'Add Bookmark',
+            icon: 'mdi-plus-circle-outline',
+            event: EMITS.BOOKMARK_ADD,
+        },
+        {
+            title: 'Delete Folder',
             icon: 'mdi-delete-outline',
             event: EMITS.DELETE,
         },
@@ -80,6 +91,11 @@
     const active = ref(false);
     const inputWidth = ref(0);
     const textwidth = ref();
+
+    function onBookmarkAdd() {
+        console.log('click');
+        emit(EMITS.BOOKMARK_ADD, props.bookmark.id);
+    }
 
     function onRename() {
         active.value = true;
