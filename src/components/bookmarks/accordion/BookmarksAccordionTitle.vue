@@ -71,7 +71,7 @@
     // https://pictogrammers.com/library/mdi
     const list = ref([
         {
-            title: 'Rename',
+            title: 'Rename Folder',
             icon: 'mdi-rename',
             event: EMITS.RENAME,
         },
