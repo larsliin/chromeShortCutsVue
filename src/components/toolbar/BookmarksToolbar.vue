@@ -1,11 +1,14 @@
 <template>
     <div class="toolbar d-flex" v-if="ready">
         <div>
-            <v-btn
+            <!-- <v-btn
                 class="add-bookmark-btn"
                 :color="'primary'"
                 size="large"
-                @click="dialogAddOpen = true">Add Bookmark</v-btn>
+                @click="dialogAddOpen = true">New</v-btn> -->
+            <v-btn
+                icon="mdi-star"
+                @click="dialogAddOpen = true"></v-btn>
             <BookmarksFilter
                 class="ml-5"
                 v-if="bookmarksStore.searchNavigation" />
@@ -143,8 +146,6 @@
     }
 
     function onDelete(event) {
-        console.log(event);
-
         deleteConfirmTitle.value = event.title;
         deleteConfirmId.value = event.id;
         showConfirmDelete.value = true;

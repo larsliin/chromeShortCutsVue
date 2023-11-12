@@ -23,6 +23,7 @@
                 :list="list"
                 class="foldout"
                 @delete="onDelete()"
+                @bookmarkAdd="onBookmarkAdd()"
                 @rename="onRename()" />
         </div>
         <span ref="textwidth" class="text-width">{{ model }}</span>
@@ -55,6 +56,9 @@
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';
     import { EMITS } from '@/constants';
+    import useEventsBus from '@cmp/eventBus';
+
+    const { emit } = useEventsBus();
 
     const bookmarksStore = useBookmarksStore();
 
@@ -76,6 +80,11 @@
 
     const list = ref([
         {
+            title: 'New Bookmark',
+            icon: 'mdi-star',
+            event: EMITS.BOOKMARK_ADD,
+        },
+        {
             title: 'Rename',
             icon: 'mdi-rename',
             event: EMITS.RENAME,
@@ -92,6 +101,10 @@
     const input = ref();
     const inputWidth = ref(0);
     const textwidth = ref();
+
+    function onBookmarkAdd() {
+        emit(EMITS.BOOKMARK_ADD, props.id);
+    }
 
     function onRename() {
         active.value = true;

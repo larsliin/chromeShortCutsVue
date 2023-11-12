@@ -71,14 +71,14 @@
     // https://pictogrammers.com/library/mdi
     const list = ref([
         {
+            title: 'New Bookmark',
+            icon: 'mdi-star',
+            event: EMITS.BOOKMARK_ADD,
+        },
+        {
             title: 'Rename Folder',
             icon: 'mdi-rename',
             event: EMITS.RENAME,
-        },
-        {
-            title: 'Add Bookmark',
-            icon: 'mdi-plus-circle-outline',
-            event: EMITS.BOOKMARK_ADD,
         },
         {
             title: 'Delete Folder',
@@ -93,7 +93,6 @@
     const textwidth = ref();
 
     function onBookmarkAdd() {
-        console.log('click');
         emit(EMITS.BOOKMARK_ADD, props.bookmark.id);
     }
 

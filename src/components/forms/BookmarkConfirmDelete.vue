@@ -2,7 +2,6 @@
     <v-card>
         <v-card-text>
             <div class="text-center">
-                <!-- https://pictogrammers.com/library/mdi/ -->
                 <h5 class="text-h5">Confirm Delete</h5>
             </div>
             <p class="text-center text-body-1 mt-3 mb-3">
