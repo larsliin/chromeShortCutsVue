@@ -172,6 +172,8 @@
     }
 
     .bookmark-image-container {
+        // transform-origin: center right;
+        // transform-origin: center center;
         transform-origin: center right;
     }
 
@@ -243,9 +245,11 @@
     }
 
     .bookmark .bookmark-link:active:not(.folder) .bookmark-image-container {
-        transform: perspective(400px) rotateY(-25deg) scale(1);
+        transform: perspective(400px) rotateY(-15deg) scale(.98);
         box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
-        transform-origin: center left;
+        // transform-origin: center left;
+        // transform-origin: center center;
+        transform-origin: center right;
     }
 
     .bookmark.dragging .bookmark-link .bookmark-image-container {
