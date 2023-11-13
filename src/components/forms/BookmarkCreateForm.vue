@@ -7,7 +7,7 @@
                         <v-col
                             cols="12">
                             <span class="text-h5" v-if="id">Edit Bookmark</span>
-                            <span class="text-h5" v-else>Add Bookmark</span>
+                            <span class="text-h5" v-else>New Bookmark</span>
                         </v-col>
                     </v-row>
                     <v-row>
@@ -279,17 +279,6 @@
     function onDelete() {
         emits(EMITS.DELETE, props.data);
     }
-
-    // function onDeleteConfirm() {
-    //     emits(EMITS.CLOSE);
-
-    //     if (props.data && props.data.url) {
-    //         bookmarksStore.remove_bookmark(props.data.id);
-    //         bookmarksStore.delete_localStorageItem(props.data.id);
-    //     } else {
-    //         bookmarksStore.remove_bookmarkFolder(props.data.id);
-    //     }
-    // }
 
     async function onClickSave() {
         const formValidation = await form.value.validate();

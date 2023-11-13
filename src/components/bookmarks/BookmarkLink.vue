@@ -1,31 +1,23 @@
 <template>
     <span class="bookmark relative inline-block"
         :class="{ 'foldout-open': isFoldoutOpen }">
-        <v-tooltip
-            :disabled="!bookmarksStore.bookmarkTooltip"
-            class="tooltip"
-            location="bottom center" origin="auto"
-            open-delay="500"
-            transition="none">
-            <template v-slot:activator="{ props }">
-                <a
-                    v-bind="props"
-                    class="bookmark-link"
-                    :tabindex="tabIndex"
-                    :class="[link ? '' : 'folder', size]"
-                    draggable="true"
-                    :href="link"
-                    :id="id"
-                    :aria-label="title">
-                    <BookmarkIcon
-                        :hide="!ready"
-                        :folder="!link"
-                        :image="image" />
-                    <span class="bookmark-title-container">{{ title }}</span>
-                </a>
-            </template>
-            <span v-html="title"></span>
-        </v-tooltip>
+        <a
+            v-bind="props"
+            class="bookmark-link"
+            :tabindex="tabIndex"
+            :class="[link ? '' : 'folder', size]"
+            draggable="true"
+            :href="link"
+            :id="id"
+            title=""
+            :aria-label="title">
+            <BookmarkIcon
+                :hide="!ready"
+                :folder="!link"
+                :image="image" />
+            <span class="bookmark-title-container">{{ title }}</span>
+        </a>
+        <div class="tooltip">{{ title }}</div>
         <div class="bookmark-edit">
             <BookmarkFoldout
                 :darkModeBorder="true"
@@ -147,6 +139,7 @@
     .bookmark {
         display: inline-block;
         margin: 0 0 8px;
+        position: relative;
     }
 
     .foldout {
@@ -178,6 +171,10 @@
         }
     }
 
+    .bookmark-image-container {
+        transform-origin: center right;
+    }
+
     :deep(.v-btn--icon.v-btn--density-default) {
         width: 28px;
         height: 28px;
@@ -204,20 +201,51 @@
     .bookmark {
         &:hover,
         &.foldout-open {
+            z-index: 1;
+            .tooltip {
+                opacity: 1;
+                transition: opacity 0s;
+                transition-delay: 1s;
+            }
+
             .bookmark-edit {
                 visibility: visible;
             }
         }
+
+    }
+
+    .tooltip {
+        background: rgb(var(--v-theme-surface-variant));
+        border-radius: 4px;
+        bottom: 0;
+        color: rgb(var(--v-theme-on-surface-variant));
+        font-size: 14px;
+        left: 50%;
+        max-width: 200px;
+        opacity: 0;
+        overflow: hidden;
+        padding: 5px 16px;
+        pointer-events: none;
+        position: absolute;
+        text-overflow: ellipsis;
+        transform: translate(-50%, 6px);
+        white-space: nowrap;
+
+        @media (min-width: 768px) {
+            max-width: 400px;
+        }
     }
 
     .bookmark:hover .bookmark-link:not(.folder) .bookmark-image-container {
-        transform: perspective(400px) rotateY(10deg) scale(1.05);
+        transform: perspective(400px) rotateY(25deg) scale(1.02);
         box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
     }
 
     .bookmark .bookmark-link:active:not(.folder) .bookmark-image-container {
-        transform: perspective(400px) rotateY(-10deg) scale(0.95);
+        transform: perspective(400px) rotateY(-25deg) scale(1);
         box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
+        transform-origin: center left;
     }
 
     .bookmark.dragging .bookmark-link .bookmark-image-container {
@@ -228,9 +256,4 @@
         opacity: 1;
     }
 
-</style>
-<style lang="scss">
-    .tooltip .v-overlay__content {
-        transform: translateY(-35px);
-    }
 </style>
