@@ -205,7 +205,7 @@
             .tooltip {
                 opacity: 1;
                 transition: opacity 0s;
-                transition-delay: 1s;
+                transition-delay: 400ms;
             }
 
             .bookmark-edit {
