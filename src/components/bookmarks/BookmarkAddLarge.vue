@@ -5,7 +5,7 @@
         @click="onClick()">
         <v-icon
             class="icon"
-            icon="mdi-plus" />
+            icon="mdi-star" />
     </div>
 </template>
 

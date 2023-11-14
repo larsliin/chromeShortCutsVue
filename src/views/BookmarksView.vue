@@ -156,6 +156,9 @@
                 children: parent.children.filter(child => child.id !== event)
             }));
 
+            // delete image in local storage
+            bookmarksStore.delete_localStorageItem(event);
+
             const folder = bookmarksStore.bookmarks.find(e => e.id === parentId);
 
             if (!folder.children.length) {

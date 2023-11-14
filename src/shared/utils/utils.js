@@ -66,6 +66,20 @@ export function useUtils() {
             });
     }
 
+    async function deleteBookmarkFolder(id) {
+        const bookmarksStore = useBookmarksStore();
+
+        // delete all bookmarks in folder from local storage
+        const bookmarksInFolder = bookmarksStore.bookmarks.find((e) => e.id === id);
+        const bookmarksIdMap = bookmarksInFolder.children.map((e) => e.id);
+
+        bookmarksIdMap.forEach((elem) => {
+            bookmarksStore.delete_localStorageItem(elem);
+        });
+
+        bookmarksStore.remove_bookmarkFolder(id);
+    }
+
     async function getBookmarksAsFlatArr() {
         const bookmarksStore = useBookmarksStore();
 
@@ -178,5 +192,6 @@ export function useUtils() {
         getStoredBookmarkById,
         isValidURL,
         setSliderIndex,
+        deleteBookmarkFolder,
     };
 }

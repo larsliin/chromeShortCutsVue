@@ -57,6 +57,9 @@
         from '@/components/forms/BookmarkConfirmDelete.vue';
     import { EMITS } from '@/constants';
     import useEventsBus from '@cmp/eventBus';
+    import { useUtils } from '@/shared/utils/utils';
+
+    const utils = useUtils();
 
     const { emit } = useEventsBus();
 
@@ -121,7 +124,8 @@
     function onDeleteConfirm() {
         showConfirmDelete.value = false;
 
-        bookmarksStore.remove_bookmarkFolder(props.id);
+        // delete all bookmarks in folder from local storage
+        utils.deleteBookmarkFolder(props.id);
     }
 
     function onBlur() {

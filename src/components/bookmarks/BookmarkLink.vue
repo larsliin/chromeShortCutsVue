@@ -235,7 +235,15 @@
         white-space: nowrap;
 
         @media (min-width: 768px) {
-            max-width: 400px;
+            max-width: 230px;
+        }
+
+        @media (min-width: 1024px) {
+            max-width: 300px;
+        }
+
+        @media (min-width: 1200px) {
+            max-width: 500px;
         }
     }
 
