@@ -50,14 +50,14 @@
 
 <script setup>
     import { ref, onMounted, watch } from 'vue';
-    import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
     import useEventsBus from '@cmp/eventBus';
-    import BookmarkFoldout
-        from '@/components/bookmarks/BookmarkFoldout.vue';
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';
+    import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
+    import BookmarkFoldout
+        from '@/components/fields/Foldout.vue';
 
     const { emit, bus } = useEventsBus();
 

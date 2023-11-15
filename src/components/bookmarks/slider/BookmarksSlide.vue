@@ -32,7 +32,7 @@
 
 <script setup>
     import { nextTick, computed } from 'vue';
-    import BookmarkLink from '@/components/bookmarks/BookmarkLink.vue';
+    import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
     import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
 

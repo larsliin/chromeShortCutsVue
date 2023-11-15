@@ -170,7 +170,7 @@
         ref, watch, onMounted, onUnmounted,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import BookmarkIcon from '@/components/bookmarks/BookmarkIcon.vue';
+    import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import { FOLDER, EMITS } from '@/constants';
     import { useUtils } from '@/shared/utils/utils';
     import useEventsBus from '@cmp/eventBus';

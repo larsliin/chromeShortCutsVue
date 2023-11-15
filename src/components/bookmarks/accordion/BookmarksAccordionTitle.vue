@@ -48,13 +48,12 @@
         ref, onMounted, nextTick,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import BookmarkFoldout
-        from '@/components/bookmarks/BookmarkFoldout.vue';
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';
     import { EMITS } from '@/constants';
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
+    import BookmarkFoldout from '@/components/fields/Foldout.vue';
 
     const utils = useUtils();
 
