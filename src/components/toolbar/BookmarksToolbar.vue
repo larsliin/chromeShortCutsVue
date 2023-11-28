@@ -1,12 +1,8 @@
 <template>
     <div class="toolbar d-flex" v-if="ready">
         <div>
-            <!-- <v-btn
-                class="add-bookmark-btn"
-                :color="'primary'"
-                size="large"
-                @click="dialogAddOpen = true">New</v-btn> -->
             <v-btn
+                class="toolbar-add-button"
                 icon="mdi-star"
                 @click="dialogAddOpen = true"></v-btn>
             <BookmarksFilter
@@ -123,33 +119,30 @@
 
     const utils = useUtils();
 
-    const bookmarksStore = useBookmarksStore();
-
     const { bus } = useEventsBus();
 
-    const showConfirmDelete = ref(false);
-    const dialogAddOpen = ref(false);
     const dialogSettings = ref(false);
-    const ready = ref(false);
-    const folderPreSelected = ref();
-    const deleteConfirmTitle = ref('');
-    const deleteConfirmId = ref('');
 
     const showClearbitError = ref(false);
     const showClearbitDomain = ref();
-
-    const editBookmarkData = ref();
 
     function onClearbitError(event) {
         showClearbitDomain.value = event;
         showClearbitError.value = true;
     }
 
+    const deleteConfirmId = ref('');
+    const deleteConfirmTitle = ref('');
+    const showConfirmDelete = ref(false);
+
     function onDelete(event) {
         deleteConfirmTitle.value = event.title;
         deleteConfirmId.value = event.id;
         showConfirmDelete.value = true;
     }
+
+    const bookmarksStore = useBookmarksStore();
+    const dialogAddOpen = ref(false);
 
     async function onDeleteConfirm(id) {
         deleteConfirmTitle.value = null;
@@ -167,6 +160,8 @@
             bookmarksStore.remove_bookmarkFolder(bookmark.id);
         }
     }
+
+    const editBookmarkData = ref();
 
     watch(() => bus.value.get(EMITS.EDIT), (id) => {
         const promiseArr = [
@@ -190,6 +185,8 @@
             });
     });
 
+    const folderPreSelected = ref();
+
     watch(() => bus.value.get(EMITS.BOOKMARK_ADD), (folderId) => {
         // eslint-disable-next-line prefer-destructuring
         folderPreSelected.value = folderId[0];
@@ -210,6 +207,8 @@
             }, 1000);
         }
     });
+
+    const ready = ref(false);
 
     onMounted(async () => {
         ready.value = true;
@@ -243,6 +242,10 @@
 
         > div:first-child {
             flex: 1;
+        }
+
+        &-add-button {
+            color: var(--yellow);
         }
     }
 

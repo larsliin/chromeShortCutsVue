@@ -207,8 +207,6 @@
                     });
 
                     emit(EMITS.ICON_UPDATE, event);
-
-                    bookmarksStore.editBase64Image = null;
                 }
             })
             .catch((error) => {

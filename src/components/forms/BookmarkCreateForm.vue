@@ -75,57 +75,12 @@
                         </v-col>
                         <v-col
                             cols="6">
-                            <template v-if="!data || (data && data.url)">
-                                <v-row>
-                                    <v-col
-                                        cols="12">
-                                        <BookmarkIcon
-                                            :loading="isIconLoading"
-                                            :image="base64Image" />
-                                    </v-col>
-                                </v-row>
-                                <v-row>
-                                    <v-col
-                                        cols="12">
-                                        <input
-                                            class="inp-file"
-                                            type="file"
-                                            id="inp_image"
-                                            accept=".jpg, .jpeg, .gif, .png, .svg"
-                                            @change="onImageInpChange($event)" />
-                                        <v-btn
-                                            color="blue-darken-1 mr-3 mb-3"
-                                            variant="tonal"
-                                            @click="onClickFindImage()">
-                                            Browse
-                                        </v-btn>
-                                        <v-btn
-                                            class="mr-3 mb-3"
-                                            color="blue-darken-1"
-                                            variant="tonal"
-                                            :disabled="!urlTxt"
-                                            @click="getClearbitImage()">
-                                            Generate
-                                        </v-btn>
-                                        <v-btn
-                                            color="blue-darken-1 mb-3"
-                                            variant="tonal"
-                                            :disabled="!base64Image"
-                                            @click="base64Image = null">
-                                            Clear
-                                        </v-btn>
-
-                                    </v-col>
-                                    <v-col cols="12">
-                                        <template v-if="showClearbitError && bookmarksStore.popup">
-                                            <span class="clearbit-error">
-                                                The icon generator service
-                                                could not recognize the provided domain
-                                            </span>
-                                        </template>
-                                    </v-col>
-                                </v-row>
-                            </template>
+                            <BookmarkCreateIcon
+                                :data="data"
+                                :url="urlTxt"
+                                :iconUrl="base64Image"
+                                @update="onIconUpdate($event)"
+                                @clearbitError="onClearbitError($event)" />
                         </v-col>
                     </v-row>
                 </v-container>
@@ -166,11 +121,9 @@
 </template>
 
 <script setup>
-    import {
-        ref, watch, onMounted, onUnmounted,
-    } from 'vue';
+    import { ref, watch, onMounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
+    import BookmarkCreateIcon from '@/components/forms/BookmarkCreateIcon.vue';
     import { FOLDER, EMITS } from '@/constants';
     import { useUtils } from '@/shared/utils/utils';
     import useEventsBus from '@cmp/eventBus';
@@ -180,7 +133,6 @@
     const utils = useUtils();
 
     const tabs = ref();
-    const showClearbitError = ref(false);
 
     const emits = defineEmits([
         EMITS.CLOSE,
@@ -207,52 +159,13 @@
 
     const id = ref();
     const parentId = ref();
-    const imageFile = ref();
+
     const base64Image = ref();
     const form = ref();
     const folderSlct = ref();
     const folderTxt = ref('');
     const titleTxt = ref('');
     const urlTxt = ref('');
-    const isIconLoading = ref(false);
-
-    async function fetchClearBitImage(imageUrl) {
-        isIconLoading.value = true;
-        try {
-            const response = await utils.getBase64ImageFromUrl(imageUrl);
-            if (response === 'error') {
-                showClearbitError.value = true;
-                emits(EMITS.CLEARBIT_ERROR, urlTxt.value);
-            } else {
-                base64Image.value = response;
-            }
-            isIconLoading.value = false;
-        } catch (error) {
-            isIconLoading.value = false;
-        }
-    }
-
-    function getClearbitImage() {
-        if (!urlTxt.value) {
-            return;
-        }
-
-        if (utils.isValidURL(urlTxt.value)) {
-            const domain = utils.getDomainFromUrl(urlTxt.value);
-            const imageUrl = `https://logo.clearbit.com/${domain}?size=200`;
-
-            fetchClearBitImage(imageUrl);
-        }
-
-        showClearbitError.value = false;
-    }
-
-    // force event trigger if bookmark data is not updated but image has changed
-    function emitImageUpdate() {
-        if (id.value && titleTxt.value === props.data.title && urlTxt.value === props.data.url) {
-            emit(EMITS.CHANGED, id.value);
-        }
-    }
 
     async function moveToFolder(folderStr, newFolderId) {
         if (newFolderId) {
@@ -278,6 +191,11 @@
 
     function onDelete() {
         emits(EMITS.DELETE, props.data);
+    }
+
+    // force event trigger if bookmark data is not updated but image has changed
+    function emitImageUpdate() {
+        emit(EMITS.CHANGED, id.value);
     }
 
     async function onClickSave() {
@@ -351,26 +269,12 @@
         emits(EMITS.SAVE);
     }
 
-    function onClickFindImage() {
-        document.getElementById('inp_image').click();
+    function onIconUpdate(event) {
+        base64Image.value = event;
     }
 
-    async function getBase64Data(file) {
-        try {
-            const base64Data = await bookmarksStore.toBase64(file);
-            return base64Data;
-        } catch (error) {
-            console.error(error);
-            throw error;
-        }
-    }
-
-    async function onImageInpChange(event) {
-        // eslint-disable-next-line prefer-destructuring
-        imageFile.value = event.target.files[0];
-
-        const base64Response = await getBase64Data(imageFile.value);
-        base64Image.value = base64Response;
+    function onClearbitError(event) {
+        emits(EMITS.CLEARBIT_ERROR, event);
     }
 
     watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async () => {
@@ -394,7 +298,8 @@
             parentId.value = props.data.parentId;
             titleTxt.value = props.data.title;
             urlTxt.value = props.data.url;
-            base64Image.value = props.data.image;
+            // base64Image.value = props.data.image;
+            base64Image.value = JSON.parse(JSON.stringify(props.data.image));
         }
 
         if (!slctDisabled && props.data && props.data.parentId) {
@@ -415,26 +320,13 @@
         }
     });
 
-    onUnmounted(() => {
-        // bookmarksStore.dialogOpen = false;
-    });
 </script>
 <style scoped lang="scss">
-    .inp-file {
-        display: none;
-    }
-
     .clearbit-note {
         font-size: 12px;
-        // visibility: hidden;
     }
 
     a.dark {
         color: var(--darkmode-400);
     }
-
-    .clearbit-error {
-        color: rgb(var(--v-theme-error));
-    }
-
 </style>

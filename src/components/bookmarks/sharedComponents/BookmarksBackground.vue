@@ -1,6 +1,5 @@
 <template>
-    <div class="background" :class="{ dark: bookmarksStore.enableDarkMode }">
-    </div>
+    <div class="background" :class="{ dark: bookmarksStore.enableDarkMode }"></div>
 </template>
 
 <script setup>
