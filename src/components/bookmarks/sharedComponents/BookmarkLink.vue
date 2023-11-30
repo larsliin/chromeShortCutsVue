@@ -21,9 +21,9 @@
         <div class="bookmark-edit">
             <BookmarkFoldout
                 :darkModeBorder="true"
-                :size="'x-small'"
                 :list="list"
                 :show="mouseEnter"
+                :size="'x-small'"
                 @toggle="onToggle($event)"
                 @delete="onDelete()"
                 @edit="emit(EMITS.EDIT, id)" />
@@ -39,6 +39,7 @@
                     <BookmarkConfirmDelete
                         :title="title"
                         :id="id"
+                        :typeFolder="!link"
                         :bookmark="deleteConfirmBookmark"
                         @cancel="showConfirmDelete = false"
                         @confirm="onDeleteConfirm($event)" />
@@ -80,11 +81,6 @@
     const ready = ref(false);
     const list = ref([
         {
-            title: 'Edit',
-            icon: 'mdi-rename',
-            event: EMITS.EDIT,
-        },
-        {
             title: 'Delete',
             icon: 'mdi-delete-outline',
             event: EMITS.DELETE,
@@ -112,7 +108,11 @@
     function onDeleteConfirm() {
         showConfirmDelete.value = false;
 
-        bookmarksStore.remove_bookmark(props.id);
+        if (props.link) {
+            bookmarksStore.remove_bookmark(props.id);
+        } else {
+            bookmarksStore.remove_bookmarkFolder(props.id);
+        }
     }
 
     function onToggle(event) {
@@ -130,6 +130,14 @@
     });
 
     onMounted(async () => {
+        if (props.link) {
+            const o = {
+                title: 'Edit',
+                icon: 'mdi-rename',
+                event: EMITS.EDIT,
+            };
+            list.value.unshift(o);
+        }
         updateImage();
     });
 

@@ -2,15 +2,14 @@
     <v-card>
         <v-card-text>
             <div class="text-center">
-                <h5 class="text-h5">Confirm Delete</h5>
+                <h5 class="text-h5">Delete {{ typeFolder ? 'Folder' : 'Bookmark' }}</h5>
             </div>
             <p class="text-center text-body-1 mt-3 mb-3">
-                <template v-if="typeFolder">
-                    Deleting {{ title }} will also permanently delete its containing bookmarks
-                </template>
-                <template v-else>
-                    Are you sure you want to delete {{ title }}?
-                </template>
+                Are you sure you want to delete {{ title }}?
+            </p>
+            <p class="text-center text-body-1 mt-3 mb-3"
+                v-if="typeFolder">
+                Deleting {{ title }} will also permanently delete its containing bookmarks
             </p>
         </v-card-text>
         <v-spacer class="mt-2 mb-2" />

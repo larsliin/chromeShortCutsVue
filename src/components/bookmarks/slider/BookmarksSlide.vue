@@ -21,7 +21,7 @@
                             :id="element.id"
                             :key="element.id"
                             :link="element.url"
-                            :title="element.url ? element.title : ''"
+                            :title="element.title"
                             :typeFolder="!!element.url" />
                     </li>
                 </template>
