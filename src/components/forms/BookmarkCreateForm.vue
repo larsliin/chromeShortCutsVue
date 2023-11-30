@@ -111,7 +111,7 @@
                 </v-btn>
                 <v-btn
                     color="blue-darken-1"
-                    variant="text"
+                    variant="tonal"
                     @click="onClickSave()">
                     Save
                 </v-btn>
@@ -299,7 +299,9 @@
             titleTxt.value = props.data.title;
             urlTxt.value = props.data.url;
             // base64Image.value = props.data.image;
-            base64Image.value = JSON.parse(JSON.stringify(props.data.image));
+            if (props.data.image) {
+                base64Image.value = JSON.parse(JSON.stringify(props.data.image));
+            }
         }
 
         if (!slctDisabled && props.data && props.data.parentId) {

@@ -138,7 +138,8 @@
 
         const base64Response = await getBase64Data(imageFile.value);
         base64Image.value = base64Response;
-        emits(EMITS.UPDATE, base64Image);
+
+        emits(EMITS.UPDATE, base64Image.value);
     }
 
     function onClickFindImage() {

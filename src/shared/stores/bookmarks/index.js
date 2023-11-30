@@ -19,7 +19,6 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         transition: true,
         popup: false,
         enableDarkMode: false,
-        bookmarkTooltip: true,
         dialogOpen: false,
     }),
     actions,
