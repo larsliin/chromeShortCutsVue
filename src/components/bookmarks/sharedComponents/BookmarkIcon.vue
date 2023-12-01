@@ -67,7 +67,7 @@
         z-index: 1;
 
         &.dark {
-            background-color: var(--darkmode-300);
+            background-color: rgba(var(--darkmode-rgb-300), .8)
         }
     }
 
