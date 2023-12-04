@@ -6,12 +6,15 @@
         }">
         <div class="folder-inner" v-if="bookmarks">
             <draggable
-                tag="ul"
-                item-key="id"
-                ghost-class="ghost"
                 :animation="200"
+                :delay="30"
+                :force-fallback="true"
+                :ghost-class="'ghost'"
+                :group="'bookmarks'"
+                :item-key="'id'"
                 :list="bookmarks"
-                group="bookmarks"
+                :scroll-sensitivity="100"
+                :tag="'ul'"
                 @add="onDragAdd($event)"
                 @update="onDragUpdate($event)"
                 @start="onDragStart()">
@@ -37,7 +40,10 @@
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
     import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useUtils } from '@/shared/utils/utils';
+    import useEventsBus from '@cmp/eventBus';
+    import { EMITS } from '@/constants';
+
+    const { emit } = useEventsBus();
 
     const props = defineProps({
         slideindex: Number,
@@ -77,6 +83,8 @@
 
     function onDragStart() {
         bookmarksStore.dragStart = true;
+
+        emit(EMITS.DRAG_START);
     }
 </script>
 

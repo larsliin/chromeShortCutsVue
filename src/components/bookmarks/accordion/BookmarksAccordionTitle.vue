@@ -53,7 +53,7 @@
     import { EMITS } from '@/constants';
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/utils/utils';
-    import BookmarkFoldout from '@/components/fields/Foldout.vue';
+    import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
 
     const utils = useUtils();
 

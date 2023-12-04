@@ -58,7 +58,7 @@
         from '@/components/forms/BookmarkConfirmDelete.vue';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import BookmarkFoldout
-        from '@/components/fields/Foldout.vue';
+        from '@/components/fields/BookmarkFoldout.vue';
 
     const { emit, bus } = useEventsBus();
 
@@ -180,8 +180,6 @@
     }
 
     .bookmark-image-container {
-        // transform-origin: center right;
-        // transform-origin: center center;
         transform-origin: center right;
     }
 

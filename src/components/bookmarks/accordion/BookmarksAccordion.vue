@@ -26,12 +26,17 @@
                 multiple
                 @update:modelValue="onUpdate($event)">
                 <draggable
-                    tag="div"
-                    item-key="id"
-                    ghost-class="ghost"
                     :animation="200"
+                    :force-fallback="true"
+                    :ghost-class="'ghost'"
+                    :delay="30"
+                    :handle="'.v-expansion-panel-title'"
+                    :item-key="'id'"
                     :list="bookmarksStore.bookmarks"
-                    @end="onDragEnd($event, element)">
+                    :scroll-sensitivity="100"
+                    :tag="'div'"
+                    @start="onDragStart($event)"
+                    @end="onDragEnd($event)">
                     <template #item="{element}">
                         <v-expansion-panel
                             eager>
@@ -64,7 +69,7 @@
     import useEventsBus from '@cmp/eventBus';
     import { EMITS } from '@/constants';
 
-    const { bus } = useEventsBus();
+    const { bus, emit } = useEventsBus();
 
     const bookmarksStore = useBookmarksStore();
 
@@ -89,6 +94,10 @@
         });
 
         bookmarksStore.set_syncStorage({ accordion: arr2 });
+    }
+
+    function onDragStart() {
+        emit(EMITS.DRAG_START);
     }
 
     async function onDragEnd(event) {
@@ -211,7 +220,7 @@
     }
 
     :deep(.v-expansion-panel-text__wrapper) {
-        padding-top: 16px;
+        // padding: 16px 16px;
     }
 
     .v-expansion-panels > div{

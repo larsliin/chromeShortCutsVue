@@ -5,6 +5,7 @@
         }"
         location="end bottom"
         origin="start top"
+
         v-model="toggle">
         <template v-slot:activator="{ props }">
             <v-btn
@@ -43,6 +44,9 @@
     import { ref, watch } from 'vue';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
+    import useEventsBus from '@cmp/eventBus';
+
+    const { bus } = useEventsBus();
 
     const bookmarksStore = useBookmarksStore();
 
@@ -88,6 +92,12 @@
 
     watch(toggle, (newVal) => {
         emits(EMITS.TOGGLE, newVal);
+    });
+
+    watch(() => bus.value.get(EMITS.DRAG_START), async () => {
+        if (toggle.value) {
+            toggle.value = false;
+        }
     });
 </script>
 
