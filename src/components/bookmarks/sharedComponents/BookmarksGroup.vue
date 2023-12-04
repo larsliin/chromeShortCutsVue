@@ -7,12 +7,13 @@
         <div class="folder-inner" v-if="bookmarks">
             <draggable
                 :animation="200"
-                :delay="30"
-                :force-fallback="true"
+                :delay="50"
                 :ghost-class="'ghost'"
                 :group="'bookmarks'"
                 :item-key="'id'"
                 :list="bookmarks"
+                :force-fallback="true"
+                :handle="'a'"
                 :scroll-sensitivity="100"
                 :tag="'ul'"
                 @add="onDragAdd($event)"
@@ -125,6 +126,17 @@
             ul {
                 padding: 0 40px;
             }
+        }
+    }
+
+    .sortable-chosen {
+        :deep(.tooltip) {
+            opacity: 0 !important;
+            transition: none !important;
+        }
+
+        :deep(.bookmark-edit) {
+            visibility: hidden !important;
         }
     }
 </style>

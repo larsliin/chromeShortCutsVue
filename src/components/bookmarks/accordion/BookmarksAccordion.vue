@@ -27,14 +27,15 @@
                 @update:modelValue="onUpdate($event)">
                 <draggable
                     :animation="200"
+                    :delay="50"
                     :force-fallback="true"
                     :ghost-class="'ghost'"
-                    :delay="30"
                     :handle="'.v-expansion-panel-title'"
                     :item-key="'id'"
                     :list="bookmarksStore.bookmarks"
                     :scroll-sensitivity="100"
                     :tag="'div'"
+
                     @start="onDragStart($event)"
                     @end="onDragEnd($event)">
                     <template #item="{element}">
