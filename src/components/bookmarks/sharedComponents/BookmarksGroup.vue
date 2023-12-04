@@ -11,8 +11,10 @@
                 ghost-class="ghost"
                 :animation="200"
                 :list="bookmarks"
-                @start="onDragStart()"
-                @end="onDragEnd($event, element)">
+                group="bookmarks"
+                @add="onDragAdd($event)"
+                @update="onDragUpdate($event)"
+                @start="onDragStart()">
                 <template #item="{element}">
                     <li>
                         <BookmarkLink
@@ -35,9 +37,11 @@
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
     import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
+    import { useUtils } from '@/shared/utils/utils';
 
     const props = defineProps({
         slideindex: Number,
+        id: String,
         bookmarks: {
             type: Array,
             default: () => [],
@@ -53,11 +57,15 @@
         return 'normal';
     });
 
-    function onDragStart() {
-        bookmarksStore.dragStart = true;
+    // when bookmark is moved to a different folder/parentId
+    async function onDragAdd(event) {
+        const bookmark = props.bookmarks[event.newIndex];
+
+        bookmarksStore.move_bookmark(bookmark.id, { parentId: props.id, index: event.newIndex });
     }
 
-    async function onDragEnd(event) {
+    // when bookmark is moved within the same folder/parentId
+    async function onDragUpdate(event) {
         const bookmark = props.bookmarks[event.newIndex];
 
         const index = event.newIndex > event.oldIndex ? event.newIndex + 1 : event.newIndex;
@@ -65,6 +73,10 @@
         await nextTick();
 
         bookmarksStore.reorder_bookmark(bookmark.id, index);
+    }
+
+    function onDragStart() {
+        bookmarksStore.dragStart = true;
     }
 </script>
 

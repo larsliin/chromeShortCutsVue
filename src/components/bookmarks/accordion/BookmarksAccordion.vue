@@ -39,8 +39,9 @@
                                 @delete="onFolderDelete($event)"
                                 :bookmark="element" />
                             <v-expansion-panel-text>
-                                <BookmarksSlide
+                                <BookmarksGroup
                                     :slideindex="index"
+                                    :id="element.id"
                                     :bookmarks="element.children" />
                             </v-expansion-panel-text>
                         </v-expansion-panel>
@@ -55,7 +56,7 @@
     import {
         onMounted, ref, nextTick, watch,
     } from 'vue';
-    import BookmarksSlide from '@/components/bookmarks/slider/BookmarksSlide.vue';
+    import BookmarksGroup from '@/components/bookmarks/sharedComponents/BookmarksGroup.vue';
     import BookmarksAccordionTitle
         from '@/components/bookmarks/accordion/BookmarksAccordionTitle.vue';
     import draggable from 'vuedraggable';
