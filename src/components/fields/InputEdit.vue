@@ -47,8 +47,8 @@
         </template>
     </Teleport>
 </template>
-
-    <script setup>
+<script setup>
+    import { mdiRename, mdiDeleteOutline, mdiStar } from '@mdi/js';
     import { ref, onMounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkConfirmDelete
@@ -83,17 +83,17 @@
     const list = ref([
         {
             title: 'New Bookmark',
-            icon: 'mdi-star',
+            icon: mdiStar,
             event: EMITS.BOOKMARK_ADD,
         },
         {
             title: 'Rename',
-            icon: 'mdi-rename',
+            icon: mdiRename,
             event: EMITS.RENAME,
         },
         {
             title: 'Delete',
-            icon: 'mdi-delete-outline',
+            icon: mdiDeleteOutline,
             event: EMITS.DELETE,
         },
     ]);

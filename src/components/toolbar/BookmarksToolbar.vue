@@ -3,8 +3,9 @@
         <div>
             <v-btn
                 class="toolbar-add-button"
-                icon="mdi-star"
+                :icon="mdiStar"
                 @click="dialogAddOpen = true"></v-btn>
+
             <BookmarksFilter
                 class="toolbar-filter-input"
                 v-if="bookmarksStore.searchNavigation" />
@@ -12,7 +13,7 @@
         <div>
             <v-btn
                 class="toolbar-settings-button"
-                icon="mdi-wrench"
+                :icon="mdiWrench"
                 @click="dialogSettings = true"></v-btn>
         </div>
     </div>
@@ -56,7 +57,7 @@
                                 <v-icon
                                     class="error-icon"
                                     size="large"
-                                    icon="mdi-alert-circle-outline"></v-icon>
+                                    :icon="mdiAlertCircleOutline"></v-icon>
                             </div>
                             <p class="text-center text-body-1 mt-3 mb-3">
                                 The icon generator service could not recognize the provided domain
@@ -105,6 +106,7 @@
 </template>
 
 <script setup>
+    import { mdiStar, mdiWrench, mdiAlertCircleOutline } from '@mdi/js';
     import {
         ref, watch, onMounted,
     } from 'vue';

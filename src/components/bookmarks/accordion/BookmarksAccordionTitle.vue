@@ -22,7 +22,7 @@
         <v-icon
             size="large"
             class="icon-drag"
-            icon="mdi-drag-horizontal"></v-icon>
+            :icon="mdiDragHorizontal"></v-icon>
     </v-expansion-panel-title>
     <Teleport to="body">
         <template>
@@ -47,6 +47,9 @@
     import {
         ref, onMounted, nextTick,
     } from 'vue';
+    import {
+        mdiRename, mdiDragHorizontal, mdiDeleteOutline, mdiStar,
+    } from '@mdi/js';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';
@@ -74,17 +77,17 @@
     const list = ref([
         {
             title: 'New Bookmark',
-            icon: 'mdi-star',
+            icon: mdiStar,
             event: EMITS.BOOKMARK_ADD,
         },
         {
             title: 'Rename Folder',
-            icon: 'mdi-rename',
+            icon: mdiRename,
             event: EMITS.RENAME,
         },
         {
             title: 'Delete Folder',
-            icon: 'mdi-delete-outline',
+            icon: mdiDeleteOutline,
             event: EMITS.DELETE,
         },
     ]);

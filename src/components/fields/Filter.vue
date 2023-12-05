@@ -3,7 +3,7 @@
         <v-text-field
             hide-details="auto"
             label="Filter"
-            append-inner-icon="mdi-magnify"
+            :append-inner-icon="mdiMagnify"
             clearable
             density="compact"
             variant="solo"
@@ -16,6 +16,7 @@
 </template>
 
 <script setup>
+    import { mdiMagnify } from '@mdi/js';
     import {
         ref, onMounted, watch, nextTick,
     } from 'vue';

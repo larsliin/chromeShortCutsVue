@@ -9,7 +9,7 @@
             <span class="icon-container" v-bind="props">
                 <v-icon
                     size="small"
-                    icon="mdi-help-circle-outline"></v-icon>
+                    :icon="mdiHelpCircleOutline"></v-icon>
             </span>
         </template>
         <span v-html="tooltip"></span>
@@ -18,6 +18,8 @@
 </template>
 
 <script setup>
+    import { mdiHelpCircleOutline } from '@mdi/js';
+
     defineProps({
         tooltip: {
             type: String,

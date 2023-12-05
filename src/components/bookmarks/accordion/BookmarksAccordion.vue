@@ -7,13 +7,13 @@
                 <v-btn
                     class="expansion-panels-toggle-btn mb-2"
                     size="small"
-                    icon="mdi-unfold-less-horizontal"
+                    :icon="mdiUnfoldLessHorizontal"
                     :disabled="panelsModel.length === 0"
                     @click="onUnfoldAllClick()"></v-btn>
                 <v-btn
                     class="expansion-panels-toggle-btn"
                     size="small"
-                    icon="mdi-unfold-more-horizontal"
+                    :icon="mdiUnfoldMoreHorizontal"
                     :disabled="panelsModel.length === bookmarksStore.bookmarks.length"
                     @click="onFoldAllClick()"></v-btn>
             </div>
@@ -57,6 +57,7 @@
 </template>
 
 <script setup>
+    import { mdiUnfoldLessHorizontal, mdiUnfoldMoreHorizontal } from '@mdi/js';
     import {
         onMounted, ref, nextTick, watch,
     } from 'vue';

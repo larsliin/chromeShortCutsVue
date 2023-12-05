@@ -51,6 +51,7 @@
 </template>
 
 <script setup>
+    import { mdiRename, mdiDeleteOutline } from '@mdi/js';
     import { ref, onMounted, watch } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
@@ -83,7 +84,7 @@
     const list = ref([
         {
             title: 'Delete',
-            icon: 'mdi-delete-outline',
+            icon: mdiDeleteOutline,
             event: EMITS.DELETE,
         },
     ]);
@@ -134,7 +135,7 @@
         if (props.link) {
             const o = {
                 title: 'Edit',
-                icon: 'mdi-rename',
+                icon: mdiRename,
                 event: EMITS.EDIT,
             };
             list.value.unshift(o);

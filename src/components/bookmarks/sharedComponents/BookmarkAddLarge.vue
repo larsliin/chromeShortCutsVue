@@ -5,11 +5,12 @@
         @click="onClick()">
         <v-icon
             class="icon"
-            icon="mdi-star" />
+            :icon="mdiStar" />
     </div>
 </template>
 
 <script setup>
+    import { mdiStar } from '@mdi/js';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
     import useEventsBus from '@cmp/eventBus';

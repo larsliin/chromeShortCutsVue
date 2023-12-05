@@ -52,9 +52,7 @@
 </template>
 
 <script setup>
-    import {
-        ref, watch,
-    } from 'vue';
+    import { ref, watch } from 'vue';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import { EMITS } from '@/constants';
     import { useUtils } from '@/shared/utils/utils';
@@ -65,14 +63,8 @@
     const utils = useUtils();
 
     const props = defineProps({
-        data: {
-            type: Object,
-            required: true,
-        },
-        url: {
-            type: String,
-            required: true,
-        },
+        data: Object,
+        url: String,
         iconUrl: String,
     });
 

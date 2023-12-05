@@ -5,7 +5,7 @@
             class="visibility-toggle"
             :class="{ hide }">
             <v-icon v-if="folder"
-                icon="mdi-folder-open" />
+                :icon="mdiFolderOpen" />
             <template v-else-if="image">
                 <span class="bookmark-image-overlay" ></span>
                 <span class="bookmark-image"
@@ -27,6 +27,7 @@
 </template>
 
 <script setup>
+    import { mdiFolderOpen } from '@mdi/js';
     import { BIconStarFill } from 'bootstrap-icons-vue';
     import { useBookmarksStore } from '@stores/bookmarks';
 

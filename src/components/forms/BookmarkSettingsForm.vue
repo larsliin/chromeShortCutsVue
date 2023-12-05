@@ -25,7 +25,7 @@
                                         @click:clear="clearFileInput()"
                                         :disabled="iconsFileImport"
                                         label="Bookmarks Data File"
-                                        prepend-icon="mdi-download"
+                                        :prepend-icon="mdiDownload"
                                         v-model="bookmarksFileImport"></v-file-input>
                                 </v-col>
                             </v-row>
@@ -39,7 +39,7 @@
                                     <v-btn
                                         color="blue-darken-1"
                                         variant="tonal"
-                                        prepend-icon="mdi-upload"
+                                        :prepend-icon="mdiUpload"
                                         @click="onClickExportBookmarks()">
                                         Export Bookmarks
                                     </v-btn>
@@ -61,7 +61,7 @@
                                         @click:clear="clearFileInput()"
                                         :disabled="bookmarksFileImport"
                                         label="Icons Data File input"
-                                        prepend-icon="mdi-download"
+                                        :prepend-icon="mdiDownload"
                                         v-model="iconsFileImport"></v-file-input>
                                 </v-col>
                             </v-row>
@@ -75,7 +75,7 @@
                                     <v-btn
                                         color="blue-darken-1"
                                         variant="tonal"
-                                        prepend-icon="mdi-upload"
+                                        :prepend-icon="mdiUpload"
                                         @click="onClickExportIcons()">
                                         Export Icons
                                     </v-btn>
@@ -179,6 +179,7 @@
 </template>
 
 <script setup>
+    import { mdiDownload, mdiUpload } from '@mdi/js';
     import {
         ref, onMounted, watch, onUnmounted,
     } from 'vue';

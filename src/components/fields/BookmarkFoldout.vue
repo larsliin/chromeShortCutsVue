@@ -10,7 +10,7 @@
             <v-btn
                 class="button"
                 :size="size"
-                icon="mdi-dots-vertical"
+                :icon="mdiDotsVertical"
                 v-bind="props"></v-btn>
         </template>
         <v-list
@@ -40,6 +40,7 @@
 </template>
 
 <script setup>
+    import { mdiDotsVertical } from '@mdi/js';
     import { ref, watch } from 'vue';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';

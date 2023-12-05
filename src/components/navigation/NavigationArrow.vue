@@ -5,12 +5,13 @@
         :class="[ direction, bookmarksStore.enableDarkMode ? 'dark' : '' ]"
         @click="onClick()">
         <!-- https://pictogrammers.com/library/mdi/ -->
-        <v-icon size="large" icon="mdi-chevron-right" v-if="direction === 'right'" ></v-icon>
-        <v-icon size="large" icon="mdi-chevron-left" v-if="direction === 'left'" ></v-icon>
+        <v-icon size="large" :icon="mdiChevronRight" v-if="direction === 'right'" ></v-icon>
+        <v-icon size="large" :icon="mdiChevronLeft" v-if="direction === 'left'" ></v-icon>
     </button>
 </template>
 
 <script setup>
+    import { mdiChevronRight, mdiChevronLeft } from '@mdi/js';
     import { ref, onMounted, watch } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/utils/utils';
