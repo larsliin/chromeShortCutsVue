@@ -26,11 +26,11 @@
                 multiple
                 @update:modelValue="onUpdate($event)">
                 <draggable
+                    :fallbackTolerance="10"
                     :animation="200"
-                    :delay="25"
                     :force-fallback="true"
                     :ghost-class="'ghost'"
-                    :handle="'.mdi-drag-horizontal'"
+                    :handle="'button'"
                     :item-key="'id'"
                     :list="bookmarksStore.bookmarks"
                     :scroll-sensitivity="100"
@@ -45,7 +45,6 @@
                                 :bookmark="element" />
                             <v-expansion-panel-text>
                                 <BookmarksGroup
-                                    :slideindex="index"
                                     :id="element.id"
                                     :bookmarks="element.children" />
                             </v-expansion-panel-text>
@@ -220,7 +219,7 @@
     }
 
     :deep(.v-expansion-panel-text__wrapper) {
-        // padding: 16px 16px;
+        padding-top: 16px;
     }
 
     .v-expansion-panels > div{

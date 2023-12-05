@@ -44,10 +44,18 @@ const vuetify = createVuetify({
     },
 });
 
-const app = createApp(App);
-app.config.globalProperties.emitter = emitter;
-app.use(pinia).use(vuetify).mount('#app');
+const appElement = document.getElementById('app');
 
-const appPopup = createApp(AppPopup);
-appPopup.config.globalProperties.emitter = emitter;
-appPopup.use(pinia).use(vuetify).mount('#appPopup');
+if (appElement) {
+    const app = createApp(App);
+    app.config.globalProperties.emitter = emitter;
+    app.use(pinia).use(vuetify).mount('#app');
+}
+
+const appPopupElement = document.getElementById('appPopup');
+
+if (appPopupElement) {
+    const appPopup = createApp(AppPopup);
+    appPopup.config.globalProperties.emitter = emitter;
+    appPopup.use(pinia).use(vuetify).mount('#appPopup');
+}

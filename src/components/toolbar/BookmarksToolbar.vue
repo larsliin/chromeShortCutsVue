@@ -6,11 +6,12 @@
                 icon="mdi-star"
                 @click="dialogAddOpen = true"></v-btn>
             <BookmarksFilter
-                class="ml-5"
+                class="toolbar-filter-input"
                 v-if="bookmarksStore.searchNavigation" />
         </div>
         <div>
             <v-btn
+                class="toolbar-settings-button"
                 icon="mdi-wrench"
                 @click="dialogSettings = true"></v-btn>
         </div>
@@ -224,7 +225,7 @@
         $breakpoint: 540px;
 
         height: 0;
-        padding: 20px;
+        justify-content: center;
         position: fixed;
         width: $breakpoint;
         z-index: 999;
@@ -237,15 +238,20 @@
             align-items: center;
             display: flex;
             position: relative;
-            top: 20px;
+            top: 45px;
         }
 
         > div:first-child {
-            flex: 1;
+            flex: 0 1 calc(100% - 90px);
         }
 
         &-add-button {
             color: var(--yellow);
+        }
+
+        &-filter-input {
+            left: 20px;
+            position: relative;
         }
     }
 

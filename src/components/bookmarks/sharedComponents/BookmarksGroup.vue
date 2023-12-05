@@ -6,19 +6,21 @@
         }">
         <div class="folder-inner" v-if="bookmarks">
             <draggable
+                :class="{ dragging }"
+                :fallbackTolerance="10"
                 :animation="200"
-                :delay="50"
                 :ghost-class="'ghost'"
                 :group="'bookmarks'"
                 :item-key="'id'"
                 :list="bookmarks"
                 :force-fallback="true"
-                :handle="'a'"
+                :handle="'.handle'"
                 :scroll-sensitivity="100"
                 :tag="'ul'"
                 @add="onDragAdd($event)"
                 @update="onDragUpdate($event)"
-                @start="onDragStart()">
+                @start="onDragStart()"
+                @end="dragging = false">
                 <template #item="{element}">
                     <li>
                         <BookmarkLink
@@ -27,8 +29,7 @@
                             :id="element.id"
                             :key="element.id"
                             :link="element.url"
-                            :title="element.title"
-                            :typeFolder="!!element.url" />
+                            :title="element.title" />
                     </li>
                 </template>
             </draggable>
@@ -37,7 +38,7 @@
 </template>
 
 <script setup>
-    import { nextTick, computed } from 'vue';
+    import { nextTick, computed, ref } from 'vue';
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
     import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
@@ -54,6 +55,8 @@
             default: () => [],
         },
     });
+
+    const dragging = ref(false);
 
     const bookmarksStore = useBookmarksStore();
 
@@ -84,6 +87,8 @@
 
     function onDragStart() {
         bookmarksStore.dragStart = true;
+
+        dragging.value = true;
 
         emit(EMITS.DRAG_START);
     }
@@ -119,6 +124,20 @@
                 margin: 0 10px 5px;
                 display: inline;
                 position: relative;
+            }
+
+            &.dragging {
+                :deep(.bookmark-edit) {
+                    display: none;
+                }
+
+                :deep(.tooltip) {
+                    display: none;
+                }
+
+                :deep(.bookmark-image-container) {
+                    transform: none !important;
+                }
             }
         }
 

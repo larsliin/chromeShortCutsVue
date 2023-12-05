@@ -1,28 +1,29 @@
 <template>
     <span class="bookmark relative inline-block"
         :class="{ 'foldout-open': isFoldoutOpen }">
-        <a
-            v-bind="props"
-            class="bookmark-link"
-            :tabindex="tabIndex"
-            :class="[link ? '' : 'folder', size]"
-            draggable="true"
-            :href="link"
-            :id="id"
-            title=""
-            :aria-label="title">
-            <BookmarkIcon
-                :hide="!ready"
-                :folder="!link"
-                :image="image" />
-            <span class="bookmark-title-container">{{ title }}</span>
-        </a>
+        <span class="handle">
+            <a
+                v-bind="props"
+                class="bookmark-link"
+                :tabindex="tabIndex"
+                :class="[link ? '' : 'folder', size]"
+                draggable="true"
+                :href="link"
+                :id="id"
+                title=""
+                :aria-label="title">
+                <BookmarkIcon
+                    :hide="!ready"
+                    :folder="!link"
+                    :image="image" />
+                <span class="bookmark-title-container">{{ title }}</span>
+            </a>
+        </span>
         <div class="tooltip">{{ title }}</div>
         <div class="bookmark-edit">
             <BookmarkFoldout
                 :darkModeBorder="true"
                 :list="list"
-                :show="mouseEnter"
                 :size="'x-small'"
                 @toggle="onToggle($event)"
                 @delete="onDelete()"
@@ -39,7 +40,7 @@
                     <BookmarkConfirmDelete
                         :title="title"
                         :id="id"
-                        :typeFolder="!link"
+                        :typeFolder="link ? true : false"
                         :bookmark="deleteConfirmBookmark"
                         @cancel="showConfirmDelete = false"
                         @confirm="onDeleteConfirm($event)" />
@@ -261,8 +262,6 @@
     .bookmark .bookmark-link:active:not(.folder) .bookmark-image-container {
         transform: perspective(400px) rotateY(-15deg) scale(.98);
         box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
-        // transform-origin: center left;
-        // transform-origin: center center;
         transform-origin: center right;
     }
 
