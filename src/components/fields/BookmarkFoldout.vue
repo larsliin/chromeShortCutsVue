@@ -116,6 +116,8 @@
     .button {
         background-color: transparent;
         box-shadow: none;
+        position: relative;
+        z-index: 5;
     }
 
     .item-button {

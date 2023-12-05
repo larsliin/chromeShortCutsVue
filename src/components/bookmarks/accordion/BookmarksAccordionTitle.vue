@@ -11,7 +11,7 @@
             type="text"
             ref="input"
             tabindex="-1"
-            :class="[ active, bookmarksStore.enableDarkMode ? 'dark' : '']"
+            :class="[ bookmarksStore.enableDarkMode ? 'dark' : '']"
             :style="{width: inputWidth}"
             @click.stop="onInputClick($event)"
             @blur.stop="onBlur($event)"
@@ -90,7 +90,6 @@
     ]);
 
     const input = ref();
-    const active = ref(false);
     const inputWidth = ref(0);
     const textwidth = ref();
 
@@ -99,7 +98,6 @@
     }
 
     function onRename() {
-        active.value = true;
         inputWidth.value = `${textwidth.value.clientWidth + 0}px`;
         input.value.focus();
     }
@@ -127,8 +125,6 @@
 
     function onBlur() {
         bookmarksStore.update_bookmark(props.bookmark.id, { title: model.value });
-
-        active.value = false;
     }
 
     async function keyDown(event) {
@@ -162,13 +158,12 @@
         pointer-events: none;
         text-overflow: ellipsis;
         white-space: nowrap;
-
-        &.active {
-            pointer-events: initial;
-        }
+        position: relative;
+        z-index: 10;
 
         &:focus {
             outline: none;
+            pointer-events: auto;
             border: 1px solid rgba(0,0,0,.12);
 
             &.dark {
@@ -210,6 +205,9 @@
         position: absolute;
         top: 50%;
         transform: translate(-50%, -50%);
+        height: 100%;
+        width: 100%;
+        z-index: 0;
     }
 
     .text-width {
