@@ -26,6 +26,7 @@ export const EMITS = Object.freeze({
     DELETE: 'delete',
     DRAG_START: 'dragStart',
     EDIT: 'edit',
+    FILTER_UPDATED: 'filterUpdated',
     ICON_UPDATE: 'iconUpdate',
     UPDATE: 'update',
     IMAGES_IMPORT: 'imagesImport',

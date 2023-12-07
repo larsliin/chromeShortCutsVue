@@ -55,8 +55,8 @@
         from '@/components/forms/BookmarkConfirmDelete.vue';
     import { EMITS } from '@/constants';
     import useEventsBus from '@cmp/eventBus';
-    import { useUtils } from '@/shared/utils/utils';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
+    import { useUtils } from '@/shared/utils/utils';
 
     const utils = useUtils();
 
@@ -111,13 +111,17 @@
         showConfirmDelete.value = true;
     }
 
-    function onDeleteConfirm() {
+    async function onDeleteConfirm() {
         // close confirmation dialogue
         showConfirmDelete.value = false;
 
-        utils.deleteBookmarkFolder(props.bookmark.id);
+        // get updated bookmark folder index
+        const bookmarkResponse = await bookmarksStore.get_bookmarkById(props.bookmark.id);
+        const bookmark = bookmarkResponse;
 
-        emits(EMITS.DELETE, props.bookmark.id);
+        utils.deleteBookmarkFolder(bookmarkResponse.id);
+
+        emits(EMITS.DELETE, { id: props.bookmark.id, index: bookmark.index });
     }
 
     function onInputClick(event) {

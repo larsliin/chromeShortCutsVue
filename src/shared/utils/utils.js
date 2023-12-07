@@ -182,6 +182,14 @@ export function useUtils() {
         }
     }
 
+    async function setAccordionModel(model) {
+        const bookmarksStore = useBookmarksStore();
+
+        bookmarksStore.accordionModel = [...model];
+
+        bookmarksStore.set_syncStorage({ accordion: [...model] });
+    }
+
     return {
         buildRootFolder,
         deleteAllBookmarks,
@@ -193,5 +201,6 @@ export function useUtils() {
         isValidURL,
         setSliderIndex,
         deleteBookmarkFolder,
+        setAccordionModel,
     };
 }

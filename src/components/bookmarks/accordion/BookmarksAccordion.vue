@@ -3,25 +3,28 @@
         <div class="folders-container">
             <div
                 class="expansion-panels-toggle"
-                v-if="panelsModel">
+                v-if="bookmarksStore.accordionModel">
                 <v-btn
                     class="expansion-panels-toggle-btn mb-2"
                     size="small"
                     :icon="mdiUnfoldLessHorizontal"
-                    :disabled="panelsModel.length === 0"
+                    :disabled="bookmarksStore.accordionModel.length === 0
+                        || !bookmarksStore.bookmarks.length"
                     @click="onUnfoldAllClick()"></v-btn>
                 <v-btn
                     class="expansion-panels-toggle-btn"
                     size="small"
                     :icon="mdiUnfoldMoreHorizontal"
-                    :disabled="panelsModel.length === bookmarksStore.bookmarks.length"
+                    :disabled="bookmarksStore.accordionModel.length
+                        === bookmarksStore.bookmarks.length
+                        || !bookmarksStore.bookmarks.length"
                     @click="onFoldAllClick()"></v-btn>
             </div>
             <v-expansion-panels
                 class="expansion-panels"
-                v-if="panelsModel && bookmarksStore.bookmarks"
+                v-if="bookmarksStore.accordionModel && bookmarksStore.bookmarks"
                 ref="expansionPanels"
-                v-model="panelsModel"
+                v-model="bookmarksStore.accordionModel"
                 variant="popout"
                 multiple
                 @update:modelValue="onUpdate($event)">
@@ -68,12 +71,14 @@
     import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
     import { EMITS } from '@/constants';
+    import { useUtils } from '@/shared/utils/utils';
+
+    const utils = useUtils();
 
     const { bus, emit } = useEventsBus();
 
     const bookmarksStore = useBookmarksStore();
 
-    const panelsModel = ref();
     const expansionPanels = ref();
 
     // store in local synced-storage the open accordion items
@@ -145,40 +150,52 @@
     }
 
     function onUnfoldAllClick() {
-        panelsModel.value = [];
-
-        bookmarksStore.set_syncStorage({ accordion: [] });
+        utils.setAccordionModel([]);
     }
 
     function onFoldAllClick() {
         const panelsSelector = expansionPanels.value.$el.querySelectorAll('.v-expansion-panel');
         const arr = [...Array(panelsSelector.length).keys()];
 
-        panelsModel.value = arr;
-
-        bookmarksStore.set_syncStorage({ accordion: arr });
+        utils.setAccordionModel(Array.from(arr));
     }
 
     function onFolderDelete(event) {
-        const index = bookmarksStore.bookmarks.findIndex((e) => e.id === event);
+        // update open/closed accordion panels list
+        const sorted = [...bookmarksStore.accordionModel.sort((a, b) => a - b)];
+        let filtered = sorted.filter((e) => e !== event.index);
+        filtered = filtered.map((value) => (value >= event.index ? value - 1 : value));
+        filtered = filtered.filter((e) => e < bookmarksStore.bookmarks.length);
 
-        // remove deleted item from accordion open panels
-        if (panelsModel.value.includes(index)) {
-            panelsModel.value = panelsModel.value.filter((e) => e !== index);
-        }
+        utils.setAccordionModel(Array.from(filtered));
     }
 
     watch(() => bus.value.get(EMITS.BOOKMARKS_IMPORT), () => {
-        panelsModel.value = [0];
+        utils.setAccordionModel([0]);
+    });
+
+    let tmpPanelsModel;
+
+    watch(() => bus.value.get(EMITS.FILTER_UPDATED), (newVal, oldVal) => {
+        if (!oldVal[0] || newVal[0] !== '') {
+            if (!tmpPanelsModel) {
+                tmpPanelsModel = Array.from(bookmarksStore.accordionModel);
+                bookmarksStore.accordionModel = Array
+                    .from({ length: bookmarksStore.bookmarks.length }, (_, index) => index);
+            }
+        } else if (tmpPanelsModel) {
+            bookmarksStore.accordionModel = Array.from(tmpPanelsModel);
+            tmpPanelsModel = null;
+        }
     });
 
     onMounted(async () => {
         const accordionResponse = await bookmarksStore.get_syncStorage('accordion');
 
         if (accordionResponse) {
-            panelsModel.value = Array.from(accordionResponse);
+            bookmarksStore.accordionModel = Array.from(accordionResponse);
         } else {
-            panelsModel.value = [];
+            bookmarksStore.accordionModel = [];
         }
     });
 </script>

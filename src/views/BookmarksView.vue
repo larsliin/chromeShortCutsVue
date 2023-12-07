@@ -142,6 +142,7 @@
             await utils.deleteLocalStoreImages();
 
             utils.setSliderIndex(0, true);
+            utils.setAccordionModel([0]);
 
             emit(EMITS.BOOKMARKS_UPDATED, 'removed');
 

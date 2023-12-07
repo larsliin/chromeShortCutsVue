@@ -27,7 +27,7 @@
 
     const utils = useUtils();
 
-    const { bus } = useEventsBus();
+    const { bus, emit } = useEventsBus();
 
     const bookmarksStore = useBookmarksStore();
 
@@ -81,6 +81,8 @@
         }
 
         utils.setSliderIndex(sliderIndex, true);
+
+        emit(EMITS.FILTER_UPDATED, event ? event.toLowerCase() : '');
 
         if (throttleTimer) {
             clearTimeout(throttleTimer);

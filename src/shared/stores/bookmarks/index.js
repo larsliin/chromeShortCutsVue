@@ -21,6 +21,7 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         enableDarkMode: false,
         dialogOpen: false,
         rootElem: null,
+        accordionModel: null,
     }),
     actions,
     getters,

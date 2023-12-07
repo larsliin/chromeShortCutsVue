@@ -23,7 +23,7 @@
                                     </p>
                                     <v-file-input
                                         @click:clear="clearFileInput()"
-                                        :disabled="iconsFileImport"
+                                        :disabled="!!iconsFileImport"
                                         label="Bookmarks Data File"
                                         :prepend-icon="mdiDownload"
                                         v-model="bookmarksFileImport"></v-file-input>
@@ -59,7 +59,7 @@
                                     </p>
                                     <v-file-input
                                         @click:clear="clearFileInput()"
-                                        :disabled="bookmarksFileImport"
+                                        :disabled="!!bookmarksFileImport"
                                         label="Icons Data File input"
                                         :prepend-icon="mdiDownload"
                                         v-model="iconsFileImport"></v-file-input>
@@ -479,6 +479,11 @@
 
     watch(bookmarksFileImport, (newVal) => {
         if (newVal) {
+            if (!Object.keys(newVal).length) {
+                bookmarksFileImport.value = null;
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 const importBookmarks = JSON.parse(e.target.result);
@@ -495,6 +500,11 @@
 
     watch(iconsFileImport, (newVal) => {
         if (newVal) {
+            if (!Object.keys(newVal).length) {
+                iconsFileImport.value = null;
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 const importIcons = JSON.parse(e.target.result);
