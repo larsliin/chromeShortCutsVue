@@ -190,6 +190,22 @@ export function useUtils() {
         bookmarksStore.set_syncStorage({ accordion: [...model] });
     }
 
+    async function updateAccordionModel(folder) {
+        const bookmarksStore = useBookmarksStore();
+
+        const sorted = [...bookmarksStore.accordionModel.sort((a, b) => a - b)];
+        let filtered = sorted.filter((e) => e !== folder.index);
+        filtered = filtered.map((value) => (value >= folder.index ? value - 1 : value));
+        filtered = filtered.filter((e) => e < bookmarksStore.bookmarks.length);
+
+        await this.setAccordionModel(Array.from(filtered));
+
+        // TODO: replace timeout with await promise
+        setTimeout(() => {
+            bookmarksStore.transitionDisabled = false;
+        }, 500);
+    }
+
     return {
         buildRootFolder,
         deleteAllBookmarks,
@@ -202,5 +218,6 @@ export function useUtils() {
         setSliderIndex,
         deleteBookmarkFolder,
         setAccordionModel,
+        updateAccordionModel,
     };
 }
