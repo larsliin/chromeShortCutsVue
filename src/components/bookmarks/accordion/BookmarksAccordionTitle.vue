@@ -67,6 +67,7 @@
     const emits = defineEmits([
         EMITS.DELETE,
         EMITS.BOOKMARK_ADD,
+        EMITS.BEFORE_DELETE,
     ]);
 
     const props = defineProps({
@@ -112,6 +113,10 @@
     }
 
     async function onDeleteConfirm() {
+        emits(EMITS.BEFORE_DELETE);
+
+        await nextTick();
+
         // close confirmation dialogue
         showConfirmDelete.value = false;
 

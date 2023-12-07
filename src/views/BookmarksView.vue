@@ -292,17 +292,32 @@
             bookmarksStore.sliderIndex = 0;
         }
 
-        const darkModeResponse = await bookmarksStore.get_syncStorage('darkMode');
-        bookmarksStore.enableDarkMode = !!darkModeResponse;
+        // dark mode color theme
+        const preferDarkModeResponse = await bookmarksStore.get_syncStorage('darkMode');
+        bookmarksStore.enablePreferDarkMode = !!preferDarkModeResponse;
 
+        const systemDarkModeResponse = await bookmarksStore.get_syncStorage('systemDarkMode');
+        bookmarksStore.enableSystemDarkMode = !!systemDarkModeResponse;
+
+        if (bookmarksStore.enableSystemDarkMode) {
+            bookmarksStore.enableDarkMode = window
+                .matchMedia('(prefers-color-scheme: dark)').matches;
+        } else if (bookmarksStore.enablePreferDarkMode) {
+            bookmarksStore.enableDarkMode = true;
+        } else {
+            bookmarksStore.enableDarkMode = false;
+        }
         theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
 
+        // is accordion mode enabled
         const accordionNavigationResponse = await bookmarksStore.get_syncStorage('accordionNavigation');
         bookmarksStore.accordionNavigation = !accordionNavigationResponse;
 
+        // is filter search enabled
         const enableSearchResponse = await bookmarksStore.get_syncStorage('searchNavigation');
         bookmarksStore.searchNavigation = !enableSearchResponse;
 
+        // is slider arrow navigation enabled
         const arrowNavigationResponse = await bookmarksStore.get_syncStorage('arrowNavigation');
         bookmarksStore.arrowNavigation = arrowNavigationResponse === undefined;
 
@@ -314,6 +329,10 @@
     }
 
     onMounted(() => {
+        if (bookmarksStore.enableSystemDarkMode) {
+            theme.global.name.value = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
         init();
     });
 

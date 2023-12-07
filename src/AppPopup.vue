@@ -57,9 +57,21 @@
             bookmarksStore.sliderIndex = 0;
         }
 
-        const darkModeResponse = await bookmarksStore.get_syncStorage('darkMode');
-        bookmarksStore.enableDarkMode = !!darkModeResponse;
+        // dark mode color theme
+        const preferDarkModeResponse = await bookmarksStore.get_syncStorage('darkMode');
+        bookmarksStore.enablePreferDarkMode = !!preferDarkModeResponse;
 
+        const systemDarkModeResponse = await bookmarksStore.get_syncStorage('systemDarkMode');
+        bookmarksStore.enableSystemDarkMode = !!systemDarkModeResponse;
+
+        if (bookmarksStore.enableSystemDarkMode) {
+            bookmarksStore.enableDarkMode = window
+                .matchMedia('(prefers-color-scheme: dark)').matches;
+        } else if (bookmarksStore.enablePreferDarkMode) {
+            bookmarksStore.enableDarkMode = true;
+        } else {
+            bookmarksStore.enableDarkMode = false;
+        }
         theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
 
         await utils.buildRootFolder();

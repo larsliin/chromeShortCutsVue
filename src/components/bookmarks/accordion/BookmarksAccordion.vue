@@ -44,9 +44,11 @@
                         <v-expansion-panel
                             eager>
                             <BookmarksAccordionTitle
+                                @beforeDelete="onBeforeDelete"
                                 @delete="onFolderDelete($event)"
                                 :bookmark="element" />
-                            <v-expansion-panel-text>
+                            <v-expansion-panel-text
+                                :class="{'no-transition': transitionDisabled }">
                                 <BookmarksGroup
                                     :id="element.id"
                                     :bookmarks="element.children" />
@@ -160,14 +162,25 @@
         utils.setAccordionModel(Array.from(arr));
     }
 
-    function onFolderDelete(event) {
+    const transitionDisabled = ref(false);
+
+    function onBeforeDelete() {
+        transitionDisabled.value = true;
+    }
+
+    async function onFolderDelete(event) {
         // update open/closed accordion panels list
         const sorted = [...bookmarksStore.accordionModel.sort((a, b) => a - b)];
         let filtered = sorted.filter((e) => e !== event.index);
         filtered = filtered.map((value) => (value >= event.index ? value - 1 : value));
         filtered = filtered.filter((e) => e < bookmarksStore.bookmarks.length);
 
-        utils.setAccordionModel(Array.from(filtered));
+        await utils.setAccordionModel(Array.from(filtered));
+
+        // TODO: replace timeout with await promise
+        setTimeout(() => {
+            transitionDisabled.value = false;
+        }, 500);
     }
 
     watch(() => bus.value.get(EMITS.BOOKMARKS_IMPORT), () => {
@@ -296,6 +309,10 @@
     ):not(.v-expansion-panel--after-active) {
         border-top-left-radius: 0 !important;
         border-top-right-radius: 0 !important;
+    }
+
+    .v-expansion-panel-text.no-transition {
+        transition: none !important;
     }
 
 </style>

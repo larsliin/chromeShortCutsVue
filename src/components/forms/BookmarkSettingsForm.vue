@@ -87,15 +87,29 @@
                             <v-row>
                                 <v-col
                                     cols="12">
+                                    <p>Dark mode color theme</p>
                                     <div class="switch-container">
                                         <v-switch
-                                            label="Dark Mode"
+                                            label="Use OS Dark Mode Setting"
                                             color="info"
                                             hide-details="auto"
-                                            v-model="enableDarkMode"></v-switch>
+                                            v-model="enableSystemDarkMode"></v-switch>
+                                        <ToolTip
+                                            tooltip="Use OS system Dark Mode setting.<br />
+                                            If enabled this setting will override Prefer
+                                            Dark Mode setting" />
+                                    </div>
+                                    <div class="switch-container">
+                                        <v-switch
+                                            label="Prefer Dark Mode"
+                                            color="info"
+                                            hide-details="auto"
+                                            :disabled="enableSystemDarkMode"
+                                            v-model="enablePreferDarkMode"></v-switch>
                                         <ToolTip
                                             tooltip="Switch to Dark Mode theme" />
                                     </div>
+                                    <p class="mt-5">Layout</p>
                                     <div class="switch-container">
                                         <v-switch
                                             label="Use accordion layout"
@@ -103,8 +117,9 @@
                                             hide-details="auto"
                                             v-model="enableAccordionNavigation"></v-switch>
                                         <ToolTip
-                                            tooltip="Toggle between Slider and Accordion layout" />
+                                            tooltip="Toggle between Slider or Accordion layout" />
                                     </div>
+                                    <p class="mt-5">Slider layout mode navigation</p>
                                     <div class="switch-container">
                                         <v-switch
                                             label="Enable Arrow Navigation"
@@ -113,10 +128,11 @@
                                             :disabled="enableAccordionNavigation"
                                             v-model="enableArrowNavigation"></v-switch>
                                         <ToolTip
-                                            :tooltip="`Enable slider side arrows navigation.
+                                            :tooltip="`Enable slider side arrows navigation.<br/>
                                             This switch will be disabled if Accordion Layout
                                             is enabled`" />
                                     </div>
+                                    <p class="mt-5">Filtering</p>
                                     <div class="switch-container">
                                         <v-switch
                                             label="Enable Filtering"
@@ -202,7 +218,8 @@
 
     const form = ref();
     const enableArrowNavigation = ref();
-    const enableDarkMode = ref();
+    const enablePreferDarkMode = ref();
+    const enableSystemDarkMode = ref();
     const enableAccordionNavigation = ref();
     const enableSearchNavigation = ref();
 
@@ -401,15 +418,34 @@
             reader.readAsText(iconsFileImport.value[0]);
         }
 
-        bookmarksStore.enableDarkMode = enableDarkMode.value;
+        // enableSystemDarkMode
+        bookmarksStore.enableSystemDarkMode = enableSystemDarkMode.value;
 
-        if (enableDarkMode.value) {
-            bookmarksStore.set_syncStorage({ darkMode: true });
+        if (enableSystemDarkMode.value) {
+            bookmarksStore.set_syncStorage({ systemDarkMode: true });
+
+            bookmarksStore.enableDarkMode = window
+                .matchMedia('(prefers-color-scheme: dark)').matches;
         } else {
-            bookmarksStore.delete_syncStorageItem('darkMode');
-        }
-        theme.global.name.value = enableDarkMode.value ? 'dark' : 'light';
+            bookmarksStore.delete_syncStorageItem('systemDarkMode');
 
+            bookmarksStore.enableDarkMode = false;
+        }
+
+        // enablePreferDarkMode
+        if (!enableSystemDarkMode.value) {
+            bookmarksStore.enablePreferDarkMode = enablePreferDarkMode.value;
+            bookmarksStore.enableDarkMode = bookmarksStore.enablePreferDarkMode;
+
+            if (enablePreferDarkMode.value) {
+                bookmarksStore.set_syncStorage({ darkMode: true });
+            } else {
+                bookmarksStore.delete_syncStorageItem('darkMode');
+            }
+        }
+        theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
+
+        // enableAccordionNavigation
         bookmarksStore.accordionNavigation = enableAccordionNavigation.value;
 
         if (enableAccordionNavigation.value) {
@@ -423,7 +459,7 @@
             bookmarksStore.set_syncStorage({ sliderIndex: 0 });
         }
 
-        // arrow navigation
+        // enableArrowNavigation
         bookmarksStore.arrowNavigation = enableArrowNavigation.value;
 
         if (enableArrowNavigation.value) {
@@ -432,6 +468,7 @@
             bookmarksStore.set_syncStorage({ arrowNavigation: 'disabled' });
         }
 
+        // enableSearchNavigation
         bookmarksStore.searchNavigation = enableSearchNavigation.value;
 
         if (enableSearchNavigation.value) {
@@ -523,7 +560,8 @@
         enableArrowNavigation.value = bookmarksStore.arrowNavigation;
         enableSearchNavigation.value = bookmarksStore.searchNavigation;
         enableAccordionNavigation.value = bookmarksStore.accordionNavigation;
-        enableDarkMode.value = bookmarksStore.enableDarkMode;
+        enablePreferDarkMode.value = bookmarksStore.enablePreferDarkMode;
+        enableSystemDarkMode.value = bookmarksStore.enableSystemDarkMode;
 
         bookmarksStore.dialogOpen = true;
     });

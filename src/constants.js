@@ -23,6 +23,7 @@ export const EMITS = Object.freeze({
     CLICK_BACKGROUND: 'clickBackground',
     CLOSE: 'close',
     CONFIRM: 'confirm',
+    BEFORE_DELETE: 'beforeDelete',
     DELETE: 'delete',
     DRAG_START: 'dragStart',
     EDIT: 'edit',
