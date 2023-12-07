@@ -48,7 +48,7 @@
                                 @delete="onFolderDelete($event)"
                                 :bookmark="element" />
                             <v-expansion-panel-text
-                                :class="{'no-transition': transitionDisabled }">
+                                :class="{'no-transition': bookmarksStore.transitionDisabled }">
                                 <BookmarksGroup
                                     :id="element.id"
                                     :bookmarks="element.children" />
@@ -162,24 +162,22 @@
         utils.setAccordionModel(Array.from(arr));
     }
 
-    const transitionDisabled = ref(false);
-
     function onBeforeDelete() {
-        transitionDisabled.value = true;
+        bookmarksStore.transitionDisabled = true;
     }
 
-    async function onFolderDelete(event) {
+    async function onFolderDelete(folder) {
         // update open/closed accordion panels list
         const sorted = [...bookmarksStore.accordionModel.sort((a, b) => a - b)];
-        let filtered = sorted.filter((e) => e !== event.index);
-        filtered = filtered.map((value) => (value >= event.index ? value - 1 : value));
+        let filtered = sorted.filter((e) => e !== folder.index);
+        filtered = filtered.map((value) => (value >= folder.index ? value - 1 : value));
         filtered = filtered.filter((e) => e < bookmarksStore.bookmarks.length);
 
         await utils.setAccordionModel(Array.from(filtered));
 
         // TODO: replace timeout with await promise
         setTimeout(() => {
-            transitionDisabled.value = false;
+            bookmarksStore.transitionDisabled = false;
         }, 500);
     }
 

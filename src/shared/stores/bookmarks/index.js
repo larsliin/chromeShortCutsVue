@@ -24,6 +24,7 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         enablePreferDarkMode: false,
         enableSystemDarkMode: false,
         enableDarkMode: false,
+        transitionDisabled: false,
     }),
     actions,
     getters,
