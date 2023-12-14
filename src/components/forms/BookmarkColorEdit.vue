@@ -57,13 +57,15 @@
         EMITS.CANCEL, EMITS.CONFIRM,
     ]);
 
-    const color = ref('#ff0000');
+    const color = ref();
 
     const swatches = [
-        ['#f44336', '#3f51b5', '#009688', '#ffeb3b'],
-        ['#e81e63', '#2196f3', '#4caf50', '#ffc107'],
-        ['#9c27b0', '#03a9f4', '#8bc34a', '#ff9800'],
-        ['#673ab7', '#00bcd4', '#cddc39', '#ff5722'],
+        ['#FB3838', '#F99B7B', '#FCD291', '#F8B531', '#FFFFFF'],
+        ['#EFEF3F', '#F4F5A4', '#C4E49E', '#9DD354', '#D3D3D3'],
+        ['#73CC6C', '#B3DBA7', '#B6DFD2', '#7DD0B8', '#808080'],
+        ['#60C4ED', '#ACD9F8', '#9EACD5', '#6680C5', '#555555'],
+        ['#7C65B6', '#A797CA', '#C19ECA', '#A064B0', '#333333'],
+        ['#E860AC', '#EAA5C8', '#FC9FB7', '#FB338F', '#000000'],
     ];
 
     function onCancel() {
@@ -87,7 +89,7 @@
 </script>
 <style lang="scss" scoped>
     :deep(.v-color-picker-swatches) {
-        transform: scale(1.5);
+        transform: scale(1.3);
     }
 
     .btn-wrapper {

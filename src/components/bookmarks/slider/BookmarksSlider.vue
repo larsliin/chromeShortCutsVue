@@ -8,7 +8,7 @@
                 :key="bookmark.id">
                 <BookmarksGroup
                     :slideindex="index"
-                    :id="bookmark.id"
+                    :folder="bookmark"
                     :bookmarks="bookmark.children" />
             </template>
         </div>

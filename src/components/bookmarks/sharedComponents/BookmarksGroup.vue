@@ -33,28 +33,67 @@
                     </li>
                 </template>
             </draggable>
+            <div class="folder-empty"
+                v-if="!bookmarks.length">
+                <v-btn
+                    variant="tonal"
+                    color="red"
+                    @click="onDelete()">
+                    Delete
+                </v-btn>
+            </div>
         </div>
     </div>
+    <Teleport to="body"
+        v-if="showConfirmDelete">
+        <template>
+            <v-row justify="center">
+                <v-dialog
+                    v-model="showConfirmDelete"
+                    persistent
+                    width="450">
+                    <BookmarkConfirmDelete
+                        :showFolderMessage="false"
+                        :title="folder.title"
+                        :id="folder.id"
+                        @cancel="showConfirmDelete = false"
+                        @confirm="onDeleteConfirm($event)" />
+                </v-dialog>
+            </v-row>
+        </template>
+    </Teleport>
 </template>
 
 <script setup>
-    import { nextTick, computed, ref } from 'vue';
+    import {
+        nextTick, computed, ref,
+    } from 'vue';
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
     import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
     import { EMITS } from '@/constants';
+    import { useUtils } from '@/shared/utils/utils';
+    import BookmarkConfirmDelete
+        from '@/components/forms/BookmarkConfirmDelete.vue';
+
+    const utils = useUtils();
 
     const { emit } = useEventsBus();
 
     const props = defineProps({
         slideindex: Number,
-        id: String,
+        folder: Object,
         bookmarks: {
             type: Array,
             default: () => [],
         },
     });
+
+    const emits = defineEmits([
+        EMITS.DELETE,
+        EMITS.BEFORE_DELETE,
+    ]);
 
     const dragging = ref(false);
 
@@ -67,11 +106,37 @@
         return 'normal';
     });
 
+    const showConfirmDelete = ref(false);
+
+    function onDelete() {
+        showConfirmDelete.value = true;
+    }
+
+    async function onDeleteConfirm() {
+        emits(EMITS.BEFORE_DELETE);
+
+        await nextTick();
+
+        // close confirmation dialogue
+        showConfirmDelete.value = false;
+
+        // get updated bookmark folder index
+        const bookmarkResponse = await bookmarksStore.get_bookmarkById(props.folder.id);
+        const bookmark = bookmarkResponse;
+
+        utils.deleteBookmarkFolder(bookmarkResponse);
+
+        emits(EMITS.DELETE, { id: props.folder.id, index: bookmark.index });
+    }
+
     // when bookmark is moved to a different folder/parentId
     async function onDragAdd(event) {
         const bookmark = props.bookmarks[event.newIndex];
 
-        bookmarksStore.move_bookmark(bookmark.id, { parentId: props.id, index: event.newIndex });
+        bookmarksStore.move_bookmark(bookmark.id, {
+            parentId: props.folder.id,
+            index: event.newIndex,
+        });
     }
 
     // when bookmark is moved within the same folder/parentId
@@ -106,6 +171,15 @@
         &-inner {
             display: flex;
             justify-content: center;
+            min-height: 150px;
+            position: relative;
+        }
+
+        &-empty {
+            margin-top: 60px;
+            opacity: 0;
+            z-index: 1;
+            pointer-events: none;
         }
 
         ul {
@@ -118,7 +192,16 @@
             max-width: 1024px;
             padding: 0;
             width: 100%;
-            min-height: 150px;
+
+            &:empty {
+                position: absolute;
+                height: 100%;
+
+                + div {
+                    opacity: 1;
+                    pointer-events: all;
+                }
+            }
 
             li {
                 padding: 0;

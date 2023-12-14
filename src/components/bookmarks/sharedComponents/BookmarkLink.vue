@@ -41,7 +41,7 @@
                     <BookmarkConfirmDelete
                         :title="title"
                         :id="id"
-                        :typeFolder="link ? true : false"
+                        :showFolderMessage="link ? true : false"
                         @cancel="showConfirmDelete = false"
                         @confirm="onDeleteConfirm($event)" />
                 </v-dialog>
@@ -203,7 +203,7 @@
     .bookmark-edit {
         visibility: hidden;
         position: absolute;
-        right: -6px;
+        right: 0;
         top: -6px;
         opacity: .5;
     }

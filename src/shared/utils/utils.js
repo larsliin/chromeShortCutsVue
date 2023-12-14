@@ -78,9 +78,6 @@ export function useUtils() {
         });
 
         bookmarksStore.remove_bookmarkFolder(bookmark.id);
-
-        console.log(bookmarksStore.accordionModel);
-        console.log(bookmarksStore.bookmarks.length);
     }
 
     async function getBookmarksAsFlatArr() {

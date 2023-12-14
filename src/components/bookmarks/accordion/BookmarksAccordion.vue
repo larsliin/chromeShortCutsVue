@@ -50,8 +50,8 @@
                             <v-expansion-panel-text
                                 :class="{ 'no-transition': bookmarksStore.transitionDisabled }">
                                 <BookmarksGroup
-                                    :id="element.id"
-                                    :bookmarks="element.children" />
+                                    :folder="element"
+                                    :bookmarks="element.children"/>
                             </v-expansion-panel-text>
                         </v-expansion-panel>
                     </template>

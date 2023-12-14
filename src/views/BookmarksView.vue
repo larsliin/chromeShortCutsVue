@@ -323,7 +323,9 @@
                     const bookmarkFolder = bookmarksStore.bookmarks.find((e) => e.id === item[0]);
 
                     const [, bookmarkFolderColor] = item;
-                    bookmarkFolder.color = bookmarkFolderColor;
+                    if (bookmarkFolder) {
+                        bookmarkFolder.color = bookmarkFolderColor;
+                    }
                 });
             }
 
