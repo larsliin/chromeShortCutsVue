@@ -10,7 +10,7 @@
                     :style="'slider'"
                     :enabled="bookmarksStore.sliderIndex === index"
                     :value="bookmark.title"
-                    :id="bookmark.id" />
+                    :bookmark="bookmark" />
             </div>
         </div>
         <div class="navigation-container">

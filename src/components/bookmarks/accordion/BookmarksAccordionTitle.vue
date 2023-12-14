@@ -1,10 +1,12 @@
 <template>
-    <v-expansion-panel-title>
+    <v-expansion-panel-title
+        :color="bookmark.color">
         <BookmarkFoldout
             :list="list"
             class="foldout"
             @delete="onDelete()"
             @rename="onRename()"
+            @openColorEditor="onOpenColorEditor()"
             @bookmarkAdd="onBookmarkAdd()" />
         <input
             class="input"
@@ -24,7 +26,8 @@
             class="icon-drag"
             :icon="mdiDragHorizontal"></v-icon>
     </v-expansion-panel-title>
-    <Teleport to="body">
+    <Teleport to="body"
+        v-if="showConfirmDelete || showColorEdit">
         <template>
             <v-row justify="center">
                 <v-dialog
@@ -38,6 +41,15 @@
                         @cancel="showConfirmDelete = false"
                         @confirm="onDeleteConfirm($event)" />
                 </v-dialog>
+                <v-dialog
+                    v-model="showColorEdit"
+                    persistent
+                    width="450">
+                    <BookmarkColorEdit
+                        :bookmark="bookmark"
+                        @confirm="onColorConfirm($event)"
+                        @cancel="showColorEdit = false" />
+                </v-dialog>
             </v-row>
         </template>
     </Teleport>
@@ -48,11 +60,14 @@
         ref, onMounted, nextTick,
     } from 'vue';
     import {
-        mdiRename, mdiDragHorizontal, mdiDeleteOutline, mdiStar,
+        mdiRename, mdiDragHorizontal, mdiDeleteOutline, mdiStar, mdiPalette,
     } from '@mdi/js';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';
+    import BookmarkColorEdit
+        from '@/components/forms/BookmarkColorEdit.vue';
+
     import { EMITS } from '@/constants';
     import useEventsBus from '@cmp/eventBus';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
@@ -87,6 +102,11 @@
             event: EMITS.RENAME,
         },
         {
+            title: 'Folder Color',
+            icon: mdiPalette,
+            event: EMITS.OPEN_COLOR_EDITOR,
+        },
+        {
             title: 'Delete Folder',
             icon: mdiDeleteOutline,
             event: EMITS.DELETE,
@@ -101,8 +121,41 @@
         emit(EMITS.BOOKMARK_ADD, props.bookmark.id);
     }
 
+    const showColorEdit = ref(false);
+
+    function onOpenColorEditor() {
+        showColorEdit.value = true;
+    }
+
+    const color = ref();
+
+    async function onColorConfirm(event) {
+        color.value = event;
+
+        showColorEdit.value = false;
+
+        const getColorsResponse = await bookmarksStore.get_syncStorage('folderColors');
+        const colorsObj = getColorsResponse || {};
+
+        const folder = bookmarksStore.bookmarks.find((e) => e.id === props.bookmark.id);
+        if (event) {
+            colorsObj[props.bookmark.id] = color.value;
+            folder.color = color.value;
+        } else if (colorsObj[props.bookmark.id]) {
+            delete colorsObj[props.bookmark.id];
+            folder.color = '';
+        }
+
+        if (!Object.keys(colorsObj).length) {
+            bookmarksStore.delete_syncStorageItem('folderColors');
+        } else {
+            bookmarksStore.set_syncStorage({ folderColors: colorsObj });
+        }
+    }
+
     function onRename() {
         inputWidth.value = `${textwidth.value.clientWidth + 0}px`;
+
         input.value.focus();
     }
 
@@ -124,7 +177,7 @@
         const bookmarkResponse = await bookmarksStore.get_bookmarkById(props.bookmark.id);
         const bookmark = bookmarkResponse;
 
-        utils.deleteBookmarkFolder(bookmarkResponse.id);
+        utils.deleteBookmarkFolder(bookmarkResponse);
 
         emits(EMITS.DELETE, { id: props.bookmark.id, index: bookmark.index });
     }
@@ -157,6 +210,11 @@
 
     onMounted(() => {
         inputWidth.value = `${textwidth.value.clientWidth + 0}px`;
+        // if (bookmarksStore.folderColors && bookmarksStore.folderColors[props.bookmark.id]) {
+        //     color.value = bookmarksStore.folderColors[props.bookmark.id];
+        // }
+
+        // console.log(props.bookmark);
     });
 
 </script>
@@ -172,6 +230,7 @@
         white-space: nowrap;
         position: relative;
         z-index: 10;
+        color: inherit;
 
         &:focus {
             outline: none;
@@ -186,6 +245,10 @@
 
     .foldout {
         margin-right: 4px;
+
+    }
+    :deep(.v-btn) {
+        color: inherit
     }
 
     :deep(.v-expansion-panel-title__overlay) {
@@ -193,8 +256,12 @@
         background-color: rgb(var(--v-theme-primary));
     }
 
+    .v-expansion-panel--active>.v-expansion-panel-title {
+        min-height: 52px;
+    }
+
     .v-expansion-panel-title {
-        padding: 6px 24px 6px 10px;
+        padding: 2px 24px 2px 10px;
 
         &:hover {
             .button {

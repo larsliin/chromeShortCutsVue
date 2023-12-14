@@ -54,6 +54,7 @@
         EMITS.DELETE,
         EMITS.RENAME,
         EMITS.TOGGLE,
+        EMITS.OPEN_COLOR_EDITOR,
         EMITS.EDIT,
         EMITS.BOOKMARK_ADD,
     ]);
@@ -76,6 +77,9 @@
         switch (event) {
             case EMITS.RENAME:
                 emits(EMITS.RENAME);
+                break;
+            case EMITS.OPEN_COLOR_EDITOR:
+                emits(EMITS.OPEN_COLOR_EDITOR);
                 break;
             case EMITS.DELETE:
                 emits(EMITS.DELETE);

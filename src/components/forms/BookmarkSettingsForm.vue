@@ -249,7 +249,7 @@
     }
 
     async function onClickExportBookmarks() {
-        const exportBookmarks = bookmarksStore.bookmarks;
+        const exportBookmarks = Array.from(bookmarksStore.bookmarks);
 
         // fetch all images from local storage
         const localStorageItems = await bookmarksStore.get_localStorageAll(null);
@@ -275,11 +275,27 @@
         a.click();
     }
 
+    const colorsMap = {};
+
     // update global store bookmarks obj with the latest imported bookmarks
     async function updateBookmarksStore() {
         const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
 
         bookmarksStore.bookmarks = bookmarksResponse[0].children;
+
+        // inject imported colors into new bookmarks object
+        Object.entries(colorsMap).forEach((item) => {
+            const bookmarkFolder = bookmarksStore.bookmarks.find((e) => e.id === item[0]);
+            if (bookmarkFolder) {
+                const [, bookmarkFolderColor] = item;
+                bookmarkFolder.color = bookmarkFolderColor;
+            }
+        });
+
+        // save imported colors
+        if (colorsMap && Object.keys(colorsMap).length) {
+            bookmarksStore.set_syncStorage({ folderColors: colorsMap });
+        }
 
         emit(EMITS.BOOKMARKS_UPDATED, 'import');
     }
@@ -321,11 +337,11 @@
         await utils.deleteAllBookmarks();
         await utils.buildRootFolder();
 
+        await bookmarksStore.delete_syncStorageItem('folderColors');
+
         emit(EMITS.BOOKMARKS_IMPORT);
 
         const bookmarksRootResponse = await bookmarksStore.get_bookmarkById(bookmarksStore.rootId);
-
-        const map = {};
 
         const foldersPromiseArr = [];
         const importBookmarks = JSON.parse(event.target.result);
@@ -336,6 +352,8 @@
                 .create_bookmark(bookmarksRootResponse.id, folder.title));
         });
 
+        const map = {};
+
         Promise.all(foldersPromiseArr)
             .then((p) => {
                 // put all bookmarks children in a flat array for easier iteration
@@ -344,12 +362,16 @@
                 // map old parent folder id to new folder id create in the step before
                 p.forEach((f, i) => {
                     map[importBookmarks[i].id] = f.id;
+
+                    if (importBookmarks[i].color) {
+                        colorsMap[f.id] = importBookmarks[i].color;
+                    }
                 });
 
                 const imagesArr = [];
 
                 const bookmarkssPromiseArr = [];
-                // then create bookmarks ad add to folders created before
+                // then create bookmarks and add to folders created before
                 bookmarksFlatArr.forEach((bookmark) => {
                     bookmarkssPromiseArr.push(bookmarksStore
                         .create_bookmark(map[bookmark.parentId], bookmark.title, bookmark.url));

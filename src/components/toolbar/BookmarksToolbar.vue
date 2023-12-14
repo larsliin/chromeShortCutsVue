@@ -17,7 +17,8 @@
                 @click="dialogSettings = true"></v-btn>
         </div>
     </div>
-    <Teleport to="body">
+    <Teleport to="body"
+        v-if="dialogAddOpen || dialogSettings">
         <template>
             <v-row justify="center">
                 <v-dialog
@@ -43,7 +44,8 @@
             </v-row>
         </template>
     </Teleport>
-    <Teleport to="body">
+    <Teleport to="body"
+        v-if="showClearbitError">
         <template>
             <v-row justify="center">
                 <v-dialog
@@ -86,7 +88,8 @@
             </v-row>
         </template>
     </Teleport>
-    <Teleport to="body">
+    <Teleport to="body"
+        v-if="showConfirmDelete">
         <template>
             <v-row justify="center">
                 <v-dialog

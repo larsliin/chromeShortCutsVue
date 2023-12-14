@@ -30,7 +30,8 @@
                 @edit="emit(EMITS.EDIT, id)" />
         </div>
     </span>
-    <Teleport to="body">
+    <Teleport to="body"
+        v-if="showConfirmDelete">
         <template>
             <v-row justify="center">
                 <v-dialog
@@ -41,7 +42,6 @@
                         :title="title"
                         :id="id"
                         :typeFolder="link ? true : false"
-                        :bookmark="deleteConfirmBookmark"
                         @cancel="showConfirmDelete = false"
                         @confirm="onDeleteConfirm($event)" />
                 </v-dialog>

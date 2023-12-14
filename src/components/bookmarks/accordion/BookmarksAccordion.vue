@@ -40,15 +40,15 @@
                     :tag="'div'"
                     @start="onDragStart($event)"
                     @end="onDragEnd($event)">
-                    <template #item="{element}">
+                    <template #item="{ element }">
                         <v-expansion-panel
+                            :id="element.id"
                             eager>
                             <BookmarksAccordionTitle
                                 @beforeDelete="onBeforeDelete"
-                                @delete="onFolderDelete($event)"
                                 :bookmark="element" />
                             <v-expansion-panel-text
-                                :class="{'no-transition': bookmarksStore.transitionDisabled }">
+                                :class="{ 'no-transition': bookmarksStore.transitionDisabled }">
                                 <BookmarksGroup
                                     :id="element.id"
                                     :bookmarks="element.children" />
@@ -164,11 +164,6 @@
 
     function onBeforeDelete() {
         bookmarksStore.transitionDisabled = true;
-    }
-
-    function onFolderDelete(folder) {
-        // update open/closed accordion panels list
-        utils.updateAccordionModel(folder);
     }
 
     watch(() => bus.value.get(EMITS.BOOKMARKS_IMPORT), () => {

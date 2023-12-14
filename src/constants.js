@@ -17,6 +17,7 @@ export const EMITS = Object.freeze({
     BOOKMARK_CREATED: 'bookmarkCreated',
     BOOKMARKS_IMPORT: 'bookmarksImport',
     BOOKMARKS_UPDATED: 'bookmarksUpdated',
+    OPEN_COLOR_EDITOR: 'openColorEditor',
     CANCEL: 'cancel',
     CHANGED: 'changed',
     CLEARBIT_ERROR: 'clearbitError',

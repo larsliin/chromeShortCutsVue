@@ -134,6 +134,7 @@
             // if root folder is deleted then simply delete everything
             await bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id);
             await bookmarksStore.delete_syncStorageItem('accordion');
+            await bookmarksStore.delete_syncStorageItem('folderColors');
 
             bookmarksStore.rootId = null;
 
@@ -160,14 +161,6 @@
 
             // delete image in local storage
             bookmarksStore.delete_localStorageItem(event);
-
-            const folder = bookmarksStore.bookmarks.find(e => e.id === parentId);
-
-            if (!folder.children.length) {
-                // if folder is empty after bookmark has been deleted
-                // then delete the containing folder
-                bookmarksStore.remove_bookmark(folder.id);
-            }
         } else { // if is type folder
             bookmarksStore.bookmarks = bookmarksStore.bookmarks.filter(e => e.id !== event);
         }
@@ -246,10 +239,6 @@
 
         const emptyFolder = bookmarks[0].children.find((e) => e.children.length === 0);
 
-        if (emptyFolder) {
-            await bookmarksStore.remove_bookmark(emptyFolder.id);
-        }
-
         await update();
 
         const index = bookmarksStore.bookmarks
@@ -281,51 +270,65 @@
     }
 
     async function init() {
-        await bookmarksStore
-            .get_folderByTitle(FOLDER.ROOT.parentId, FOLDER.ROOT.label);
+        // load all settings
+        const promiseArr = [
+            bookmarksStore.get_folderByTitle(FOLDER.ROOT.parentId, FOLDER.ROOT.label),
+            bookmarksStore.get_syncStorage('sliderIndex'),
+            bookmarksStore.get_syncStorage('darkMode'),
+            bookmarksStore.get_syncStorage('systemDarkMode'),
+            bookmarksStore.get_syncStorage('accordionNavigation'),
+            bookmarksStore.get_syncStorage('searchNavigation'),
+            bookmarksStore.get_syncStorage('arrowNavigation'),
+            getBookmarks(),
+            bookmarksStore.get_syncStorage('folderColors'),
+            utils.buildRootFolder()
+        ];
 
-        const slideIndexResponse = await bookmarksStore.get_syncStorage('sliderIndex');
+        Promise.all(promiseArr).then(([rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, searchNavigation, arrowNavigation, bookmarks, colors, buildRoot]) => {
+            // sliderIndex
+            if (typeof sliderIndex === 'number') {
+                bookmarksStore.sliderIndex = sliderIndex;
+            } else {
+                bookmarksStore.sliderIndex = 0;
+            }
 
-        if (typeof slideIndexResponse === 'number') {
-            bookmarksStore.sliderIndex = slideIndexResponse;
-        } else {
-            bookmarksStore.sliderIndex = 0;
-        }
+            // prefer dark mode
+            bookmarksStore.enablePreferDarkMode = !!darkMode;
 
-        // dark mode color theme
-        const preferDarkModeResponse = await bookmarksStore.get_syncStorage('darkMode');
-        bookmarksStore.enablePreferDarkMode = !!preferDarkModeResponse;
+            // system dark mode
+            bookmarksStore.enableSystemDarkMode = !!systemDarkMode;
 
-        const systemDarkModeResponse = await bookmarksStore.get_syncStorage('systemDarkMode');
-        bookmarksStore.enableSystemDarkMode = !!systemDarkModeResponse;
+            if (bookmarksStore.enableSystemDarkMode) {
+                bookmarksStore.enableDarkMode = window
+                    .matchMedia('(prefers-color-scheme: dark)').matches;
+            } else if (bookmarksStore.enablePreferDarkMode) {
+                bookmarksStore.enableDarkMode = true;
+            } else {
+                bookmarksStore.enableDarkMode = false;
+            }
+            theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
 
-        if (bookmarksStore.enableSystemDarkMode) {
-            bookmarksStore.enableDarkMode = window
-                .matchMedia('(prefers-color-scheme: dark)').matches;
-        } else if (bookmarksStore.enablePreferDarkMode) {
-            bookmarksStore.enableDarkMode = true;
-        } else {
-            bookmarksStore.enableDarkMode = false;
-        }
-        theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
+            // accordion navigation
+            bookmarksStore.accordionNavigation = !accordionNavigation;
 
-        // is accordion mode enabled
-        const accordionNavigationResponse = await bookmarksStore.get_syncStorage('accordionNavigation');
-        bookmarksStore.accordionNavigation = !accordionNavigationResponse;
+            // search/filter
+            bookmarksStore.searchNavigation = !searchNavigation;
 
-        // is filter search enabled
-        const enableSearchResponse = await bookmarksStore.get_syncStorage('searchNavigation');
-        bookmarksStore.searchNavigation = !enableSearchResponse;
+            // arrow navigation
+            bookmarksStore.arrowNavigation = !!arrowNavigation;
 
-        // is slider arrow navigation enabled
-        const arrowNavigationResponse = await bookmarksStore.get_syncStorage('arrowNavigation');
-        bookmarksStore.arrowNavigation = arrowNavigationResponse === undefined;
+            // inject colors into shared bookmarks
+            if (colors && Object.keys(colors).length) {
+                Object.entries(colors).forEach((item) => {
+                    const bookmarkFolder = bookmarksStore.bookmarks.find((e) => e.id === item[0]);
 
-        toggleOverflowHidden();
+                    const [, bookmarkFolderColor] = item;
+                    bookmarkFolder.color = bookmarkFolderColor;
+                });
+            }
 
-        await utils.buildRootFolder();
-
-        await getBookmarks();
+            toggleOverflowHidden();
+        });
     }
 
     onMounted(() => {

@@ -66,18 +66,21 @@ export function useUtils() {
             });
     }
 
-    async function deleteBookmarkFolder(id) {
+    async function deleteBookmarkFolder(bookmark) {
         const bookmarksStore = useBookmarksStore();
 
         // delete all bookmarks in folder from local storage
-        const bookmarksInFolder = bookmarksStore.bookmarks.find((e) => e.id === id);
+        const bookmarksInFolder = bookmarksStore.bookmarks.find((e) => e.id === bookmark.id);
         const bookmarksIdMap = bookmarksInFolder.children.map((e) => e.id);
 
         bookmarksIdMap.forEach((elem) => {
             bookmarksStore.delete_localStorageItem(elem);
         });
 
-        bookmarksStore.remove_bookmarkFolder(id);
+        bookmarksStore.remove_bookmarkFolder(bookmark.id);
+
+        console.log(bookmarksStore.accordionModel);
+        console.log(bookmarksStore.bookmarks.length);
     }
 
     async function getBookmarksAsFlatArr() {
@@ -190,22 +193,6 @@ export function useUtils() {
         bookmarksStore.set_syncStorage({ accordion: [...model] });
     }
 
-    async function updateAccordionModel(folder) {
-        const bookmarksStore = useBookmarksStore();
-
-        const sorted = [...bookmarksStore.accordionModel.sort((a, b) => a - b)];
-        let filtered = sorted.filter((e) => e !== folder.index);
-        filtered = filtered.map((value) => (value >= folder.index ? value - 1 : value));
-        filtered = filtered.filter((e) => e < bookmarksStore.bookmarks.length);
-
-        await this.setAccordionModel(Array.from(filtered));
-
-        // TODO: replace timeout with await promise
-        setTimeout(() => {
-            bookmarksStore.transitionDisabled = false;
-        }, 500);
-    }
-
     return {
         buildRootFolder,
         deleteAllBookmarks,
@@ -218,6 +205,5 @@ export function useUtils() {
         setSliderIndex,
         deleteBookmarkFolder,
         setAccordionModel,
-        updateAccordionModel,
     };
 }

@@ -29,7 +29,8 @@
         <span ref="textwidth" class="text-width">{{ model }}</span>
     </div>
 
-    <Teleport to="body">
+    <Teleport to="body"
+        v-if="showConfirmDelete">
         <template>
             <v-row justify="center">
                 <v-dialog
@@ -39,7 +40,7 @@
                     <BookmarkConfirmDelete
                         :typeFolder="true"
                         :title="model"
-                        :id="id"
+                        :id="bookmark.id"
                         @cancel="showConfirmDelete = false"
                         @confirm="onDeleteConfirm()" />
                 </v-dialog>
@@ -66,8 +67,8 @@
 
     const props = defineProps({
         style: String,
-        id: {
-            type: String,
+        bookmark: {
+            type: Object,
             required: true,
         },
         value: {
@@ -105,7 +106,7 @@
     const textwidth = ref();
 
     function onBookmarkAdd() {
-        emit(EMITS.BOOKMARK_ADD, props.id);
+        emit(EMITS.BOOKMARK_ADD, props.bookmark.id);
     }
 
     function onRename() {
@@ -124,13 +125,13 @@
         showConfirmDelete.value = false;
 
         // delete all bookmarks in folder from local storage
-        utils.deleteBookmarkFolder(props.id);
+        utils.deleteBookmarkFolder(props.bookmark);
     }
 
     function onBlur() {
         active.value = false;
 
-        bookmarksStore.update_bookmark(props.id, { title: model.value });
+        bookmarksStore.update_bookmark(props.bookmark.id, { title: model.value });
 
         bookmarksStore.titleInputActive = false;
     }

@@ -118,6 +118,7 @@
             max-width: 1024px;
             padding: 0;
             width: 100%;
+            min-height: 150px;
 
             li {
                 padding: 0;
