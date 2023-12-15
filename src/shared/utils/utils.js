@@ -11,14 +11,11 @@ export function useUtils() {
         }
         return null;
     }
-
+    // eslint-disable-next-line
     function isValidURL(str) {
         // eslint-disable-next-line
-        const expression = '^(http:\/\/|https:\/\/|chrome:\/\/)([a-zA-Z0-9_-]+\.)+[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?(\/[a-zA-Z0-9_\/-]*)*$';
-
-        const regex = new RegExp(expression);
-
-        return !!str.match(regex);
+        const urlRegex = /(https?:\/\/(www\.)?[a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)?)/;
+        return urlRegex.test(str);
     }
 
     async function getBase64ImageFromUrl(url) {

@@ -6,11 +6,37 @@
                 v-for="(bookmark, index) in bookmarksStore.bookmarks"
                 :key="index"
                 :class="{ active: bookmarksStore.sliderIndex === index }">
-                <InputEdit
-                    :style="'slider'"
-                    :enabled="bookmarksStore.sliderIndex === index"
-                    :value="bookmark.title"
-                    :bookmark="bookmark" />
+            </div>
+            <div class="wrapper">
+                <div>
+                    <input
+                        class="input"
+                        ref="input"
+                        type="input"
+                        tabindex="-1"
+                        :readonly="!active"
+                        :class="[
+                            active ? 'active' : '',
+                            bookmarksStore.enableDarkMode ? 'dark' : ''
+                        ]"
+                        :style="{width: inputWidth}"
+                        v-model="bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title"
+                        @click.stop="onClick($event)"
+                        @focus="bookmarksStore.titleInputActive = true"
+                        @blur="onBlur()"
+                        @keydown="onChange($event)" />
+                </div>
+                <div class="foldout">
+                    <BookmarkFoldout
+                        :list="list"
+                        class="foldout"
+                        @delete="onDelete()"
+                        @bookmarkAdd="onBookmarkAdd()"
+                        @rename="onRename()" />
+                </div>
+                <span ref="textwidth" class="text-width">
+                    {{ bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title }}
+                </span>
             </div>
         </div>
         <div class="navigation-container">
@@ -24,12 +50,40 @@
             </button>
         </div>
     </div>
+    <Teleport to="body"
+        v-if="showConfirmDelete">
+        <template>
+            <v-row justify="center">
+                <v-dialog
+                    v-model="showConfirmDelete"
+                    persistent
+                    width="450">
+                    <BookmarkConfirmDelete
+                        :showFolderMessage="true"
+                        :title="bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title"
+                        :id="bookmarksStore.bookmarks[bookmarksStore.sliderIndex].id"
+                        @cancel="showConfirmDelete = false"
+                        @confirm="onDeleteConfirm()" />
+                </v-dialog>
+            </v-row>
+        </template>
+    </Teleport>
 </template>
 
 <script setup>
+    import { mdiRename, mdiDeleteOutline, mdiStar } from '@mdi/js';
+    import {
+        ref, onMounted, watch, nextTick,
+    } from 'vue';
+    import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/utils/utils';
-    import InputEdit from '@/components/fields/InputEdit.vue';
+    import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
+    import BookmarkConfirmDelete
+        from '@/components/forms/BookmarkConfirmDelete.vue';
+    import useEventsBus from '@cmp/eventBus';
+
+    const { emit } = useEventsBus();
 
     const utils = useUtils();
 
@@ -38,6 +92,82 @@
     function onClick(index) {
         utils.setSliderIndex(index, true);
     }
+
+    const list = ref([
+        {
+            title: 'New Bookmark',
+            icon: mdiStar,
+            event: EMITS.BOOKMARK_ADD,
+        },
+        {
+            title: 'Rename',
+            icon: mdiRename,
+            event: EMITS.RENAME,
+        },
+        {
+            title: 'Delete',
+            icon: mdiDeleteOutline,
+            event: EMITS.DELETE,
+        },
+    ]);
+
+    const active = ref(false);
+    const input = ref();
+    const inputWidth = ref(0);
+    const textwidth = ref();
+
+    const showConfirmDelete = ref(false);
+
+    function onDelete() {
+        showConfirmDelete.value = true;
+    }
+
+    function onDeleteConfirm() {
+        showConfirmDelete.value = false;
+
+        // delete all bookmarks in folder from local storage
+        utils.deleteBookmarkFolder(bookmarksStore.bookmarks[bookmarksStore.sliderIndex]);
+    }
+
+    function onBookmarkAdd() {
+        emit(EMITS.BOOKMARK_ADD, bookmarksStore.bookmarks[bookmarksStore.sliderIndex].id);
+    }
+
+    function onRename() {
+        active.value = true;
+        inputWidth.value = `${textwidth.value.clientWidth + 0}px`;
+        input.value.focus();
+    }
+
+    function onBlur() {
+        active.value = false;
+
+        bookmarksStore.update_bookmark(
+            bookmarksStore.bookmarks[bookmarksStore.sliderIndex].id,
+            { title: bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title },
+        );
+
+        bookmarksStore.titleInputActive = false;
+    }
+
+    function onChange(event) {
+        if (event.keyCode === 13 || event.keyCode === 27) {
+            input.value.blur();
+            return;
+        }
+
+        const add = event.keyCode === 8 ? -5 : 10;
+        inputWidth.value = `${textwidth.value.clientWidth + add}px`;
+    }
+
+    watch(() => bookmarksStore.sliderIndex, async () => {
+        await nextTick();
+        inputWidth.value = `${textwidth.value.clientWidth}px`;
+    });
+
+    onMounted(() => {
+        inputWidth.value = `${textwidth.value.clientWidth}px`;
+    });
 </script>
 
 <style scoped lang="scss">
@@ -123,5 +253,67 @@
 
     .navigation-header-container.animated .navigation-header {
         transition: all 0.15s ease-out;
+    }
+
+    //
+    .wrapper  {
+        display: flex;
+        position: relative;
+        flex-direction: row;
+        align-items: center;
+        margin-bottom: 10px;
+
+        &:hover .foldout {
+            opacity: 1;
+        }
+     }
+
+     .input {
+        border-radius: 4px;
+        border: 1px solid transparent;
+        cursor: default;
+        font-size: 16px;
+        padding: 6px;
+        pointer-events: none;
+        width: auto;
+
+        &.active {
+            border: 1px solid rgba(0,0,0,.12);
+
+            &.dark {
+                border: 1px solid var(--darkmode-400);
+            }
+        }
+
+        &:focus {
+            outline: none;
+        }
+
+        &:focus {
+            cursor: default;
+        }
+
+        &.enabled {
+            pointer-events: initial;
+        }
+    }
+
+    .text-width {
+        display: inline-block;
+        font-size: 16px;
+        font-weight: 700;
+        padding: 6px;
+        position: absolute;
+        visibility: hidden;
+        pointer-events: none;
+        z-index: -1;
+        white-space: nowrap;
+    }
+
+    .foldout {
+        right: 0;
+        position: absolute;
+        transform: translateX(42px);
+        opacity: .25;
     }
 </style>

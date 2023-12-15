@@ -92,7 +92,7 @@
         setChromeEventListeners();
     }
 
-    async function onCreated(event) {
+async function onCreated(event) {
         if (bookmarksStore.isImporting) {
             return;
         }
@@ -112,6 +112,7 @@
         if (bookmarkResponse.parentId === bookmarksStore.rootId) {
             // if folder bookmark is a folder in root directory
             bookmarksStore.bookmarks.push(bookmarkResponse);
+
         } else if (folder){
             // if bookmark event is bookmark and not folder
             if (!folder.children) {
