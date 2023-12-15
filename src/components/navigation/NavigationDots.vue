@@ -83,7 +83,7 @@
         from '@/components/forms/BookmarkConfirmDelete.vue';
     import useEventsBus from '@cmp/eventBus';
 
-    const { emit } = useEventsBus();
+    const { bus, emit } = useEventsBus();
 
     const utils = useUtils();
 
@@ -160,13 +160,21 @@
         inputWidth.value = `${textwidth.value.clientWidth + add}px`;
     }
 
-    watch(() => bookmarksStore.sliderIndex, async () => {
+    async function updateWidth() {
         await nextTick();
         inputWidth.value = `${textwidth.value.clientWidth}px`;
+    }
+
+    watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async () => {
+        updateWidth();
+    });
+
+    watch(() => bookmarksStore.sliderIndex, async () => {
+        updateWidth();
     });
 
     onMounted(() => {
-        inputWidth.value = `${textwidth.value.clientWidth}px`;
+        updateWidth();
     });
 </script>
 
