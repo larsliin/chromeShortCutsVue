@@ -85,9 +85,13 @@
 
         bookmarksStore.rootId = getRootResponse;
 
-        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse);
+        try {
+            const bookmarksResponse = await bookmarksStore.get_bookmarks(getRootResponse);
 
-        bookmarksStore.bookmarks = bookmarks ? bookmarks[0].children : [];
+            bookmarksStore.bookmarks = bookmarksResponse[0]?.children ? bookmarksResponse[0].children : [];
+        } catch (error) {
+            bookmarksStore.bookmarks = [];
+        }
 
         setChromeEventListeners();
     }
@@ -131,8 +135,8 @@ async function onCreated(event) {
     async function onRemoved(event) {
         const bookmark = utils.getStoredBookmarkById(event);
 
+        // if root folder is deleted then simply delete everything
         if (bookmarksStore.rootId === event) {
-            // if root folder is deleted then simply delete everything
             await bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id);
             await bookmarksStore.delete_syncStorageItem('accordion');
             await bookmarksStore.delete_syncStorageItem('folderColors');
@@ -144,7 +148,7 @@ async function onCreated(event) {
             await utils.deleteLocalStoreImages();
 
             utils.setSliderIndex(0, true);
-            utils.setAccordionModel([0]);
+            utils.updateAccordionModel([0]);
 
             emit(EMITS.BOOKMARKS_UPDATED, 'removed');
 
@@ -152,8 +156,6 @@ async function onCreated(event) {
         }
 
         if (bookmark) { // if is type bookmark
-            const parentId = bookmark.parentId;
-
             // Filter away child object with the specified ID
             bookmarksStore.bookmarks = bookmarksStore.bookmarks.map(parent => ({
                 ...parent,
@@ -163,6 +165,10 @@ async function onCreated(event) {
             // delete image in local storage
             bookmarksStore.delete_localStorageItem(event);
         } else { // if is type folder
+            const index = bookmarksStore.bookmarks.findIndex(e => e.id === event);
+
+            utils.updateAccordionModel(index);
+
             bookmarksStore.bookmarks = bookmarksStore.bookmarks.filter(e => e.id !== event);
         }
 
@@ -234,11 +240,6 @@ async function onCreated(event) {
         if (!isBookmarkInScope(event)) {
             return;
         }
-
-        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
-        const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse);
-
-        const emptyFolder = bookmarks[0].children.find((e) => e.children.length === 0);
 
         await update();
 

@@ -20,7 +20,11 @@ export default {
             try {
                 // eslint-disable-next-line no-undef
                 chrome.bookmarks.get(id, (event) => {
-                    resolve(event[0]);
+                    if (event && event.length > 0) {
+                        resolve(event[0]);
+                    } else {
+                        reject(new Error('Bookmark not found'));
+                    }
                 });
             } catch (error) {
                 reject(error);
@@ -159,6 +163,7 @@ export default {
                     },
                 );
             } catch (error) {
+                console.log('ERROR');
                 reject(error);
             }
         });

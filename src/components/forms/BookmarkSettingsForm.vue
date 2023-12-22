@@ -370,17 +370,21 @@
 
                 const imagesArr = [];
 
-                const bookmarkssPromiseArr = [];
+                const bookmarksPromiseArr = [];
                 // then create bookmarks and add to folders created before
                 bookmarksFlatArr.forEach((bookmark) => {
-                    bookmarkssPromiseArr.push(bookmarksStore
+                    bookmarksPromiseArr.push(bookmarksStore
                         .create_bookmark(map[bookmark.parentId], bookmark.title, bookmark.url));
 
                     imagesArr.push(bookmark.image);
                 });
 
-                Promise.all(bookmarkssPromiseArr)
+                Promise.all(bookmarksPromiseArr)
                     .then((results) => {
+                        bookmarksStore.accordionModel = [0];
+                        bookmarksStore.set_syncStorage({
+                            accordion: [...bookmarksStore.accordionModel],
+                        });
                         saveImages(results, imagesArr);
                     })
                     .catch((error) => {

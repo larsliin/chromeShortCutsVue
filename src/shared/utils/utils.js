@@ -16,6 +16,8 @@ export function useUtils() {
         // eslint-disable-next-line
         const urlRegex = /(https?:\/\/(www\.)?[a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)?)/;
         return urlRegex.test(str);
+        // const urlRegex = /(https?:\/\/(www\.)?[a-zA-Z0-9@:%._+~#=])/;
+        // return urlRegex.test(str);
     }
 
     async function getBase64ImageFromUrl(url) {
@@ -179,12 +181,19 @@ export function useUtils() {
         }
     }
 
-    async function setAccordionModel(model) {
+    async function updateAccordionModel(index) {
         const bookmarksStore = useBookmarksStore();
 
-        bookmarksStore.accordionModel = [...model];
+        const indexInAccordionModelModel = bookmarksStore.accordionModel.indexOf(index);
 
-        bookmarksStore.set_syncStorage({ accordion: [...model] });
+        if (indexInAccordionModelModel > -1) {
+            bookmarksStore.accordionModel.splice(indexInAccordionModelModel, 1);
+        }
+
+        bookmarksStore.accordionModel = bookmarksStore
+            .accordionModel.map((value) => ((value > index) ? value - 1 : value));
+
+        bookmarksStore.set_syncStorage({ accordion: [...bookmarksStore.accordionModel] });
     }
 
     return {
@@ -198,6 +207,6 @@ export function useUtils() {
         isValidURL,
         setSliderIndex,
         deleteBookmarkFolder,
-        setAccordionModel,
+        updateAccordionModel,
     };
 }

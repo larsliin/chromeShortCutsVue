@@ -152,14 +152,14 @@
     }
 
     function onUnfoldAllClick() {
-        utils.setAccordionModel([]);
+        utils.updateAccordionModel([]);
     }
 
     function onFoldAllClick() {
         const panelsSelector = expansionPanels.value.$el.querySelectorAll('.v-expansion-panel');
         const arr = [...Array(panelsSelector.length).keys()];
 
-        utils.setAccordionModel(Array.from(arr));
+        utils.updateAccordionModel(Array.from(arr));
     }
 
     function onBeforeDelete() {
@@ -167,7 +167,7 @@
     }
 
     watch(() => bus.value.get(EMITS.BOOKMARKS_IMPORT), () => {
-        utils.setAccordionModel([0]);
+        utils.updateAccordionModel([0]);
     });
 
     let tmpPanelsModel;
