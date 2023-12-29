@@ -6,14 +6,12 @@
                 v-if="bookmarksStore.accordionModel">
                 <v-btn
                     class="expansion-panels-toggle-btn mb-2"
-                    size=""
                     :icon="mdiUnfoldLessHorizontal"
                     :disabled="bookmarksStore.accordionModel.length === 0
                         || !bookmarksStore.bookmarks.length"
                     @click="onUnfoldAllClick()"></v-btn>
                 <v-btn
                     class="expansion-panels-toggle-btn"
-                    size=""
                     :icon="mdiUnfoldMoreHorizontal"
                     :disabled="bookmarksStore.accordionModel.length
                         === bookmarksStore.bookmarks.length
@@ -152,14 +150,18 @@
     }
 
     function onUnfoldAllClick() {
-        utils.updateAccordionModel([]);
+        bookmarksStore.accordionModel = [];
+
+        bookmarksStore.set_syncStorage({ accordion: [] });
     }
 
     function onFoldAllClick() {
         const panelsSelector = expansionPanels.value.$el.querySelectorAll('.v-expansion-panel');
         const arr = [...Array(panelsSelector.length).keys()];
 
-        utils.updateAccordionModel(Array.from(arr));
+        bookmarksStore.accordionModel = Array.from(arr);
+
+        bookmarksStore.set_syncStorage({ accordion: [...bookmarksStore.accordionModel] });
     }
 
     function onBeforeDelete() {
