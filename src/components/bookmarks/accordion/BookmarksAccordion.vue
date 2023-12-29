@@ -6,14 +6,14 @@
                 v-if="bookmarksStore.accordionModel">
                 <v-btn
                     class="expansion-panels-toggle-btn mb-2"
-                    size="small"
+                    size=""
                     :icon="mdiUnfoldLessHorizontal"
                     :disabled="bookmarksStore.accordionModel.length === 0
                         || !bookmarksStore.bookmarks.length"
                     @click="onUnfoldAllClick()"></v-btn>
                 <v-btn
                     class="expansion-panels-toggle-btn"
-                    size="small"
+                    size=""
                     :icon="mdiUnfoldMoreHorizontal"
                     :disabled="bookmarksStore.accordionModel.length
                         === bookmarksStore.bookmarks.length

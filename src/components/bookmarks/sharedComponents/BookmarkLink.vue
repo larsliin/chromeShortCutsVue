@@ -168,10 +168,10 @@
         width: 90px;
 
         &.small {
-            width: 75px;
+            width: 82px;
 
             .bookmark-image-container {
-                width: 75px;
+                width: 100%;
                 padding: 6px;
             }
 
