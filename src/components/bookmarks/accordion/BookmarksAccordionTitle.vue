@@ -6,7 +6,7 @@
             class="foldout"
             @delete="onDelete()"
             @rename="onRename()"
-            @openColorEditor="onOpenColorEditor()"
+            @openColorEditor="showColorEdit = true"
             @bookmarkAdd="onBookmarkAdd()" />
         <input
             class="input"
@@ -46,7 +46,6 @@
                     persistent
                     width="450">
                     <BookmarkColorEdit
-                        :bookmark="bookmark"
                         @confirm="onColorConfirm($event)"
                         @cancel="showColorEdit = false" />
                 </v-dialog>
@@ -122,10 +121,6 @@
     }
 
     const showColorEdit = ref(false);
-
-    function onOpenColorEditor() {
-        showColorEdit.value = true;
-    }
 
     const color = ref();
 

@@ -1,5 +1,6 @@
 <template>
     <span class="bookmark-image-container"
+        :style="{ backgroundColor: color }"
         :class="{ 'dimmed': folder, dark: bookmarksStore.enableDarkMode }">
         <span
             class="visibility-toggle"
@@ -38,6 +39,7 @@
         image: String,
         loading: Boolean,
         hide: Boolean,
+        color: String,
     });
 </script>
 

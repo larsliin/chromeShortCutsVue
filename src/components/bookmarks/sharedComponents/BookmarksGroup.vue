@@ -26,10 +26,8 @@
                         <BookmarkLink
                             :size="size"
                             :tabIndex="slideindex === bookmarksStore.sliderIndex ? '1' : '-1'"
-                            :id="element.id"
-                            :key="element.id"
-                            :link="element.url"
-                            :title="element.title" />
+                            :bookmark="element"
+                            :key="element.id" />
                     </li>
                 </template>
             </draggable>

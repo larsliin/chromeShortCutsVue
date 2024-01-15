@@ -6,20 +6,21 @@
                 v-bind="props"
                 class="bookmark-link"
                 :tabindex="tabIndex"
-                :class="[link ? '' : 'folder', size]"
+                :class="[bookmark.url ? '' : 'folder', size]"
                 draggable="true"
-                :href="link"
-                :id="id"
+                :href="bookmark.url"
+                :id="bookmark.id"
                 title=""
-                :aria-label="title">
+                :aria-label="bookmark.title">
                 <BookmarkIcon
+                    :color="bookmark.color"
                     :hide="!ready"
-                    :folder="!link"
+                    :folder="!bookmark.url"
                     :image="image" />
-                <span class="bookmark-title-container">{{ title }}</span>
+                <span class="bookmark-title-container">{{ bookmark.title }}</span>
             </a>
         </span>
-        <div class="tooltip">{{ title }}</div>
+        <div class="tooltip">{{ bookmark.title }}</div>
         <div class="bookmark-edit">
             <BookmarkFoldout
                 :darkModeBorder="true"
@@ -27,7 +28,8 @@
                 :size="'x-small'"
                 @toggle="onToggle($event)"
                 @delete="onDelete()"
-                @edit="emit(EMITS.EDIT, id)" />
+                @edit="emit(EMITS.EDIT, bookmark.id)"
+                @openColorEditor="showColorEdit = true" />
         </div>
     </span>
     <Teleport to="body"
@@ -39,11 +41,26 @@
                     persistent
                     width="450">
                     <BookmarkConfirmDelete
-                        :title="title"
-                        :id="id"
-                        :showFolderMessage="link ? true : false"
+                        :title="props.bookmark.title"
+                        :id="bookmark.id"
+                        :showFolderMessage="bookmark.url ? true : false"
                         @cancel="showConfirmDelete = false"
                         @confirm="onDeleteConfirm($event)" />
+                </v-dialog>
+            </v-row>
+        </template>
+    </Teleport>
+    <Teleport to="body"
+        v-if="showColorEdit">
+        <template>
+            <v-row justify="center">
+                <v-dialog
+                    v-model="showColorEdit"
+                    persistent
+                    width="450">
+                    <BookmarkColorEdit
+                        @confirm="onColorConfirm($event)"
+                        @cancel="showColorEdit = false" />
                 </v-dialog>
             </v-row>
         </template>
@@ -51,7 +68,7 @@
 </template>
 
 <script setup>
-    import { mdiRename, mdiDeleteOutline } from '@mdi/js';
+    import { mdiRename, mdiDeleteOutline, mdiPalette } from '@mdi/js';
     import { ref, onMounted, watch } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
@@ -61,6 +78,11 @@
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import BookmarkFoldout
         from '@/components/fields/BookmarkFoldout.vue';
+    import BookmarkColorEdit
+        from '@/components/forms/BookmarkColorEdit.vue';
+    import { useUtils } from '@/shared/utils/utils';
+
+    const utils = useUtils();
 
     const { emit, bus } = useEventsBus();
 
@@ -69,13 +91,9 @@
             type: String,
             default: '-1',
         },
-        id: {
-            type: [String, Number],
-            required: true,
-        },
-        title: String,
-        link: String,
+        bookmark: Object,
         size: String,
+        color: String,
     });
 
     const isFoldoutOpen = ref(false);
@@ -92,7 +110,7 @@
     const bookmarksStore = useBookmarksStore();
 
     async function updateImage() {
-        const getImageResponse = await bookmarksStore.get_localStorage(props.id);
+        const getImageResponse = await bookmarksStore.get_localStorage(props.bookmark.id);
 
         if (getImageResponse) {
             image.value = getImageResponse.image;
@@ -110,10 +128,10 @@
     function onDeleteConfirm() {
         showConfirmDelete.value = false;
 
-        if (props.link) {
-            bookmarksStore.remove_bookmark(props.id);
+        if (props.bookmark.url) {
+            bookmarksStore.remove_bookmark(props.bookmark.id);
         } else {
-            bookmarksStore.remove_bookmarkFolder(props.id);
+            bookmarksStore.remove_bookmarkFolder(props.bookmark.id);
         }
     }
 
@@ -126,19 +144,57 @@
     });
 
     watch(() => bus.value.get(EMITS.ICON_UPDATE), (id) => {
-        if (id[0] === props.id) {
+        if (id[0] === props.bookmark.id) {
             updateImage();
         }
     });
 
+    const selectedColor = ref();
+
+    const showColorEdit = ref(false);
+
+    async function onColorConfirm(event) {
+        selectedColor.value = event;
+
+        showColorEdit.value = false;
+
+        //
+        const getColorsResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
+        const colorsObj = getColorsResponse || {};
+
+        const bookmark = utils.getStoredBookmarkById(props.bookmark.id);
+
+        if (event) {
+            colorsObj[props.bookmark.id] = selectedColor.value;
+            bookmark.color = selectedColor.value;
+        } else if (colorsObj[props.bookmark.id]) {
+            delete colorsObj[props.bookmark.id];
+            bookmark.color = '';
+        }
+
+        if (!Object.keys(colorsObj).length) {
+            bookmarksStore.delete_syncStorageItem('bookmarkColors');
+        } else {
+            bookmarksStore.set_syncStorage({ bookmarkColors: colorsObj });
+        }
+    }
+
     onMounted(async () => {
-        if (props.link) {
-            const o = {
+        if (props.bookmark.url) {
+            const colorItem = {
+                title: 'Color',
+                icon: mdiPalette,
+                event: EMITS.OPEN_COLOR_EDITOR,
+            };
+
+            const editItem = {
                 title: 'Edit',
                 icon: mdiRename,
                 event: EMITS.EDIT,
             };
-            list.value.unshift(o);
+
+            list.value.unshift(colorItem);
+            list.value.unshift(editItem);
         }
         updateImage();
     });

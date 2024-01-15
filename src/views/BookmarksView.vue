@@ -140,6 +140,7 @@ async function onCreated(event) {
             await bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id);
             await bookmarksStore.delete_syncStorageItem('accordion');
             await bookmarksStore.delete_syncStorageItem('folderColors');
+            await bookmarksStore.delete_syncStorageItem('bookmarkColors');
 
             bookmarksStore.rootId = null;
 
@@ -283,10 +284,11 @@ async function onCreated(event) {
             bookmarksStore.get_syncStorage('arrowNavigation'),
             getBookmarks(),
             bookmarksStore.get_syncStorage('folderColors'),
+            bookmarksStore.get_syncStorage('bookmarkColors'),
             utils.buildRootFolder()
         ];
 
-        Promise.all(promiseArr).then(([rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, searchNavigation, arrowNavigation, bookmarks, colors, buildRoot]) => {
+        Promise.all(promiseArr).then(([rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, searchNavigation, arrowNavigation, bookmarks, folderColors, bookmarkColors, buildRoot]) => {
             // sliderIndex
             if (typeof sliderIndex === 'number') {
                 bookmarksStore.sliderIndex = sliderIndex;
@@ -319,14 +321,26 @@ async function onCreated(event) {
             // arrow navigation
             bookmarksStore.arrowNavigation = !!arrowNavigation;
 
-            // inject colors into shared bookmarks
-            if (colors && Object.keys(colors).length) {
-                Object.entries(colors).forEach((item) => {
+            // inject folderColors into shared bookmarks
+            if (folderColors && Object.keys(folderColors).length) {
+                Object.entries(folderColors).forEach((item) => {
                     const bookmarkFolder = bookmarksStore.bookmarks.find((e) => e.id === item[0]);
 
                     const [, bookmarkFolderColor] = item;
                     if (bookmarkFolder) {
                         bookmarkFolder.color = bookmarkFolderColor;
+                    }
+                });
+            }
+
+            // inject bookmarkColors into shared bookmarks
+            if (bookmarkColors && Object.keys(bookmarkColors).length) {
+                Object.entries(bookmarkColors).forEach((item) => {
+                    const bookmark = utils.getStoredBookmarkById(item[0]);
+
+                    const [, bookmarkFolderColor] = item;
+                    if (bookmark) {
+                        bookmark.color = bookmarkFolderColor;
                     }
                 });
             }
