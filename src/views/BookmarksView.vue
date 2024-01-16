@@ -283,7 +283,7 @@ async function onCreated(event) {
             bookmarksStore.get_syncStorage('searchNavigation'),
             bookmarksStore.get_syncStorage('arrowNavigation'),
             getBookmarks(),
-            bookmarksStore.get_syncStorage('folderColors'),
+            bookmarksStore.get_syncStorage('folderColors2'),
             bookmarksStore.get_syncStorage('bookmarkColors'),
             utils.buildRootFolder()
         ];
@@ -322,13 +322,21 @@ async function onCreated(event) {
             bookmarksStore.arrowNavigation = !!arrowNavigation;
 
             // inject folderColors into shared bookmarks
-            if (folderColors && Object.keys(folderColors).length) {
-                Object.entries(folderColors).forEach((item) => {
-                    const bookmarkFolder = bookmarksStore.bookmarks.find((e) => e.id === item[0]);
+            if (folderColors && folderColors.length) {
+                folderColors.forEach((item, index) => {
+                    // const bookmarkFolder = bookmarksStore.bookmarks.find((e) => e.id === item.id);
 
-                    const [, bookmarkFolderColor] = item;
-                    if (bookmarkFolder) {
-                        bookmarkFolder.color = bookmarkFolderColor;
+                    // const [, bookmarkFolderColor] = item;
+                    // if (bookmarkFolder) {
+                    //     bookmarkFolder.color = bookmarkFolderColor;
+                    // }
+
+
+
+                    if (item) {
+                        const bookmarkFolder = bookmarksStore.bookmarks[index];
+                        bookmarkFolder.color = item.color;
+                        console.log(bookmarkFolder);
                     }
                 });
             }

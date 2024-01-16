@@ -20,7 +20,7 @@
             @keydown.stop="keyDown($event)"
             @keyup.stop="keyUp($event)"
             v-model="model" />
-        <span ref="textwidth" class="text-width">{{ model }}</span>
+        <span ref="textWidth" class="text-width">{{ model }}</span>
         <v-icon
             size="large"
             class="icon-drag"
@@ -114,7 +114,7 @@
 
     const input = ref();
     const inputWidth = ref(0);
-    const textwidth = ref();
+    const textWidth = ref();
 
     function onBookmarkAdd() {
         emit(EMITS.BOOKMARK_ADD, props.bookmark.id);
@@ -125,31 +125,52 @@
     const color = ref();
 
     async function onColorConfirm(event) {
+        const index = bookmarksStore.bookmarks.findIndex((e) => e.id === props.bookmark.id);
+
         color.value = event;
 
         showColorEdit.value = false;
 
-        const getColorsResponse = await bookmarksStore.get_syncStorage('folderColors');
-        const colorsObj = getColorsResponse || {};
+        const getColorsResponse = await bookmarksStore.get_syncStorage('folderColors2');
+        const colorsObj = getColorsResponse || [];
 
         const folder = bookmarksStore.bookmarks.find((e) => e.id === props.bookmark.id);
+
         if (event) {
-            colorsObj[props.bookmark.id] = color.value;
+            colorsObj[index] = { id: props.bookmark.id, color: event };
             folder.color = color.value;
-        } else if (colorsObj[props.bookmark.id]) {
-            delete colorsObj[props.bookmark.id];
+        } else if (colorsObj[index]) {
+            colorsObj[index] = null;
             folder.color = '';
         }
 
-        if (!Object.keys(colorsObj).length) {
-            bookmarksStore.delete_syncStorageItem('folderColors');
+        if (colorsObj.every((value) => value === null)) {
+            bookmarksStore.delete_syncStorageItem('folderColors2');
         } else {
-            bookmarksStore.set_syncStorage({ folderColors: colorsObj });
+            bookmarksStore.set_syncStorage({ folderColors2: colorsObj });
         }
+
+        // const getColorsResponse = await bookmarksStore.get_syncStorage('folderColors');
+        // const colorsObj = getColorsResponse || {};
+
+        // const folder = bookmarksStore.bookmarks.find((e) => e.id === props.bookmark.id);
+        // if (event) {
+        //     colorsObj[props.bookmark.id] = color.value;
+        //     folder.color = color.value;
+        // } else if (colorsObj[props.bookmark.id]) {
+        //     delete colorsObj[props.bookmark.id];
+        //     folder.color = '';
+        // }
+
+        // if (!Object.keys(colorsObj).length) {
+        //     bookmarksStore.delete_syncStorageItem('folderColors');
+        // } else {
+        //     bookmarksStore.set_syncStorage({ folderColors: colorsObj });
+        // }
     }
 
     function onRename() {
-        inputWidth.value = `${textwidth.value.clientWidth + 0}px`;
+        inputWidth.value = `${textWidth.value.clientWidth + 0}px`;
 
         input.value.focus();
     }
@@ -196,7 +217,7 @@
 
         await nextTick();
 
-        inputWidth.value = `${textwidth.value.clientWidth + add}px`;
+        inputWidth.value = `${textWidth.value.clientWidth + add}px`;
     }
 
     function keyUp(event) {
@@ -204,7 +225,7 @@
     }
 
     onMounted(() => {
-        inputWidth.value = `${textwidth.value.clientWidth + 0}px`;
+        inputWidth.value = `${textWidth.value.clientWidth + 0}px`;
     });
 
 </script>
