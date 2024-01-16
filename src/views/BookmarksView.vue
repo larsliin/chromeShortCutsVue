@@ -244,10 +244,11 @@ async function onCreated(event) {
 
         await update();
 
-        const index = bookmarksStore.bookmarks
-            .findIndex(e => e.children.find(a => a.id === event));
+        const index = bookmarksStore.bookmarks.findIndex(a => a.id === event.toString());
 
-        utils.setSliderIndex(index, true);
+        if (index) {
+            utils.setSliderIndex(index, true);
+        }
 
         emit(EMITS.BOOKMARKS_UPDATED, 'moved');
     }
@@ -283,7 +284,7 @@ async function onCreated(event) {
             bookmarksStore.get_syncStorage('searchNavigation'),
             bookmarksStore.get_syncStorage('arrowNavigation'),
             getBookmarks(),
-            bookmarksStore.get_syncStorage('folderColors2'),
+            bookmarksStore.get_syncStorage('folderColors'),
             bookmarksStore.get_syncStorage('bookmarkColors'),
             utils.buildRootFolder()
         ];
@@ -322,21 +323,13 @@ async function onCreated(event) {
             bookmarksStore.arrowNavigation = !!arrowNavigation;
 
             // inject folderColors into shared bookmarks
-            if (folderColors && folderColors.length) {
-                folderColors.forEach((item, index) => {
-                    // const bookmarkFolder = bookmarksStore.bookmarks.find((e) => e.id === item.id);
+            if (folderColors && Object.keys(folderColors).length) {
+                Object.entries(folderColors).forEach((item) => {
+                    const bookmarkFolder = bookmarksStore.bookmarks.find((e) => e.id === item[0]);
 
-                    // const [, bookmarkFolderColor] = item;
-                    // if (bookmarkFolder) {
-                    //     bookmarkFolder.color = bookmarkFolderColor;
-                    // }
-
-
-
-                    if (item) {
-                        const bookmarkFolder = bookmarksStore.bookmarks[index];
-                        bookmarkFolder.color = item.color;
-                        console.log(bookmarkFolder);
+                    const [, bookmarkFolderColor] = item;
+                    if (bookmarkFolder) {
+                        bookmarkFolder.color = bookmarkFolderColor;
                     }
                 });
             }

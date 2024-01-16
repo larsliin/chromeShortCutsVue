@@ -125,48 +125,27 @@
     const color = ref();
 
     async function onColorConfirm(event) {
-        const index = bookmarksStore.bookmarks.findIndex((e) => e.id === props.bookmark.id);
-
         color.value = event;
 
         showColorEdit.value = false;
 
-        const getColorsResponse = await bookmarksStore.get_syncStorage('folderColors2');
-        const colorsObj = getColorsResponse || [];
+        const getColorsResponse = await bookmarksStore.get_syncStorage('folderColors');
+        const colorsObj = getColorsResponse || {};
 
         const folder = bookmarksStore.bookmarks.find((e) => e.id === props.bookmark.id);
-
         if (event) {
-            colorsObj[index] = { id: props.bookmark.id, color: event };
+            colorsObj[props.bookmark.id] = color.value;
             folder.color = color.value;
-        } else if (colorsObj[index]) {
-            colorsObj[index] = null;
+        } else if (colorsObj[props.bookmark.id]) {
+            delete colorsObj[props.bookmark.id];
             folder.color = '';
         }
 
-        if (colorsObj.every((value) => value === null)) {
-            bookmarksStore.delete_syncStorageItem('folderColors2');
+        if (!Object.keys(colorsObj).length) {
+            bookmarksStore.delete_syncStorageItem('folderColors');
         } else {
-            bookmarksStore.set_syncStorage({ folderColors2: colorsObj });
+            bookmarksStore.set_syncStorage({ folderColors: colorsObj });
         }
-
-        // const getColorsResponse = await bookmarksStore.get_syncStorage('folderColors');
-        // const colorsObj = getColorsResponse || {};
-
-        // const folder = bookmarksStore.bookmarks.find((e) => e.id === props.bookmark.id);
-        // if (event) {
-        //     colorsObj[props.bookmark.id] = color.value;
-        //     folder.color = color.value;
-        // } else if (colorsObj[props.bookmark.id]) {
-        //     delete colorsObj[props.bookmark.id];
-        //     folder.color = '';
-        // }
-
-        // if (!Object.keys(colorsObj).length) {
-        //     bookmarksStore.delete_syncStorageItem('folderColors');
-        // } else {
-        //     bookmarksStore.set_syncStorage({ folderColors: colorsObj });
-        // }
     }
 
     function onRename() {
