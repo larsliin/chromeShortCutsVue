@@ -275,7 +275,7 @@
         a.click();
     }
 
-    const colorsMap = {};
+    const colorsFoldersMap = {};
 
     // update global store bookmarks obj with the latest imported bookmarks
     async function updateBookmarksStore() {
@@ -284,7 +284,7 @@
         bookmarksStore.bookmarks = bookmarksResponse[0].children;
 
         // inject imported colors into new bookmarks object
-        Object.entries(colorsMap).forEach((item) => {
+        Object.entries(colorsFoldersMap).forEach((item) => {
             const bookmarkFolder = bookmarksStore.bookmarks.find((e) => e.id === item[0]);
             if (bookmarkFolder) {
                 const [, bookmarkFolderColor] = item;
@@ -293,8 +293,8 @@
         });
 
         // save imported colors
-        if (colorsMap && Object.keys(colorsMap).length) {
-            bookmarksStore.set_syncStorage({ folderColors: colorsMap });
+        if (colorsFoldersMap && Object.keys(colorsFoldersMap).length) {
+            bookmarksStore.set_syncStorage({ folderColors: colorsFoldersMap });
         }
 
         emit(EMITS.BOOKMARKS_UPDATED, 'import');
@@ -364,7 +364,7 @@
                     map[importBookmarks[i].id] = f.id;
 
                     if (importBookmarks[i].color) {
-                        colorsMap[f.id] = importBookmarks[i].color;
+                        colorsFoldersMap[f.id] = importBookmarks[i].color;
                     }
                 });
 
