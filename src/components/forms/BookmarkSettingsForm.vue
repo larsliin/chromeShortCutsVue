@@ -410,15 +410,21 @@
             const bookmarkId = bookmarksFlatResponse
                 .find((e) => item.url === e.url);
 
-            promiseAllArr.push(bookmarksStore.set_localStorage({
-                [bookmarkId.id]: {
-                    id: bookmarkId.id,
-                    parentId: item.parentId,
-                    image: item.image,
-                    url: item.url,
-                    title: item.title,
-                },
-            }));
+            console.group();
+            console.log(bookmarkId.title);
+            console.log(bookmarkId.id);
+            console.groupEnd();
+            if (bookmarkId.id) {
+                promiseAllArr.push(bookmarksStore.set_localStorage({
+                    [bookmarkId.id]: {
+                        id: bookmarkId.id,
+                        parentId: item.parentId,
+                        image: item.image,
+                        url: item.url,
+                        title: item.title,
+                    },
+                }));
+            }
         });
 
         Promise.all(promiseAllArr)
