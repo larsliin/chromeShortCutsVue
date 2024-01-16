@@ -407,16 +407,13 @@
         const promiseAllArr = [];
 
         importIcons.forEach((item) => {
-            const bookmarkId = bookmarksFlatResponse
+            const bookmark = bookmarksFlatResponse
                 .find((e) => item.url === e.url);
 
-            console.group();
-            console.log(bookmarkId);
-            console.groupEnd();
-            if (bookmarkId) {
+            if (bookmark) {
                 promiseAllArr.push(bookmarksStore.set_localStorage({
-                    [bookmarkId.id]: {
-                        id: bookmarkId.id,
+                    [bookmark.id]: {
+                        id: bookmark.id,
                         parentId: item.parentId,
                         image: item.image,
                         url: item.url,
