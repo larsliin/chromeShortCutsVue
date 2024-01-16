@@ -411,10 +411,9 @@
                 .find((e) => item.url === e.url);
 
             console.group();
-            console.log(bookmarkId.title);
-            console.log(bookmarkId.id);
+            console.log(bookmarkId);
             console.groupEnd();
-            if (bookmarkId.id) {
+            if (bookmarkId) {
                 promiseAllArr.push(bookmarksStore.set_localStorage({
                     [bookmarkId.id]: {
                         id: bookmarkId.id,
