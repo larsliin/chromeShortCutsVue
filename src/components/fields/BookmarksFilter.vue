@@ -1,14 +1,14 @@
 <template>
     <div class="wrapper">
         <v-text-field
-            hide-details="auto"
-            label="Filter"
-            :append-inner-icon="mdiMagnify"
             clearable
             density="compact"
-            variant="solo"
-            :disabled="!isEnabled"
+            hide-details="auto"
+            label="Filter"
             v-model="bookmarkSearch"
+            variant="solo"
+            :append-inner-icon="mdiMagnify"
+            :disabled="!isEnabled"
             @update:modelValue="onUpdate($event)"
             @click:clear="onClear($event)">
         </v-text-field>

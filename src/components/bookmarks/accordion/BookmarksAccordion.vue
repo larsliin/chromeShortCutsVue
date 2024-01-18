@@ -175,7 +175,7 @@
     let tmpPanelsModel;
 
     watch(() => bus.value.get(EMITS.FILTER_UPDATED), (newVal, oldVal) => {
-        if (!oldVal[0] || newVal[0] !== '') {
+        if ((oldVal && !oldVal[0]) || newVal[0] !== '') {
             if (!tmpPanelsModel) {
                 tmpPanelsModel = Array.from(bookmarksStore.accordionModel);
                 bookmarksStore.accordionModel = Array
