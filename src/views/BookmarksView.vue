@@ -86,7 +86,7 @@
         bookmarksStore.rootId = getRootResponse;
 
         try {
-            const bookmarksResponse = await bookmarksStore.get_bookmarks(getRootResponse);
+            const bookmarksResponse = await bookmarksStore.get_coloredBookmarks(getRootResponse);
 
             bookmarksStore.bookmarks = bookmarksResponse[0]?.children ? bookmarksResponse[0].children : [];
         } catch (error) {
@@ -284,8 +284,6 @@ async function onCreated(event) {
             bookmarksStore.get_syncStorage('searchNavigation'),
             bookmarksStore.get_syncStorage('arrowNavigation'),
             getBookmarks(),
-            bookmarksStore.get_syncStorage('folderColors'),
-            bookmarksStore.get_syncStorage('bookmarkColors'),
             utils.buildRootFolder()
         ];
 
@@ -321,30 +319,6 @@ async function onCreated(event) {
 
             // arrow navigation
             bookmarksStore.arrowNavigation = !!arrowNavigation;
-
-            // inject folderColors into shared bookmarks
-            if (folderColors && Object.keys(folderColors).length) {
-                Object.entries(folderColors).forEach((item) => {
-                    const bookmarkFolder = bookmarksStore.bookmarks.find((e) => e.id === item[0]);
-
-                    const [, bookmarkFolderColor] = item;
-                    if (bookmarkFolder) {
-                        bookmarkFolder.color = bookmarkFolderColor;
-                    }
-                });
-            }
-
-            // inject bookmarkColors into shared bookmarks
-            if (bookmarkColors && Object.keys(bookmarkColors).length) {
-                Object.entries(bookmarkColors).forEach((item) => {
-                    const bookmark = utils.getStoredBookmarkById(item[0]);
-
-                    const [, bookmarkFolderColor] = item;
-                    if (bookmark) {
-                        bookmark.color = bookmarkFolderColor;
-                    }
-                });
-            }
 
             toggleOverflowHidden();
         });

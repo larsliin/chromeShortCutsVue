@@ -16,6 +16,7 @@
 </template>
 
 <script setup>
+    import { cloneDeep } from 'lodash';
     import { mdiMagnify } from '@mdi/js';
     import {
         ref, onMounted, watch, nextTick,
@@ -33,10 +34,10 @@
 
     const bookmarkSearch = ref();
 
-    async function onClear() {
-        const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+    let clonedBookmarks;
 
-        bookmarksStore.bookmarks = bookmarksResponse[0].children;
+    async function onClear() {
+        bookmarksStore.bookmarks = cloneDeep(clonedBookmarks);
     }
 
     let throttleTimer = null;
@@ -45,19 +46,20 @@
     async function onUpdate(event = '') {
         bookmarksStore.transition = false;
 
-        const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+        const bookmarks = cloneDeep(clonedBookmarks);
         let currentFolder = bookmarksStore.bookmarks[bookmarksStore.sliderIndex];
 
         if (!currentFolder) {
-            [currentFolder] = bookmarksResponse;
+            [currentFolder] = bookmarks;
         }
+
         const currentFolderId = currentFolder.id;
 
         let sliderIndex = 0;
 
         if (event) {
-            // if filter string has a value
-            const filteredData = bookmarksResponse[0].children.map((item) => {
+            // if filter string has a value then filter bookmarks
+            const filteredData = bookmarks.map((item) => {
                 if (item.children) {
                     // eslint-disable-next-line no-param-reassign
                     item.children = item.children
@@ -73,8 +75,8 @@
             sliderIndex = Math.max(bookmarksStore.bookmarks
                 .findIndex((e) => e.id === currentFolderId), 0);
         } else {
-            // if filter string is empty
-            bookmarksStore.bookmarks = bookmarksResponse[0].children;
+            // if filter string is empty then reset bookmarks
+            bookmarksStore.bookmarks = bookmarks;
 
             sliderIndex = Math.max(bookmarksStore.bookmarks
                 .findIndex((e) => e.id === currentFolderId), 0);
@@ -96,26 +98,32 @@
 
     const isEnabled = ref(false);
 
-    watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async (action) => {
+    async function getBookmarks() {
+        try {
+            const bookmarksResponse = await bookmarksStore
+                .get_coloredBookmarks(bookmarksStore.rootId);
+
+            clonedBookmarks = bookmarksResponse[0]?.children
+                ? bookmarksResponse[0].children : [];
+
+            isEnabled.value = !!clonedBookmarks.length;
+        } catch (error) {
+            clonedBookmarks = [];
+        }
+    }
+
+    watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async () => {
         if (!bookmarksStore.rootId) {
             return;
         }
 
         await nextTick();
 
-        const response = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
-
-        isEnabled.value = !!response[0].children.length;
-
-        if (action[0] === 'moved') {
-            bookmarkSearch.value = '';
-        }
+        getBookmarks();
     });
 
-    onMounted(async () => {
-        const response = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
-
-        isEnabled.value = !!response[0].children.length;
+    onMounted(() => {
+        getBookmarks();
     });
 
 </script>
