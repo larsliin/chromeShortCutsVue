@@ -18,48 +18,48 @@ export default {
     async get_coloredBookmarks(id) {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
-                chrome.bookmarks.getSubTree(
-                    id,
-                    (response1) => {
-                        // eslint-disable-next-line no-undef
-                        chrome.storage.sync.get('folderColors').then((response2) => {
-                            // eslint-disable-next-line no-undef
-                            chrome.storage.sync.get('bookmarkColors').then((response3) => {
-                                if (response2.folderColors) {
-                                    Object.entries(response2.folderColors).forEach((item) => {
-                                        const bookmarkFolder = response1[0].children
-                                            .find((e) => e.id === item[0]);
-                                        if (bookmarkFolder) {
-                                            const [, bookmarkFolderColor] = item;
-                                            bookmarkFolder.color = bookmarkFolderColor;
-                                        }
-                                    });
-                                }
-                                if (response3.bookmarkColors) {
-                                    Object.entries(response3.bookmarkColors).forEach((item) => {
-                                        const bookmarksFlatArr = response1[0].children
-                                            .flatMap((obj) => obj.children);
-                                        const bookmark = bookmarksFlatArr
-                                            .find((e) => e.id === item[0]);
-                                        if (bookmark) {
-                                            const [, bookmarkColor] = item;
-                                            bookmark.color = bookmarkColor;
-                                        }
-                                    });
-                                }
+                const promiseArr = [];
 
-                                resolve(response1);
+                promiseArr.push(this.get_bookmarks(id));
+                promiseArr.push(this.get_syncStorage('folderColors'));
+                promiseArr.push(this.get_syncStorage('bookmarkColors'));
+
+                Promise.all(promiseArr)
+                    .then(([response1, response2, response3]) => {
+                        const returnObj = [...response1];
+
+                        if (response2) {
+                            Object.entries(response2).forEach((item) => {
+                                const bookmarkFolder = returnObj[0].children
+                                    .find((e) => e.id === item[0]);
+                                if (bookmarkFolder) {
+                                    const [, bookmarkFolderColor] = item;
+                                    bookmarkFolder.color = bookmarkFolderColor;
+                                }
                             });
-                        });
-                    },
-                );
+                        }
+                        if (response3) {
+                            Object.entries(response3).forEach((item) => {
+                                const bookmarksFlatArr = returnObj[0].children
+                                    .flatMap((obj) => obj.children);
+                                const bookmark = bookmarksFlatArr
+                                    .find((e) => e.id === item[0]);
+                                if (bookmark) {
+                                    const [, bookmarkColor] = item;
+                                    bookmark.color = bookmarkColor;
+                                }
+                            });
+                        }
+                        resolve(returnObj);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                });
             } catch (error) {
                 reject(error);
             }
         });
     },
-
     async get_bookmarkById(id) {
         return new Promise((resolve, reject) => {
             try {
