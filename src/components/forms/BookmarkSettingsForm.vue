@@ -462,7 +462,6 @@
         bookmarksStore.delete_syncStorageItem('folderColors');
 
         const importIcons = JSON.parse(event.target.result);
-        console.log(importIcons);
         const bookmarksFlatResponse = await utils.getBookmarksAsFlatArr();
 
         const promiseAllArr = [];
@@ -617,15 +616,7 @@
     }
 
     function isImportIconsFileValid(obj) {
-        const arr = [
-            obj.bookmarks.some((e) => e.id),
-            obj.bookmarks.some((e) => e.image),
-            obj.bookmarks.some((e) => e.parentId),
-            obj.bookmarks.some((e) => e.title),
-            obj.bookmarks.some((e) => e.url),
-        ];
-
-        return !arr.includes(false);
+        return obj.bookmarks && obj.folders;
     }
 
     watch(bookmarksFileImport, (newVal) => {
