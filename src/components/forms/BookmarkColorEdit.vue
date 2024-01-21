@@ -15,7 +15,6 @@
                     :swatches="swatches"
                     show-swatches />
             </div>
-
         </v-card-text>
         <v-spacer class="mt-2 mb-2" />
         <v-divider></v-divider>
@@ -53,6 +52,10 @@
 
     const bookmarksStore = useBookmarksStore();
 
+    const props = defineProps({
+        value: String,
+    });
+
     const emits = defineEmits([
         EMITS.CANCEL, EMITS.CONFIRM,
     ]);
@@ -80,6 +83,8 @@
     }
 
     onMounted(() => {
+        color.value = props.value;
+
         bookmarksStore.dialogOpen = true;
     });
 
