@@ -23,6 +23,7 @@
             <div class="btn-wrapper">
                 <div>
                     <v-btn
+                        v-if="hasColor"
                         variant="text"
                         @click="onClear()">
                         Clear
@@ -36,6 +37,7 @@
                     </v-btn>
                     <v-btn
                         variant="tonal"
+                        :disabled="!color"
                         @click="onConfirm()">
                         Update
                     </v-btn>
@@ -82,8 +84,12 @@
         emits(EMITS.CONFIRM, null);
     }
 
+    const hasColor = ref(false);
+
     onMounted(() => {
         color.value = props.value;
+
+        hasColor.value = !!props.value;
 
         bookmarksStore.dialogOpen = true;
     });
