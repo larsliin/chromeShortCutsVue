@@ -46,6 +46,7 @@
                     persistent
                     width="450">
                     <BookmarkColorEdit
+                        :value="bookmark.color"
                         @confirm="onColorConfirm($event)"
                         @cancel="showColorEdit = false" />
                 </v-dialog>
