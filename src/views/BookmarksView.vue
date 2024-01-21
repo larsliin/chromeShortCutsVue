@@ -96,7 +96,7 @@
         setChromeEventListeners();
     }
 
-async function onCreated(event) {
+    async function onCreated(event) {
         if (bookmarksStore.isImporting) {
             return;
         }
@@ -106,7 +106,6 @@ async function onCreated(event) {
             return;
         }
 
-        // eslint-disable-next-line no-use-before-define
         await utils.buildRootFolder();
 
         const bookmarkResponse = await bookmarksStore.get_bookmarkById(event);

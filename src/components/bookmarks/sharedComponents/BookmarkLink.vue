@@ -13,7 +13,7 @@
                 title=""
                 :aria-label="bookmark.title">
                 <BookmarkIcon
-                    :color="bookmark.color"
+                    :color="color"
                     :hide="!ready"
                     :folder="!bookmark.url"
                     :image="image" />
@@ -94,7 +94,6 @@
         },
         bookmark: Object,
         size: String,
-        color: String,
     });
 
     const isFoldoutOpen = ref(false);
@@ -120,6 +119,16 @@
         ready.value = true;
     }
 
+    const color = ref();
+
+    async function updateColor() {
+        const getImageResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
+
+        if (getImageResponse) {
+            color.value = getImageResponse[props.bookmark.id];
+        }
+    }
+
     const showConfirmDelete = ref(false);
 
     function onDelete() {
@@ -142,6 +151,7 @@
 
     watch(() => bus.value.get(EMITS.IMAGES_IMPORT), () => {
         updateImage();
+        updateColor();
     });
 
     watch(() => bus.value.get(EMITS.ICON_UPDATE), (id) => {
@@ -180,6 +190,8 @@
         }
     }
 
+    const colorVal = ref();
+
     onMounted(async () => {
         if (props.bookmark.url) {
             const colorItem = {
@@ -197,6 +209,9 @@
             list.value.unshift(colorItem);
             list.value.unshift(editItem);
         }
+
+        color.value = props.bookmark.color;
+
         updateImage();
     });
 

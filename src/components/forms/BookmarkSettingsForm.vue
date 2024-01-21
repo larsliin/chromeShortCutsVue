@@ -239,7 +239,14 @@
         const localStorageItems = await bookmarksStore.get_localStorageAll(null);
         const localStorageItemsImageArr = Object.values(localStorageItems).filter((e) => e.image);
 
-        const jsonString = JSON.stringify(localStorageItemsImageArr);
+        const bookmarkColorsResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
+
+        const imageArrWithColors = localStorageItemsImageArr.map((obj) => ({
+            ...obj,
+            color: bookmarkColorsResponse[obj.id] || obj.color || null,
+        }));
+
+        const jsonString = JSON.stringify(imageArrWithColors);
 
         const a = document.createElement('a');
 
@@ -433,17 +440,24 @@
     async function onIconsImportReaderLoad(event) {
         bookmarksStore.isImporting = true;
 
+        bookmarksStore.delete_syncStorageItem('bookmarkColors');
+
         const importIcons = JSON.parse(event.target.result);
 
         const bookmarksFlatResponse = await utils.getBookmarksAsFlatArr();
 
         const promiseAllArr = [];
 
+        const colorArr = {};
         importIcons.forEach((item) => {
             const bookmark = bookmarksFlatResponse
                 .find((e) => item.url === e.url);
 
             if (bookmark) {
+                if (item.color) {
+                    colorArr[bookmark.id] = item.color;
+                }
+
                 promiseAllArr.push(bookmarksStore.set_localStorage({
                     [bookmark.id]: {
                         id: bookmark.id,
@@ -455,6 +469,8 @@
                 }));
             }
         });
+
+        bookmarksStore.set_syncStorage({ bookmarkColors: colorArr });
 
         Promise.all(promiseAllArr)
             .then(() => {
