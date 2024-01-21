@@ -239,14 +239,32 @@
         const localStorageItems = await bookmarksStore.get_localStorageAll(null);
         const localStorageItemsImageArr = Object.values(localStorageItems).filter((e) => e.image);
 
+        const folderColorsResponse = await bookmarksStore.get_syncStorage('folderColors');
         const bookmarkColorsResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
 
-        const imageArrWithColors = localStorageItemsImageArr.map((obj) => ({
-            ...obj,
-            color: bookmarkColorsResponse[obj.id] || obj.color || null,
-        }));
+        let foldersWithColors = [];
+        if (folderColorsResponse) {
+            foldersWithColors = Object.entries(folderColorsResponse).map((e) => ({
+                id: e[0],
+                color: e[1],
+                title: bookmarksStore.bookmarks.find((a) => a.id === e[0]).title,
+            }));
+        }
 
-        const jsonString = JSON.stringify(imageArrWithColors);
+        let bookmarksWithColors = [];
+        if (bookmarkColorsResponse) {
+            bookmarksWithColors = localStorageItemsImageArr.map((obj) => ({
+                ...obj,
+                color: bookmarkColorsResponse[obj.id] || obj.color || null,
+            }));
+        }
+
+        const exportArr = {
+            folders: foldersWithColors,
+            bookmarks: bookmarksWithColors,
+        };
+
+        const jsonString = JSON.stringify(exportArr);
 
         const a = document.createElement('a');
 
@@ -441,15 +459,18 @@
         bookmarksStore.isImporting = true;
 
         bookmarksStore.delete_syncStorageItem('bookmarkColors');
+        bookmarksStore.delete_syncStorageItem('folderColors');
 
         const importIcons = JSON.parse(event.target.result);
-
+        console.log(importIcons);
         const bookmarksFlatResponse = await utils.getBookmarksAsFlatArr();
 
         const promiseAllArr = [];
 
         const colorArr = {};
-        importIcons.forEach((item) => {
+
+        // bookmarks
+        importIcons.bookmarks.forEach((item) => {
             const bookmark = bookmarksFlatResponse
                 .find((e) => item.url === e.url);
 
@@ -471,6 +492,22 @@
         });
 
         bookmarksStore.set_syncStorage({ bookmarkColors: colorArr });
+
+        // folders
+        const folderColorArr = {};
+
+        importIcons.folders.forEach((item) => {
+            const bookmark = bookmarksStore.bookmarks
+                .find((e) => item.title === e.title);
+
+            if (bookmark) {
+                if (item.color) {
+                    folderColorArr[bookmark.id] = item.color;
+                }
+            }
+        });
+
+        bookmarksStore.set_syncStorage({ folderColors: folderColorArr });
 
         Promise.all(promiseAllArr)
             .then(() => {
@@ -581,11 +618,11 @@
 
     function isImportIconsFileValid(obj) {
         const arr = [
-            obj.some((e) => e.id),
-            obj.some((e) => e.image),
-            obj.some((e) => e.parentId),
-            obj.some((e) => e.title),
-            obj.some((e) => e.url),
+            obj.bookmarks.some((e) => e.id),
+            obj.bookmarks.some((e) => e.image),
+            obj.bookmarks.some((e) => e.parentId),
+            obj.bookmarks.some((e) => e.title),
+            obj.bookmarks.some((e) => e.url),
         ];
 
         return !arr.includes(false);

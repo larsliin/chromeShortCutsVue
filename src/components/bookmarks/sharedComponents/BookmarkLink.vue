@@ -122,10 +122,10 @@
     const color = ref();
 
     async function updateColor() {
-        const getImageResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
+        const getColorResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
 
-        if (getImageResponse) {
-            color.value = getImageResponse[props.bookmark.id];
+        if (getColorResponse) {
+            color.value = getColorResponse[props.bookmark.id];
         }
     }
 
@@ -178,9 +178,11 @@
         if (event) {
             colorsObj[props.bookmark.id] = selectedColor.value;
             bookmark.color = selectedColor.value;
+            color.value = selectedColor.value;
         } else if (colorsObj[props.bookmark.id]) {
             delete colorsObj[props.bookmark.id];
             bookmark.color = '';
+            color.value = null;
         }
 
         if (!Object.keys(colorsObj).length) {
@@ -190,9 +192,7 @@
         }
     }
 
-    const colorVal = ref();
-
-    onMounted(async () => {
+    onMounted(() => {
         if (props.bookmark.url) {
             const colorItem = {
                 title: 'Color',

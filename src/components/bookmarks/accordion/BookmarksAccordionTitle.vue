@@ -1,6 +1,6 @@
 <template>
     <v-expansion-panel-title
-        :color="bookmark.color">
+        :color="color">
         <BookmarkFoldout
             :list="list"
             class="foldout"
@@ -57,7 +57,7 @@
 
 <script setup>
     import {
-        ref, onMounted, nextTick,
+        ref, onMounted, nextTick, watch,
     } from 'vue';
     import {
         mdiRename, mdiDragHorizontal, mdiDeleteOutline, mdiStar, mdiPalette,
@@ -77,7 +77,7 @@
 
     const bookmarksStore = useBookmarksStore();
 
-    const { emit } = useEventsBus();
+    const { emit, bus } = useEventsBus();
 
     const emits = defineEmits([
         EMITS.DELETE,
@@ -123,10 +123,12 @@
 
     const showColorEdit = ref(false);
 
+    const selectedColor = ref();
+
     const color = ref();
 
     async function onColorConfirm(event) {
-        color.value = event;
+        selectedColor.value = event;
 
         showColorEdit.value = false;
 
@@ -134,12 +136,15 @@
         const colorsObj = getColorsResponse || {};
 
         const folder = bookmarksStore.bookmarks.find((e) => e.id === props.bookmark.id);
+
         if (event) {
-            colorsObj[props.bookmark.id] = color.value;
-            folder.color = color.value;
+            colorsObj[props.bookmark.id] = selectedColor.value;
+            folder.color = selectedColor.value;
+            color.value = selectedColor.value;
         } else if (colorsObj[props.bookmark.id]) {
             delete colorsObj[props.bookmark.id];
             folder.color = '';
+            color.value = null;
         }
 
         if (!Object.keys(colorsObj).length) {
@@ -204,8 +209,22 @@
         event.preventDefault();
     }
 
+    async function updateColor() {
+        const getColorResponse = await bookmarksStore.get_syncStorage('folderColors');
+
+        if (getColorResponse) {
+            color.value = getColorResponse[props.bookmark.id];
+        }
+    }
+
+    watch(() => bus.value.get(EMITS.IMAGES_IMPORT), () => {
+        updateColor();
+    });
+
     onMounted(() => {
         inputWidth.value = `${textWidth.value.clientWidth + 0}px`;
+
+        color.value = props.bookmark.color;
     });
 
 </script>
