@@ -5,13 +5,15 @@
             <a
                 v-bind="props"
                 class="bookmark-link"
-                :tabindex="tabIndex"
-                :class="[bookmark.url ? '' : 'folder', size]"
                 draggable="true"
+                title=""
+                :aria-label="bookmark.title"
+                :class="[bookmark.url ? '' : 'folder', size, hideEdit ? 'hide-edit' : '']"
                 :href="bookmark.url"
                 :id="bookmark.id"
-                title=""
-                :aria-label="bookmark.title">
+                :tabindex="tabIndex"
+                @keyup.enter="onClick($event)"
+                @click="onClick($event)">
                 <BookmarkIcon
                     :color="color"
                     :hide="!ready"
@@ -20,17 +22,19 @@
                 <span class="bookmark-title-container">{{ bookmark.title }}</span>
             </a>
         </span>
-        <div class="tooltip">{{ bookmark.title }}</div>
-        <div class="bookmark-edit">
-            <BookmarkFoldout
-                :darkModeBorder="true"
-                :list="list"
-                :size="'x-small'"
-                @toggle="onToggle($event)"
-                @delete="onDelete()"
-                @edit="emit(EMITS.EDIT, bookmark.id)"
-                @openColorEditor="showColorEdit = true" />
-        </div>
+        <template v-if="!hideEdit">
+            <div class="tooltip">{{ bookmark.title }}</div>
+            <div class="bookmark-edit">
+                <BookmarkFoldout
+                    :darkModeBorder="true"
+                    :list="list"
+                    :size="'x-small'"
+                    @toggle="onToggle($event)"
+                    @delete="onDelete()"
+                    @edit="emit(EMITS.EDIT, bookmark.id)"
+                    @openColorEditor="showColorEdit = true" />
+            </div>
+        </template>
     </span>
     <Teleport to="body"
         v-if="showConfirmDelete">
@@ -82,6 +86,7 @@
     import BookmarkColorEdit
         from '@/components/forms/BookmarkColorEdit.vue';
     import { useUtils } from '@/shared/utils/utils';
+    import { uniq } from 'lodash';
 
     const utils = useUtils();
 
@@ -94,6 +99,7 @@
         },
         bookmark: Object,
         size: String,
+        hideEdit: Boolean,
     });
 
     const isFoldoutOpen = ref(false);
@@ -111,12 +117,59 @@
 
     async function updateImage() {
         const getImageResponse = await bookmarksStore.get_localStorage(props.bookmark.id);
-
         if (getImageResponse) {
             image.value = getImageResponse.image;
         }
 
         ready.value = true;
+    }
+
+    function onClick(event) {
+        event.preventDefault();
+
+        if (event.pointerId < 0) {
+            return;
+        }
+
+        if (!bookmarksStore.statistics) {
+            bookmarksStore.statistics = [];
+        }
+        const bookmarkStats = bookmarksStore.statistics
+            .find((item) => item.url === (props.bookmark.url));
+
+        const bookmarkStatsIndex = bookmarksStore.statistics
+            .findIndex((item) => Object.values(item.id).includes(props.bookmark.id));
+
+        const index = (bookmarkStatsIndex) === -1 ? bookmarksStore.statistics.length
+            : bookmarkStatsIndex;
+        const clicks = bookmarkStats?.clicks !== undefined
+            ? parseInt(bookmarkStats.clicks, 10) + 1 : 1;
+
+        let idArr;
+        if (bookmarkStats) {
+            idArr = Object.values(bookmarkStats.id);
+            idArr.push(props.bookmark.id);
+            idArr = uniq(idArr);
+        } else {
+            idArr = [props.bookmark.id];
+        }
+
+        bookmarksStore.statistics[index] = ({
+            id: idArr,
+            url: props.bookmark.url,
+            title: props.bookmark.title,
+            clicks,
+        });
+
+        const sorted = bookmarksStore.statistics.sort((a, b) => b.clicks - a.clicks);
+
+        bookmarksStore.set_syncStorage({ statistics: sorted });
+
+        if (event.ctrlKey || event.metaKey) {
+            window.open(props.bookmark.url, '_blank');
+        } else {
+            window.location.href = props.bookmark.url;
+        }
     }
 
     const color = ref();
@@ -169,7 +222,6 @@
 
         showColorEdit.value = false;
 
-        //
         const getColorsResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
         const colorsObj = getColorsResponse || {};
 
@@ -239,6 +291,14 @@
         text-decoration: none;
         width: 90px;
 
+        &.hide-edit {
+            margin-top: 6px;
+
+            .bookmark-title-container {
+                margin-top: 2px;
+            }
+        }
+
         &.small {
             width: 82px;
 
@@ -249,6 +309,23 @@
 
             .bookmark-title-container {
                 font-size: 11px;
+            }
+        }
+
+        &.smaller {
+            width: 62px;
+
+            .bookmark-image-container {
+                width: 100%;
+                padding: 6px;
+
+                :deep(svg) {
+                    width: 42px
+                }
+            }
+
+            .bookmark-title-container {
+                font-size: 10px;
             }
         }
     }
@@ -294,7 +371,6 @@
                 visibility: visible;
             }
         }
-
     }
 
     .tooltip {

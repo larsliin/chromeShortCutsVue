@@ -18,6 +18,8 @@
                 v-if="bookmarksStore.arrowNavigation && bookmarksStore.bookmarks.length > 1"
                 direction="right" />
         </template>
+        <BookmarksPopular
+            v-if="bookmarksStore.statistics" />
     </div>
 </template>
 
@@ -35,6 +37,8 @@
     import BookmarkAddLarge from '@/components/bookmarks/sharedComponents/BookmarkAddLarge.vue';
     import BookmarksBackground
         from '@/components/bookmarks/sharedComponents/BookmarksBackground.vue';
+    import BookmarksPopular from '@/components/bookmarks/sharedComponents/BookmarksPopular.vue';
+    import { toArray } from 'lodash';
 
     const theme = useTheme();
 
@@ -60,7 +64,6 @@
     async function update() {
         if (bookmarksStore.dragStart) {
             bookmarksStore.dragStart = false;
-
             return;
         }
 
@@ -276,6 +279,7 @@
         // load all settings
         const promiseArr = [
             bookmarksStore.get_folderByTitle(FOLDER.ROOT.parentId, FOLDER.ROOT.label),
+            bookmarksStore.get_syncStorage('statistics'),
             bookmarksStore.get_syncStorage('sliderIndex'),
             bookmarksStore.get_syncStorage('darkMode'),
             bookmarksStore.get_syncStorage('systemDarkMode'),
@@ -286,8 +290,12 @@
             utils.buildRootFolder()
         ];
 
-        Promise.all(promiseArr).then(([rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, searchNavigation, arrowNavigation, bookmarks, folderColors, bookmarkColors, buildRoot]) => {
+        Promise.all(promiseArr).then(([rootFolder, statistics, sliderIndex, darkMode, systemDarkMode, accordionNavigation, searchNavigation, arrowNavigation, bookmarks, folderColors, bookmarkColors, buildRoot]) => {
             // sliderIndex
+            if (statistics) {
+                bookmarksStore.statistics = toArray(statistics);
+            }
+
             if (typeof sliderIndex === 'number') {
                 bookmarksStore.sliderIndex = sliderIndex;
             } else {

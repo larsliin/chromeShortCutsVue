@@ -25,7 +25,7 @@
                     <li>
                         <BookmarkLink
                             :size="size"
-                            :tabIndex="slideindex === bookmarksStore.sliderIndex ? '1' : '-1'"
+                            :tabIndex="getTabIndex()"
                             :bookmark="element"
                             :key="element.id" />
                     </li>
@@ -108,6 +108,13 @@
 
     function onDelete() {
         showConfirmDelete.value = true;
+    }
+
+    function getTabIndex() {
+        if (bookmarksStore.accordionNavigation) {
+            return '';
+        }
+        return props.slideindex === bookmarksStore.sliderIndex ? '1' : '-1';
     }
 
     async function onDeleteConfirm() {

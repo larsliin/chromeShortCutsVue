@@ -14,10 +14,10 @@ export function useUtils() {
     // eslint-disable-next-line
     function isValidURL(str) {
         // eslint-disable-next-line
-        const urlRegex = /(https?:\/\/(www\.)?[a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)?)/;
-        return urlRegex.test(str);
-        // const urlRegex = /(https?:\/\/(www\.)?[a-zA-Z0-9@:%._+~#=])/;
+        // const urlRegex = /(https?:\/\/(www\.)?[a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)?)/;
         // return urlRegex.test(str);
+        const urlRegex = /(https?:\/\/(www\.)?[a-zA-Z0-9@:%._+~#=])/;
+        return urlRegex.test(str);
     }
 
     async function getBase64ImageFromUrl(url) {
