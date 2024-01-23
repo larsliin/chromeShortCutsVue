@@ -208,7 +208,6 @@ export default {
                     },
                 );
             } catch (error) {
-                console.log('ERROR');
                 reject(error);
             }
         });

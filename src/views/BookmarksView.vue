@@ -18,8 +18,7 @@
                 v-if="bookmarksStore.arrowNavigation && bookmarksStore.bookmarks.length > 1"
                 direction="right" />
         </template>
-        <BookmarksPopular
-            v-if="bookmarksStore.statistics" />
+        <BookmarksPopular />
     </div>
 </template>
 
@@ -131,7 +130,7 @@
                 .findIndex(e => e.id === folder.id);
             utils.setSliderIndex(index, true);
         }
-        emit(EMITS.BOOKMARKS_UPDATED, ARGS.CREATED);
+        emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.CREATED, id: event });
     }
 
     async function onRemoved(event) {
@@ -153,7 +152,7 @@
             utils.setSliderIndex(0, true);
             utils.updateAccordionModel([0]);
 
-            emit(EMITS.BOOKMARKS_UPDATED, 'removed');
+            emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
 
             return;
         }
@@ -179,7 +178,7 @@
             utils.setSliderIndex(bookmarksStore.bookmarks.length - 1, true);
         }
 
-        emit(EMITS.BOOKMARKS_UPDATED, 'removed');
+        emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
     }
     async function onChanged(event) {
         // ensure that bookmark is ours in ROOT folder
@@ -235,7 +234,7 @@
             bookmark.title = bookmarkResponse.title;
         }
 
-        emit(EMITS.BOOKMARKS_UPDATED, 'changed');
+        emit(EMITS.BOOKMARKS_UPDATED,  { type: 'update', id: event });
     }
 
     async function onMoved(event) {
@@ -252,7 +251,7 @@
             utils.setSliderIndex(index, true);
         }
 
-        emit(EMITS.BOOKMARKS_UPDATED, 'moved');
+        emit(EMITS.BOOKMARKS_UPDATED,  { type: 'moved', id: event });
     }
 
     // force event trigger if bookmark data is not updated
@@ -279,7 +278,6 @@
         // load all settings
         const promiseArr = [
             bookmarksStore.get_folderByTitle(FOLDER.ROOT.parentId, FOLDER.ROOT.label),
-            bookmarksStore.get_syncStorage('statistics'),
             bookmarksStore.get_syncStorage('sliderIndex'),
             bookmarksStore.get_syncStorage('darkMode'),
             bookmarksStore.get_syncStorage('systemDarkMode'),
@@ -290,12 +288,8 @@
             utils.buildRootFolder()
         ];
 
-        Promise.all(promiseArr).then(([rootFolder, statistics, sliderIndex, darkMode, systemDarkMode, accordionNavigation, searchNavigation, arrowNavigation, bookmarks, folderColors, bookmarkColors, buildRoot]) => {
+        Promise.all(promiseArr).then(([rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, searchNavigation, arrowNavigation, bookmarks, folderColors, bookmarkColors, buildRoot]) => {
             // sliderIndex
-            if (statistics) {
-                bookmarksStore.statistics = toArray(statistics);
-            }
-
             if (typeof sliderIndex === 'number') {
                 bookmarksStore.sliderIndex = sliderIndex;
             } else {

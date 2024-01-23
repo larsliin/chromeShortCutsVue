@@ -141,7 +141,7 @@
     function onClearImage() {
         base64Image.value = null;
 
-        emits(EMITS.UPDATE, base64Image);
+        emits(EMITS.UPDATE, '');
     }
 
     watch(() => props.iconUrl, (newVal) => {

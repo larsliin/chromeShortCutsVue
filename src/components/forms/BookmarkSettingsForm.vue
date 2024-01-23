@@ -339,7 +339,7 @@
             bookmarksStore.set_syncStorage({ bookmarkColors: colorsBookmarksMap });
         }
 
-        emit(EMITS.BOOKMARKS_UPDATED, 'import');
+        emit(EMITS.BOOKMARKS_UPDATED, { type: 'import', id: '' });
     }
 
     // save imported images
@@ -431,6 +431,9 @@
         await utils.buildRootFolder();
 
         await bookmarksStore.delete_syncStorageItem('folderColors');
+        await bookmarksStore.delete_syncStorageItem('statistics');
+
+        bookmarksStore.statistics = [];
 
         emit(EMITS.BOOKMARKS_IMPORT);
 

@@ -19,7 +19,8 @@
                     :hide="!ready"
                     :folder="!bookmark.url"
                     :image="image" />
-                <span class="bookmark-title-container">{{ bookmark.title }}</span>
+                <span class="bookmark-title-container"
+                    v-if="((hideEdit && !image) || !hideEdit)">{{ bookmark.title }}</span>
             </a>
         </span>
         <template v-if="!hideEdit">
@@ -113,15 +114,22 @@
         },
     ]);
 
+    const emits = defineEmits([
+        EMITS.UPDATE,
+    ]);
+
     const bookmarksStore = useBookmarksStore();
 
     async function updateImage() {
         const getImageResponse = await bookmarksStore.get_localStorage(props.bookmark.id);
+
         if (getImageResponse) {
             image.value = getImageResponse.image;
         }
 
         ready.value = true;
+
+        emits(EMITS.UPDATE);
     }
 
     function onClick(event) {
@@ -292,10 +300,10 @@
         width: 90px;
 
         &.hide-edit {
-            margin-top: 6px;
+            margin-top: 4px;
 
             .bookmark-title-container {
-                margin-top: 2px;
+                margin-top: 4px;
             }
         }
 
@@ -313,14 +321,15 @@
         }
 
         &.smaller {
-            width: 62px;
+            width: 50px;
 
             .bookmark-image-container {
+                border-radius: 6px;
+                padding: 4px;
                 width: 100%;
-                padding: 6px;
 
                 :deep(svg) {
-                    width: 42px
+                    width: 32px
                 }
             }
 
