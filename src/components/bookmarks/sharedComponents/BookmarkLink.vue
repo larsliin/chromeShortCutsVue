@@ -75,7 +75,9 @@
 
 <script setup>
     import { mdiRename, mdiDeleteOutline, mdiPalette } from '@mdi/js';
-    import { ref, onMounted, watch } from 'vue';
+    import {
+        ref, onMounted, watch, toRef,
+    } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
     import useEventsBus from '@cmp/eventBus';
@@ -104,7 +106,7 @@
     });
 
     const isFoldoutOpen = ref(false);
-    const image = ref();
+    const image = toRef(props.bookmark, 'image');
     const ready = ref(false);
     const list = ref([
         {
@@ -163,13 +165,19 @@
         }
 
         bookmarksStore.statistics[index] = ({
-            id: idArr,
-            url: props.bookmark.url,
-            title: props.bookmark.title,
             clicks,
+            id: idArr,
+            title: props.bookmark.title,
+            timestamp: Date.now(),
+            url: props.bookmark.url,
         });
 
-        const sorted = bookmarksStore.statistics.sort((a, b) => b.clicks - a.clicks);
+        const sorted = bookmarksStore.statistics.sort((a, b) => {
+            if (b.clicks !== a.clicks) {
+                return b.clicks - a.clicks;
+            }
+            return b.timestamp - a.timestamp;
+        });
 
         bookmarksStore.set_syncStorage({ statistics: sorted });
 
@@ -180,7 +188,7 @@
         }
     }
 
-    const color = ref();
+    const color = toRef(props.bookmark, 'color');
 
     async function updateColor() {
         const getColorResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
@@ -250,6 +258,8 @@
         } else {
             bookmarksStore.set_syncStorage({ bookmarkColors: colorsObj });
         }
+
+        emit(EMITS.BOOKMARKS_UPDATED, { type: 'color', id: props.bookmark.id });
     }
 
     onMounted(() => {
@@ -269,8 +279,6 @@
             list.value.unshift(colorItem);
             list.value.unshift(editItem);
         }
-
-        color.value = props.bookmark.color;
 
         updateImage();
     });

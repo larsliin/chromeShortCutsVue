@@ -1,13 +1,13 @@
 <template>
-    <div class="popular" v-if="bookmarksStore.bookmarks && bookmarks">
+    <div class="popular" v-if="bookmarksStore.bookmarks && bookmarks?.length">
         <Transition>
             <div v-show="ready">
                 <div class="popular-wrapper">
-                    <div v-for="(item, index) in bookmarks" :key="index">
+                    <div v-for="item in bookmarks" :key="item.id">
                         <BookmarkLink
-                            :tabIndex="``"
                             size="smaller"
                             hideEdit
+                            :tabIndex="``"
                             :bookmark="item"
                             @update="onImageUpdate($event)" />
                     </div>
@@ -43,12 +43,14 @@
         }
     }
 
+    const maxLength = 3;
+
     async function buildBookmarks() {
         if (!bookmarksStore.statistics?.length) {
             return;
         }
 
-        const topThree = bookmarksStore.statistics.slice(0, 3);
+        const topThree = bookmarksStore.statistics.slice(0, maxLength);
         const bookmarksFlatArr = bookmarksStore.bookmarks.flatMap((obj) => obj.children);
 
         bookmarks.value = [];
@@ -69,21 +71,43 @@
     }
 
     watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async (type) => {
-        if (type[0].type === 'removed'
-            && bookmarksStore.statistics
-            && bookmarksStore.statistics.length) {
-            const index = bookmarksStore.statistics
+        // eslint-disable-next-line max-len
+        if (type[0].type === 'removed' && bookmarksStore.statistics && bookmarksStore.statistics.length) {
+            // update stored statistics object
+            const index1 = bookmarksStore.statistics
                 .findIndex((item) => Object.values(item.id).includes(type[0].id));
 
             const arr = JSON.parse(JSON.stringify(bookmarksStore.statistics));
 
-            arr.splice(index, 1);
+            arr.splice(index1, 1);
 
             await bookmarksStore.set_syncStorage({ statistics: arr });
 
             bookmarksStore.statistics = cloneDeep(arr);
 
-            buildBookmarks();
+            // update popular top three
+            const index2 = bookmarks.value.findIndex((e) => e.id === type[0].id);
+
+            bookmarks.value.splice(index2, 1);
+
+            if (bookmarksStore.statistics.length > maxLength - 1) {
+                const idObj = bookmarksStore.statistics[maxLength - 1].id;
+
+                const idArr = [];
+                Object.values(idObj).forEach((id) => {
+                    idArr.push(id);
+                });
+
+                const bookmarksFlatArr = bookmarksStore.bookmarks.flatMap((obj) => obj.children);
+                const result = bookmarksFlatArr.find((obj) => idArr.includes(obj.id));
+
+                bookmarks.value.push(result);
+            }
+        }
+
+        if (type[0] === 'import') {
+            ready.value = false;
+            bookmarks.value = [];
         }
     });
 

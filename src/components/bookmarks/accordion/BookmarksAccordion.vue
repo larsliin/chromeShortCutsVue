@@ -219,7 +219,7 @@
         z-index: 9;
         position: fixed;
         right: 20px;
-        bottom: 20px;
+        bottom: 30px;
 
         &-btn {
             display: block;
@@ -227,7 +227,7 @@
     }
 
     .expansion-panels {
-        padding-bottom: 40px;
+        padding-bottom: 30px;
 
         > div {
             width: 100%;

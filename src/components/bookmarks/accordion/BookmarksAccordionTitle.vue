@@ -230,6 +230,17 @@
 </script>
 
 <style scoped lang="scss">
+    .v-expansion-panel-title:after {
+        content: '';
+        display: block;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        background: linear-gradient(0deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 100%);
+        left: 0;
+        top: 0;
+    }
+
     .input {
         border: 1px solid transparent;
         max-width: calc(48% - 30px);
