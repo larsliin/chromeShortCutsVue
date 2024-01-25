@@ -44,7 +44,7 @@
         }
     }
 
-    const maxLength = 3;
+    const maxLength = 5;
 
     async function buildBookmarks() {
         if (!bookmarksStore.statistics?.length) {
@@ -138,7 +138,7 @@
             padding: 4px 8px 0;
         }
 
-        @media (min-width: 1024px) {
+        @media (min-width: 1024px) and (min-height: 500px) {
             left: 20px;
         }
     }
