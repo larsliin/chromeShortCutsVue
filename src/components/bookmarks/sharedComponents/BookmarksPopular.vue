@@ -8,6 +8,7 @@
                             size="smaller"
                             hideEdit
                             :tabIndex="``"
+                            :draggable="false"
                             :bookmark="item"
                             @update="onImageUpdate($event)" />
                     </div>

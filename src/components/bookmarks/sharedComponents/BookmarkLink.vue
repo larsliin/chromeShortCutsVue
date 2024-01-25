@@ -5,7 +5,7 @@
             <a
                 v-bind="props"
                 class="bookmark-link"
-                draggable="true"
+                :draggable="draggable"
                 title=""
                 :aria-label="bookmark.title"
                 :class="[bookmark.url ? '' : 'folder', size, hideEdit ? 'hide-edit' : '']"
@@ -103,6 +103,10 @@
         bookmark: Object,
         size: String,
         hideEdit: Boolean,
+        draggable: {
+            type: Boolean,
+            default: true,
+        },
     });
 
     const isFoldoutOpen = ref(false);
