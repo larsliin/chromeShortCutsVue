@@ -37,7 +37,6 @@
     import BookmarksBackground
         from '@/components/bookmarks/sharedComponents/BookmarksBackground.vue';
     import BookmarksPopular from '@/components/bookmarks/sharedComponents/BookmarksPopular.vue';
-    import { toArray } from 'lodash';
 
     const theme = useTheme();
 
@@ -135,50 +134,63 @@
 
     async function onRemoved(event) {
         const bookmark = utils.getStoredBookmarkById(event);
+        let children;
 
         // if root folder is deleted then simply delete everything
         if (bookmarksStore.rootId === event) {
-            await bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id);
-            await bookmarksStore.delete_syncStorageItem('accordion');
-            await bookmarksStore.delete_syncStorageItem('folderColors');
-            await bookmarksStore.delete_syncStorageItem('bookmarkColors');
+            const promiseArr = [
+                bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id),
+                bookmarksStore.delete_syncStorageItem('accordion'),
+                bookmarksStore.delete_syncStorageItem('folderColors'),
+                bookmarksStore.delete_syncStorageItem('bookmarkColors'),
+                bookmarksStore.delete_syncStorageItem('statistics'),
+                utils.deleteLocalStoreImages(),
+            ];
 
-            bookmarksStore.rootId = null;
+            Promise.all(promiseArr)
+                .then(async () => {
+                    bookmarksStore.rootId = null;
 
-            bookmarksStore.bookmarks = [];
+                    bookmarksStore.bookmarks = [];
 
-            await utils.deleteLocalStoreImages();
+                    utils.setSliderIndex(0, true);
+                    utils.updateAccordionModel([0]);
 
-            utils.setSliderIndex(0, true);
-            utils.updateAccordionModel([0]);
+                    emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
 
-            emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
+                    return;
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
 
-            return;
+        } else {
+            if (bookmark) { // if is type bookmark
+                // Filter away child object with the specified ID
+                bookmarksStore.bookmarks = bookmarksStore.bookmarks.map(parent => ({
+                    ...parent,
+                    children: parent.children.filter(child => child.id !== event)
+                }));
+
+                // delete image in local storage
+                bookmarksStore.delete_localStorageItem(event);
+            } else { // if is type folder
+                const index = bookmarksStore.bookmarks.findIndex(e => e.id === event);
+                const folder = bookmarksStore.bookmarks.find(e => e.id === event)
+
+                children = folder ? folder.children.flatMap(e => e.id) : [];
+
+                utils.updateAccordionModel(index);
+
+                bookmarksStore.bookmarks = bookmarksStore.bookmarks.filter(e => e.id !== event);
+            }
+
+            if (bookmarksStore.sliderIndex >= bookmarksStore.bookmarks.length) {
+                utils.setSliderIndex(bookmarksStore.bookmarks.length - 1, true);
+            }
+
+            emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event, children });
         }
-
-        if (bookmark) { // if is type bookmark
-            // Filter away child object with the specified ID
-            bookmarksStore.bookmarks = bookmarksStore.bookmarks.map(parent => ({
-                ...parent,
-                children: parent.children.filter(child => child.id !== event)
-            }));
-
-            // delete image in local storage
-            bookmarksStore.delete_localStorageItem(event);
-        } else { // if is type folder
-            const index = bookmarksStore.bookmarks.findIndex(e => e.id === event);
-
-            utils.updateAccordionModel(index);
-
-            bookmarksStore.bookmarks = bookmarksStore.bookmarks.filter(e => e.id !== event);
-        }
-
-        if (bookmarksStore.sliderIndex >= bookmarksStore.bookmarks.length) {
-            utils.setSliderIndex(bookmarksStore.bookmarks.length - 1, true);
-        }
-
-        emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
     }
     async function onChanged(event) {
         // ensure that bookmark is ours in ROOT folder

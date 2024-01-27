@@ -16,7 +16,7 @@
                 @click="onClick($event)">
                 <BookmarkIcon
                     :color="color"
-                    :hide="!ready"
+                    :hide="!ready && fadeInIcon"
                     :folder="!bookmark.url"
                     :image="image" />
                 <span class="bookmark-title-container"
@@ -104,6 +104,10 @@
         size: String,
         hideEdit: Boolean,
         draggable: {
+            type: Boolean,
+            default: true,
+        },
+        fadeInIcon: {
             type: Boolean,
             default: true,
         },

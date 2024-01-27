@@ -3,14 +3,16 @@
         <Transition>
             <div v-show="ready">
                 <div class="popular-wrapper">
-                    <div v-for="item in bookmarks" :key="item.id">
+                    <div v-for="(item, index) in bookmarks" :key="index">
                         <BookmarkLink
                             size="smaller"
                             hideEdit
                             :tabIndex="``"
                             :draggable="false"
                             :bookmark="item"
+                            :fadeInIcon="false"
                             @update="onImageUpdate($event)" />
+
                     </div>
                 </div>
             </div>
@@ -47,6 +49,8 @@
     const maxLength = 5;
 
     async function buildBookmarks() {
+        bookmarks.value = [];
+
         if (!bookmarksStore.statistics?.length) {
             return;
         }
@@ -54,14 +58,12 @@
         const topThree = bookmarksStore.statistics.slice(0, maxLength);
         const bookmarksFlatArr = bookmarksStore.bookmarks.flatMap((obj) => obj.children);
 
-        bookmarks.value = [];
-
         await nextTick();
 
         topThree.forEach((item) => {
-            const arr = toArray(item.id);
+            const bookmarkStatistics = toArray(item.id);
 
-            arr.forEach((item2) => {
+            bookmarkStatistics.forEach((item2) => {
                 const bookmark = bookmarksFlatArr.find((e) => e.id === item2);
 
                 if (bookmark) {
@@ -71,38 +73,26 @@
         });
     }
 
+    async function deletePopularBookmarks(folderIdArr) {
+        const bookmarkStatistics = JSON.parse(JSON.stringify(bookmarksStore.statistics));
+
+        const filteredArray = bookmarkStatistics
+            .filter((item) => !folderIdArr.includes(item.id[0]));
+
+        await bookmarksStore.set_syncStorage({ statistics: filteredArray });
+
+        bookmarksStore.statistics = cloneDeep(filteredArray);
+
+        buildBookmarks();
+    }
+
     watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async (type) => {
         // eslint-disable-next-line max-len
         if (type[0].type === 'removed' && bookmarksStore.statistics && bookmarksStore.statistics.length) {
-            // update stored statistics object
-            const index1 = bookmarksStore.statistics
-                .findIndex((item) => Object.values(item.id).includes(type[0].id));
-
-            const arr = JSON.parse(JSON.stringify(bookmarksStore.statistics));
-
-            arr.splice(index1, 1);
-
-            await bookmarksStore.set_syncStorage({ statistics: arr });
-
-            bookmarksStore.statistics = cloneDeep(arr);
-
-            // update popular top three
-            const index2 = bookmarks.value.findIndex((e) => e.id === type[0].id);
-
-            bookmarks.value.splice(index2, 1);
-
-            if (bookmarksStore.statistics.length > maxLength - 1) {
-                const idObj = bookmarksStore.statistics[maxLength - 1].id;
-
-                const idArr = [];
-                Object.values(idObj).forEach((id) => {
-                    idArr.push(id);
-                });
-
-                const bookmarksFlatArr = bookmarksStore.bookmarks.flatMap((obj) => obj.children);
-                const result = bookmarksFlatArr.find((obj) => idArr.includes(obj.id));
-
-                bookmarks.value.push(result);
+            if (type[0].children) {
+                deletePopularBookmarks(type[0].children);
+            } else {
+                deletePopularBookmarks([type[0].id]);
             }
         }
 
