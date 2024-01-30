@@ -601,16 +601,20 @@
         emits(EMITS.SAVE);
     }
 
-    function isImportBookmarksFileValid(obj) {
+    function isImportBookmarksFileValid(args) {
+        if (!Array.isArray(args)) {
+            return false;
+        }
+
         const arr = [
-            obj.some((e) => e.title),
-            obj.some((e) => e.children),
-            obj.some((e) => e.id),
-            obj.some((e) => e.parentId),
+            args.some((e) => e.title),
+            args.some((e) => e.children),
+            args.some((e) => e.id),
+            args.some((e) => e.parentId),
         ];
 
-        if (obj.children) {
-            const bookmarksFlatArray = obj.flatMap((e) => e.children);
+        if (args.children) {
+            const bookmarksFlatArray = args.flatMap((e) => e.children);
 
             if (bookmarksFlatArray.length) {
                 arr.push(bookmarksFlatArray.some((e) => e.url));
