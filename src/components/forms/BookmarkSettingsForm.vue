@@ -471,31 +471,34 @@
 
         const colorArr = {};
 
-        // bookmarks
+        // bookmarks icon and color
         importIcons.bookmarks.forEach((item) => {
-            const bookmark = bookmarksFlatResponse
-                .find((e) => item.url === e.url);
+            const bookmarks = bookmarksFlatResponse
+                .filter((e) => item.url === e.url);
 
-            if (bookmark) {
-                if (item.color) {
-                    colorArr[bookmark.id] = item.color;
+            bookmarks.forEach((bookmark) => {
+                if (bookmark) {
+                    if (item.color) {
+                        colorArr[bookmark.id] = item.color;
+                    }
+
+                    promiseAllArr.push(bookmarksStore.set_localStorage({
+                        [bookmark.id]: {
+                            id: bookmark.id,
+                            parentId: item.parentId,
+                            image: item.image,
+                            url: item.url,
+                            title: item.title,
+                        },
+                    }));
                 }
-
-                promiseAllArr.push(bookmarksStore.set_localStorage({
-                    [bookmark.id]: {
-                        id: bookmark.id,
-                        parentId: item.parentId,
-                        image: item.image,
-                        url: item.url,
-                        title: item.title,
-                    },
-                }));
-            }
+            });
         });
 
+        // save bookmarks colors to local storage
         bookmarksStore.set_syncStorage({ bookmarkColors: colorArr });
 
-        // folders
+        // folders color
         const folderColorArr = {};
 
         importIcons.folders.forEach((item) => {
@@ -509,8 +512,10 @@
             }
         });
 
+        // save folders colors to local storage
         bookmarksStore.set_syncStorage({ folderColors: folderColorArr });
 
+        // when all colors and images have been updated and loaded then emit event
         Promise.all(promiseAllArr)
             .then(() => {
                 emit(EMITS.IMAGES_IMPORT);
