@@ -86,6 +86,12 @@
         buildBookmarks();
     }
 
+    watch(() => bookmarksStore.statistics, (newVal) => {
+        if (!newVal || !newVal.length) {
+            bookmarks.value = [];
+        }
+    });
+
     watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async (type) => {
         // eslint-disable-next-line max-len
         if (type[0].type === 'removed' && bookmarksStore.statistics && bookmarksStore.statistics.length) {
@@ -94,11 +100,6 @@
             } else {
                 deletePopularBookmarks([type[0].id]);
             }
-        }
-
-        if (type[0] === 'import') {
-            ready.value = false;
-            bookmarks.value = [];
         }
     });
 
