@@ -189,11 +189,11 @@
 
         bookmarksStore.set_syncStorage({ statistics: sorted });
 
-        if (event.ctrlKey || event.metaKey) {
-            window.open(props.bookmark.url, '_blank');
-        } else {
-            window.location.href = props.bookmark.url;
-        }
+        // if (event.ctrlKey || event.metaKey) {
+        //     window.open(props.bookmark.url, '_blank');
+        // } else {
+        //     window.location.href = props.bookmark.url;
+        // }
     }
 
     const color = toRef(props.bookmark, 'color');

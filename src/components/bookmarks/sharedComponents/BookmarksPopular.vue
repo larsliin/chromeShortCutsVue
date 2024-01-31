@@ -79,9 +79,9 @@
         const filteredArray = bookmarkStatistics
             .filter((item) => !folderIdArr.includes(item.id[0]));
 
-        await bookmarksStore.set_syncStorage({ statistics: filteredArray });
-
         bookmarksStore.statistics = cloneDeep(filteredArray);
+
+        await bookmarksStore.set_syncStorage({ statistics: filteredArray });
 
         buildBookmarks();
     }
@@ -103,11 +103,40 @@
         }
     });
 
+    // removes bookmarks from bookmark statistics that does not have a matching id in bookmarks
+    function cleanup() {
+        const bookmarksFlatArr = bookmarksStore.bookmarks.flatMap((obj) => obj.children);
+
+        const uniqueIdsArr = bookmarksFlatArr.map((item) => item.id);
+
+        // Filter bookmarksStore.statistics array based on the condition
+        const indexArray = bookmarksStore.statistics.reduce((result, item, index) => {
+            const arr1Id = Object.values(item.id)[0];
+
+            if (!uniqueIdsArr.includes(arr1Id)) {
+                result.push(index);
+            }
+
+            return result;
+        }, []);
+
+        if (indexArray.length) {
+            const filteredArray = bookmarksStore.statistics
+                .filter((item, index) => !indexArray.includes(index));
+
+            bookmarksStore.statistics = cloneDeep(filteredArray);
+
+            bookmarksStore.set_syncStorage({ statistics: filteredArray });
+        }
+    }
+
     onMounted(async () => {
         const response = await bookmarksStore.get_syncStorage('statistics');
 
         if (response) {
             bookmarksStore.statistics = toArray(response);
+
+            cleanup();
 
             buildBookmarks();
         }
