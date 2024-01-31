@@ -104,7 +104,7 @@
     });
 
     // removes bookmarks from bookmark statistics that does not have a matching id in bookmarks
-    function cleanup() {
+    function cleanupStatistics() {
         const bookmarksFlatArr = bookmarksStore.bookmarks.flatMap((obj) => obj.children);
 
         const uniqueIdsArr = bookmarksFlatArr.map((item) => item.id);
@@ -136,7 +136,7 @@
         if (response) {
             bookmarksStore.statistics = toArray(response);
 
-            cleanup();
+            cleanupStatistics();
 
             buildBookmarks();
         }

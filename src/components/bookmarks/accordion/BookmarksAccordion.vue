@@ -235,7 +235,7 @@
     }
 
     :deep(.v-expansion-panel-text__wrapper) {
-        padding-top: 16px;
+        padding: 16px;
     }
 
     .v-expansion-panels > div{
