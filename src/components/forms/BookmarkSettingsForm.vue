@@ -262,6 +262,7 @@
         const exportArr = {
             folders: foldersWithColors,
             bookmarks: bookmarksWithColors,
+            type: 'icons',
         };
 
         const jsonString = JSON.stringify(exportArr);
@@ -292,7 +293,8 @@
         });
 
         // run exporter
-        const jsonString = JSON.stringify(exportBookmarks);
+        const result = { bookmarks: exportBookmarks, type: 'bookmarks' };
+        const jsonString = JSON.stringify(result);
 
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([jsonString], { type: 'application/json' }));
@@ -440,17 +442,17 @@
         const bookmarksRootResponse = await bookmarksStore.get_bookmarkById(bookmarksStore.rootId);
 
         const foldersPromiseArr = [];
-        const bookmarks = JSON.parse(event.target.result);
+        const importObj = JSON.parse(event.target.result);
 
         // first create folders for bookmarks
-        bookmarks.forEach((folder) => {
+        importObj.bookmarks.forEach((folder) => {
             foldersPromiseArr.push(bookmarksStore
                 .create_bookmark(bookmarksRootResponse.id, folder.title));
         });
 
         Promise.all(foldersPromiseArr)
             .then((result) => {
-                onImportedFoldersCreated(result, bookmarks);
+                onImportedFoldersCreated(result, importObj.bookmarks);
             })
             .catch((error) => {
                 console.error(error);
@@ -602,19 +604,19 @@
     }
 
     function isImportBookmarksFileValid(args) {
-        if (!Array.isArray(args)) {
+        if (args.type !== 'bookmarks' || !Array.isArray(args.bookmarks)) {
             return false;
         }
 
         const arr = [
-            args.some((e) => e.title),
-            args.some((e) => e.children),
-            args.some((e) => e.id),
-            args.some((e) => e.parentId),
+            args.bookmarks.some((e) => e.title),
+            args.bookmarks.some((e) => e.children),
+            args.bookmarks.some((e) => e.id),
+            args.bookmarks.some((e) => e.parentId),
         ];
 
-        if (args.children) {
-            const bookmarksFlatArray = args.flatMap((e) => e.children);
+        if (args.bookmarks.children) {
+            const bookmarksFlatArray = args.bookmarks.flatMap((e) => e.children);
 
             if (bookmarksFlatArray.length) {
                 arr.push(bookmarksFlatArray.some((e) => e.url));
@@ -627,8 +629,8 @@
         return !arr.includes(false);
     }
 
-    function isImportIconsFileValid(obj) {
-        return obj.bookmarks && obj.folders;
+    function isImportIconsFileValid(args) {
+        return args.type === 'icons' && args.bookmarks && args.folders;
     }
 
     watch(bookmarksFileImport, (newVal) => {
