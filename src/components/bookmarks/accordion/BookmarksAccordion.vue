@@ -23,7 +23,6 @@
                 v-if="bookmarksStore.accordionModel && bookmarksStore.bookmarks"
                 ref="expansionPanels"
                 v-model="bookmarksStore.accordionModel"
-                variant="popout"
                 multiple
                 @update:modelValue="onUpdate($event)">
                 <draggable
