@@ -1,7 +1,7 @@
 export default class UiFolder {
-    constructor(label, id, parentId) {
+    constructor(label, name, parentId) {
         this.label = label;
-        this.id = id;
+        this.name = name;
         this.parentId = parentId;
     }
 }

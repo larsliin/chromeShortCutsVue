@@ -210,7 +210,7 @@
 
             li {
                 padding: 0;
-                margin: 0 10px 5px;
+                margin: 0 10px;
                 display: inline;
                 position: relative;
             }

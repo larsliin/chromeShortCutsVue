@@ -309,7 +309,7 @@
         color: rgba(var(--v-theme-on-surface),var(--v-high-emphasis-opacity));
         display: flex;
         flex-direction: column;
-        margin-top: 28px;
+        margin-top: 34px;
         outline-color: #01a1f6;
         outline-offset: 14px;
         text-decoration: none;
@@ -378,7 +378,7 @@
         visibility: hidden;
         position: absolute;
         right: 0;
-        top: -6px;
+        top: 0;
         opacity: .5;
     }
 

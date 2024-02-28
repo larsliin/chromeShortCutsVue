@@ -208,7 +208,7 @@
         // get folder text
         const folderStr = tabs.value === 1 ? folderSlct.value : folderTxt.value;
 
-        const getRootIdResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+        const getRootIdResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.name);
         const getRootResponse = await bookmarksStore.get_bookmarkById(getRootIdResponse);
 
         // check if there is any existing folders with that folder name in our root folder

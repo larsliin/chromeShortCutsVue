@@ -16,10 +16,13 @@ export default {
     },
 
     async get_coloredBookmarks(id) {
+        // if (!id) {
+        //     return false;
+        // }
+
         return new Promise((resolve, reject) => {
             try {
                 const promiseArr = [];
-
                 promiseArr.push(this.get_bookmarks(id));
                 promiseArr.push(this.get_syncStorage('folderColors'));
                 promiseArr.push(this.get_syncStorage('bookmarkColors'));

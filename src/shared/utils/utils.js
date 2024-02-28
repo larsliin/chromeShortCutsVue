@@ -152,14 +152,14 @@ export function useUtils() {
         if (rootFolder) {
             bookmarksStore.rootId = rootFolder.id;
 
-            await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: rootFolder.id });
+            await bookmarksStore.set_localStorage({ [FOLDER.ROOT.name]: rootFolder.id });
         } else {
             // if root folder does not exist then create root and home folders
             const createRootResponse = await bookmarksStore
                 .create_bookmark(2, FOLDER.ROOT.label);
             bookmarksStore.rootId = createRootResponse.id;
 
-            await bookmarksStore.set_localStorage({ [FOLDER.ROOT.id]: createRootResponse.id });
+            await bookmarksStore.set_localStorage({ [FOLDER.ROOT.name]: createRootResponse.id });
 
             this.setSliderIndex(0, true);
         }

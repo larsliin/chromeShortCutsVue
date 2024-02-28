@@ -47,6 +47,9 @@
     const bookmarksStore = useBookmarksStore();
 
     function isBookmarkInScope(id) {
+        if (id === bookmarksStore.rootId) {
+            return true;
+        }
         const flatMap = bookmarksStore.bookmarks.flatMap((obj) => obj.children);
         return flatMap.some((e) => e.id === id);
     }
@@ -57,7 +60,7 @@
             return;
         }
 
-        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.name);
 
         const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse);
 
@@ -74,12 +77,12 @@
     }
 
     async function getBookmarks() {
-        const getRootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.id);
+        const rootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.name);
 
-        bookmarksStore.rootId = getRootResponse;
+        bookmarksStore.rootId = rootResponse;
 
         try {
-            const bookmarksResponse = await bookmarksStore.get_coloredBookmarks(getRootResponse);
+            const bookmarksResponse = await bookmarksStore.get_coloredBookmarks(rootResponse);
 
             bookmarksStore.bookmarks = bookmarksResponse[0]?.children ? bookmarksResponse[0].children : [];
         } catch (error) {
@@ -125,7 +128,6 @@
     }
 
     async function onRemoved(event) {
-
         if (!isBookmarkInScope(event)) {
             return;
         }
@@ -136,7 +138,8 @@
         // if root folder is deleted then simply delete everything
         if (bookmarksStore.rootId === event) {
             const promiseArr = [
-                bookmarksStore.delete_localStorageItem(FOLDER.ROOT.id),
+                bookmarksStore.delete_localStorageItem(FOLDER.ROOT.name),
+                bookmarksStore.delete_localStorageItem('root'),
                 bookmarksStore.delete_syncStorageItem('accordion'),
                 bookmarksStore.delete_syncStorageItem('folderColors'),
                 bookmarksStore.delete_syncStorageItem('bookmarkColors'),
@@ -151,7 +154,8 @@
                     bookmarksStore.bookmarks = [];
 
                     utils.setSliderIndex(0, true);
-                    utils.updateAccordionModel([0]);
+
+                    bookmarksStore.accordionModel = null;
 
                     emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
 
@@ -293,11 +297,12 @@
             bookmarksStore.get_syncStorage('accordionNavigation'),
             bookmarksStore.get_syncStorage('searchNavigation'),
             bookmarksStore.get_syncStorage('arrowNavigation'),
-            getBookmarks(),
-            utils.buildRootFolder()
+            utils.buildRootFolder(),
         ];
 
-        Promise.all(promiseArr).then(([rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, searchNavigation, arrowNavigation, bookmarks, folderColors, bookmarkColors, buildRoot]) => {
+        Promise.all(promiseArr).then(([rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, searchNavigation, arrowNavigation, buildRoot]) => {
+            getBookmarks();
+
             // sliderIndex
             if (typeof sliderIndex === 'number') {
                 bookmarksStore.sliderIndex = sliderIndex;
@@ -328,7 +333,7 @@
             bookmarksStore.searchNavigation = !searchNavigation;
 
             // arrow navigation
-            bookmarksStore.arrowNavigation = !!arrowNavigation;
+            bookmarksStore.arrowNavigation = !arrowNavigation;
 
             toggleOverflowHidden();
         });

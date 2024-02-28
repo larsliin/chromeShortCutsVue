@@ -19,7 +19,8 @@
                                         class="text-body-1 mb-5">
                                         Import bookmarks data file <ToolTip
                                             :tooltip="`Select bookmarks JSON
-                                            data file for importing bookmarks.`" />
+                                            data file import bookmarks.<br />This
+                                            will overwrite existing bookmarks`" />
                                     </p>
                                     <v-file-input
                                         @click:clear="clearFileInput()"
@@ -40,6 +41,7 @@
                                         color="blue-darken-1"
                                         variant="tonal"
                                         :prepend-icon="mdiUpload"
+                                        :disabled="!bookmarksStore.bookmarks?.length"
                                         @click="onClickExportBookmarks()">
                                         Export Bookmarks
                                     </v-btn>
@@ -50,16 +52,18 @@
                                     cols="12">
                                     <p
                                         class="text-body-1 mb-2">
-                                        Import icons data file <ToolTip
-                                            :tooltip="`Select a JSON data file to import
+                                        Import icons <ToolTip
+                                            :tooltip="`Select icons data file to import
                                             bookmark icons. This is useful<br />for importing
                                             icons on other devices that share the same<br />
                                             Google account, as icons are not synced across
-                                            devices.`" />
+                                            devices.<br />This will overwrite existing bookmark
+                                            icons and colors!`" />
                                     </p>
                                     <v-file-input
                                         @click:clear="clearFileInput()"
-                                        :disabled="!!bookmarksFileImport"
+                                        :disabled="!!bookmarksFileImport
+                                            || !bookmarksStore.bookmarks?.length"
                                         label="Icons Data File input"
                                         :prepend-icon="mdiDownload"
                                         v-model="iconsFileImport"></v-file-input>
@@ -76,6 +80,7 @@
                                         color="blue-darken-1"
                                         variant="tonal"
                                         :prepend-icon="mdiUpload"
+                                        :disabled="!bookmarksStore.bookmarks?.length"
                                         @click="onClickExportIcons()">
                                         Export Icons
                                     </v-btn>
