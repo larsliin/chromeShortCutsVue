@@ -12,10 +12,8 @@
             <NavigationDots
                 v-if="bookmarksStore.bookmarks && bookmarksStore.bookmarks.length > 1" />
             <NavigationArrow
-                v-if="bookmarksStore.arrowNavigation && bookmarksStore.bookmarks.length > 1"
                 direction="left" />
             <NavigationArrow
-                v-if="bookmarksStore.arrowNavigation && bookmarksStore.bookmarks.length > 1"
                 direction="right" />
         </template>
         <BookmarksPopular />
@@ -295,12 +293,10 @@
             bookmarksStore.get_syncStorage('darkMode'),
             bookmarksStore.get_syncStorage('systemDarkMode'),
             bookmarksStore.get_syncStorage('accordionNavigation'),
-            bookmarksStore.get_syncStorage('searchNavigation'),
-            bookmarksStore.get_syncStorage('arrowNavigation'),
             utils.buildRootFolder(),
         ];
 
-        Promise.all(promiseArr).then(([rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, searchNavigation, arrowNavigation, buildRoot]) => {
+        Promise.all(promiseArr).then(([rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, buildRoot]) => {
             getBookmarks();
 
             // sliderIndex
@@ -328,12 +324,6 @@
 
             // accordion navigation
             bookmarksStore.accordionNavigation = !accordionNavigation;
-
-            // search/filter
-            bookmarksStore.searchNavigation = !searchNavigation;
-
-            // arrow navigation
-            bookmarksStore.arrowNavigation = !arrowNavigation;
 
             toggleOverflowHidden();
         });

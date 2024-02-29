@@ -124,29 +124,6 @@
                                         <ToolTip
                                             tooltip="Toggle between Slider or Accordion layout" />
                                     </div>
-                                    <p class="mt-5">Slider layout mode navigation</p>
-                                    <div class="switch-container">
-                                        <v-switch
-                                            label="Enable Arrow Navigation"
-                                            color="info"
-                                            hide-details="auto"
-                                            :disabled="enableAccordionNavigation"
-                                            v-model="enableArrowNavigation"></v-switch>
-                                        <ToolTip
-                                            :tooltip="`Enable slider side arrows navigation.<br/>
-                                            This switch will be disabled if Accordion Layout
-                                            is enabled`" />
-                                    </div>
-                                    <p class="mt-5">Filtering</p>
-                                    <div class="switch-container">
-                                        <v-switch
-                                            label="Enable Filtering"
-                                            color="info"
-                                            hide-details="auto"
-                                            v-model="enableSearchNavigation"></v-switch>
-                                        <ToolTip
-                                            tooltip="Enable filtering field in toolbar" />
-                                    </div>
                                 </v-col>
                             </v-row>
                         </v-col>
@@ -587,24 +564,6 @@
             bookmarksStore.set_syncStorage({ sliderIndex: 0 });
         }
 
-        // enableArrowNavigation
-        bookmarksStore.arrowNavigation = enableArrowNavigation.value;
-
-        if (enableArrowNavigation.value) {
-            bookmarksStore.delete_syncStorageItem('arrowNavigation');
-        } else {
-            bookmarksStore.set_syncStorage({ arrowNavigation: 'disabled' });
-        }
-
-        // enableSearchNavigation
-        bookmarksStore.searchNavigation = enableSearchNavigation.value;
-
-        if (enableSearchNavigation.value) {
-            bookmarksStore.delete_syncStorageItem('searchNavigation');
-        } else {
-            bookmarksStore.set_syncStorage({ searchNavigation: 'disabled' });
-        }
-
         emits(EMITS.SAVE);
     }
 
@@ -681,8 +640,6 @@
     });
 
     onMounted(async () => {
-        enableArrowNavigation.value = bookmarksStore.arrowNavigation;
-        enableSearchNavigation.value = bookmarksStore.searchNavigation;
         enableAccordionNavigation.value = bookmarksStore.accordionNavigation;
         enablePreferDarkMode.value = bookmarksStore.enablePreferDarkMode;
         enableSystemDarkMode.value = bookmarksStore.enableSystemDarkMode;

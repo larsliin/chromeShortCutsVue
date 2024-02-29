@@ -7,7 +7,6 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
     state: () => ({
         accordionModel: null,
         accordionNavigation: true,
-        arrowNavigation: false,
         bookmarks: null,
         dialogOpen: false,
         dragStart: false,
@@ -17,7 +16,6 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         popup: false,
         rootElem: null,
         rootId: null,
-        searchNavigation: false,
         sliderIndex: null,
         titleInputActive: false,
         transition: true,

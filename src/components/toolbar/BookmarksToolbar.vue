@@ -7,8 +7,7 @@
                 @click="dialogAddOpen = true"></v-btn>
 
             <BookmarksFilter
-                class="toolbar-filter-input"
-                v-if="bookmarksStore.searchNavigation" />
+                class="toolbar-filter-input" />
         </div>
         <div>
             <v-btn
