@@ -48,8 +48,11 @@
         if (id === bookmarksStore.rootId) {
             return true;
         }
-        const flatMap = bookmarksStore.bookmarks.flatMap((obj) => obj.children);
-        return flatMap.some((e) => e.id === id);
+        const flatMapBookmarks = bookmarksStore.bookmarks.flatMap((obj) => obj.children);
+        const bookmarkExists = flatMapBookmarks.some((e) => e.id === id);
+        const folderExists = bookmarksStore.bookmarks.some((e) => e.id === id);
+
+        return bookmarkExists || folderExists;
     }
 
     async function update() {
