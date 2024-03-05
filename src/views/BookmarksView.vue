@@ -93,13 +93,30 @@
         setChromeEventListeners();
     }
 
+    async function isNewBookmarkInScope(id) {
+        return new Promise((resolve, reject) => {
+            try {
+                bookmarksStore.get_bookmarks(bookmarksStore.rootId).then((event) => {
+                    const inScope = event[0].children.some(item => {
+                        return item.id.toString() === id.toString() ||
+                            (item.children && item.children.some(child => child.id.toString() === id.toString()))
+                    });
+                    resolve(inScope);
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+     }
+
     async function onCreated(event) {
         if (bookmarksStore.isImporting) {
             return;
         }
 
+        const scope = await isNewBookmarkInScope(event);
         // ensure that bookmark is ours in ROOT folder
-        if (!isBookmarkInScope(event)) {
+        if (!scope) {
             return;
         }
 
@@ -111,7 +128,7 @@
 
         if (bookmarkResponse.parentId === bookmarksStore.rootId) {
             // if folder bookmark is a folder in root directory
-            bookmarksStore.bookmarks.push(bookmarkResponse);
+            bookmarksStore.bookmarks.splice(bookmarkResponse.index, 0, bookmarkResponse);
 
         } else if (folder){
             // if bookmark event is bookmark and not folder
@@ -119,7 +136,7 @@
                 // create bookmarks children object if folder is empty
                 folder.children = [];
             }
-            folder.children.push(bookmarkResponse);
+            folder.children.splice(bookmarkResponse.index, 0, bookmarkResponse);
 
             const index = bookmarksStore.bookmarks
                 .findIndex(e => e.id === folder.id);
@@ -242,7 +259,7 @@
         } else {
             const bookmark = utils.getStoredBookmarkById(event);
             // if not a folder then this is a bookmark
-            // update bookmark title/url/parentid
+            // update bookmark title/url/parent id
             bookmark.parentId = bookmarkResponse.parentId;
             bookmark.url = bookmarkResponse.url;
             bookmark.title = bookmarkResponse.title;

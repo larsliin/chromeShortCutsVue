@@ -5,7 +5,7 @@
             density="compact"
             hide-details="auto"
             label="Filter"
-            v-model="bookmarkSearch"
+            v-model="bookmarksStore.bookmarkSearch"
             variant="solo"
             :append-inner-icon="mdiMagnify"
             :disabled="!isEnabled"
@@ -32,8 +32,6 @@
 
     const bookmarksStore = useBookmarksStore();
 
-    const bookmarkSearch = ref();
-
     let clonedBookmarks;
 
     async function onClear() {
@@ -43,7 +41,7 @@
     let throttleTimer = null;
 
     // Filter the data
-    async function onUpdate(event = '') {
+    function onUpdate(event = '') {
         bookmarksStore.transition = false;
 
         const bookmarks = cloneDeep(clonedBookmarks);
@@ -93,7 +91,7 @@
 
         throttleTimer = setTimeout(() => {
             bookmarksStore.transition = true;
-        }, 100);
+        }, 1000);
     }
 
     const isEnabled = ref(false);

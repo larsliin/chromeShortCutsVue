@@ -16,10 +16,6 @@ export default {
     },
 
     async get_coloredBookmarks(id) {
-        // if (!id) {
-        //     return false;
-        // }
-
         return new Promise((resolve, reject) => {
             try {
                 const promiseArr = [];

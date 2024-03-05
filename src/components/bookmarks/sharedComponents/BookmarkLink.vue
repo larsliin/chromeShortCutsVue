@@ -145,13 +145,14 @@
     function onClick(event) {
         event.preventDefault();
 
-        if (event.pointerId < 0) {
+        if (event.pointerId < 0 || !props.bookmark.url) {
             return;
         }
 
         if (!bookmarksStore.statistics) {
             bookmarksStore.statistics = [];
         }
+
         const bookmarkStats = bookmarksStore.statistics
             .find((item) => item.url === (props.bookmark.url));
 
@@ -386,6 +387,7 @@
         &:hover,
         &.foldout-open {
             z-index: 1;
+
             .tooltip {
                 opacity: 1;
                 transition: opacity 0s;

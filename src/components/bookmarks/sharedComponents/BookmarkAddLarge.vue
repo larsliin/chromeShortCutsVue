@@ -1,6 +1,6 @@
 <template>
     <div class="outer"
-        v-if="!bookmarksStore.bookmarks.length"
+        v-if="!bookmarksStore.bookmarks.length && !bookmarksStore.bookmarkSearch"
         :class="{ dark: bookmarksStore.enableDarkMode }"
         @click="onClick()">
         <v-icon

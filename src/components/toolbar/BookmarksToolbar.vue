@@ -5,7 +5,6 @@
                 class="toolbar-add-button"
                 :icon="mdiStar"
                 @click="dialogAddOpen = true"></v-btn>
-
             <BookmarksFilter
                 class="toolbar-filter-input" />
         </div>

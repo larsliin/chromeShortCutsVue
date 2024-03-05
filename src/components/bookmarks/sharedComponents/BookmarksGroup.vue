@@ -6,21 +6,21 @@
         }">
         <div class="folder-inner" v-if="bookmarks">
             <draggable
+                :animation="200"
                 :class="{ dragging }"
                 :fallbackTolerance="10"
-                :animation="200"
+                :force-fallback="true"
                 :ghost-class="'ghost'"
                 :group="'bookmarks'"
+                :handle="'.handle'"
                 :item-key="'id'"
                 :list="bookmarks"
-                :force-fallback="true"
-                :handle="'.handle'"
                 :scroll-sensitivity="100"
                 :tag="'ul'"
                 @add="onDragAdd($event)"
-                @update="onDragUpdate($event)"
+                @end="onDragEnd()"
                 @start="onDragStart()"
-                @end="dragging = false">
+                @update="onDragUpdate($event)">
                 <template #item="{element}">
                     <li>
                         <BookmarkLink
@@ -160,10 +160,24 @@
 
         dragging.value = true;
 
+        document.body.classList.add('cursor-pointer');
+
         emit(EMITS.DRAG_START);
     }
-</script>
 
+    function onDragEnd() {
+        document.body.classList.remove('cursor-pointer');
+
+        dragging.value = false;
+    }
+</script>
+<style>
+    .cursor-pointer,
+    .cursor-pointer a,
+    .cursor-pointer button {
+        cursor: grabbing !important;
+    }
+</style>
 <style scoped lang="scss">
     .folder {
         flex: 0 0 100%;
@@ -234,17 +248,6 @@
             ul {
                 padding: 0 40px;
             }
-        }
-    }
-
-    .sortable-chosen {
-        :deep(.tooltip) {
-            opacity: 0 !important;
-            transition: none !important;
-        }
-
-        :deep(.bookmark-edit) {
-            visibility: hidden !important;
         }
     }
 </style>
