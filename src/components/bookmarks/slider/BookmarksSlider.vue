@@ -1,7 +1,7 @@
 <template>
     <div class="folders-outer">
         <div class="folders-container d-flex"
-            :class="{' animated': bookmarksStore.transition}"
+            :class="{' animated': !bookmarksStore.transitionDisabled}"
             :style="{ transform: sliderPosition }">
             <template
                 v-for="(bookmark, index) in bookmarksStore.bookmarks"
@@ -17,9 +17,9 @@
 
 <script setup>
     import { computed, onMounted } from 'vue';
-    import BookmarksGroup from '@/components/bookmarks/sharedComponents/BookmarksGroup.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/utils/utils';
+    import BookmarksGroup from '@/components/bookmarks/sharedComponents/BookmarksGroup.vue';
 
     const utils = useUtils();
 

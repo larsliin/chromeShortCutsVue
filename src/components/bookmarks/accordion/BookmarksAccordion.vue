@@ -1,6 +1,7 @@
 <template>
     <div class="folders-outer">
-        <div class="folders-container">
+        <div class="folders-container"
+            :class="{ 'no-transition': bookmarksStore.transitionDisabled }">
             <div
                 class="expansion-panels-toggle"
                 v-if="bookmarksStore.accordionModel">
@@ -26,8 +27,8 @@
                 multiple
                 @update:modelValue="onUpdate($event)">
                 <draggable
-                    :fallbackTolerance="10"
                     :animation="200"
+                    :fallbackTolerance="10"
                     :force-fallback="true"
                     :ghost-class="'ghost'"
                     :handle="'button'"
@@ -44,8 +45,7 @@
                             <BookmarksAccordionTitle
                                 @beforeDelete="onBeforeDelete"
                                 :bookmark="element" />
-                            <v-expansion-panel-text
-                                :class="{ 'no-transition': bookmarksStore.transitionDisabled }">
+                            <v-expansion-panel-text>
                                 <BookmarksGroup
                                     :folder="element"
                                     :bookmarks="element.children"/>
@@ -59,18 +59,18 @@
 </template>
 
 <script setup>
+    import { EMITS } from '@/constants';
     import { mdiUnfoldLessHorizontal, mdiUnfoldMoreHorizontal } from '@mdi/js';
     import {
         onMounted, ref, nextTick, watch,
     } from 'vue';
-    import BookmarksGroup from '@/components/bookmarks/sharedComponents/BookmarksGroup.vue';
+    import { useBookmarksStore } from '@stores/bookmarks';
+    import { useUtils } from '@/shared/utils/utils';
     import BookmarksAccordionTitle
         from '@/components/bookmarks/accordion/BookmarksAccordionTitle.vue';
+    import BookmarksGroup from '@/components/bookmarks/sharedComponents/BookmarksGroup.vue';
     import draggable from 'vuedraggable';
-    import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
-    import { EMITS } from '@/constants';
-    import { useUtils } from '@/shared/utils/utils';
 
     const utils = useUtils();
 
@@ -215,10 +215,10 @@
     }
 
     .expansion-panels-toggle {
-        z-index: 9;
+        bottom: 30px;
         position: fixed;
         right: 20px;
-        bottom: 30px;
+        z-index: 9;
 
         &-btn {
             display: block;
@@ -295,8 +295,14 @@
         border-top-right-radius: 0 !important;
     }
 
-    .v-expansion-panel-text.no-transition {
-        transition: none !important;
+    .no-transition {
+        .v-expansion-panel,
+        .v-expansion-panel-text {
+            transition: none !important;
+        }
+        :deep(.v-expansion-panel-title) {
+            transition: none !important;
+        }
     }
 
 </style>

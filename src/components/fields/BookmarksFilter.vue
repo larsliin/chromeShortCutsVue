@@ -9,22 +9,22 @@
             variant="solo"
             :append-inner-icon="mdiMagnify"
             :disabled="!isEnabled"
-            @update:modelValue="onUpdate($event)"
-            @click:clear="onClear($event)">
+            @click:clear="onClear($event)"
+            @update:modelValue="onUpdate($event)">
         </v-text-field>
     </div>
 </template>
 
 <script setup>
     import { cloneDeep } from 'lodash';
+    import { EMITS } from '@/constants';
     import { mdiMagnify } from '@mdi/js';
     import {
         ref, onMounted, watch, nextTick,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import useEventsBus from '@cmp/eventBus';
-    import { EMITS } from '@/constants';
     import { useUtils } from '@/shared/utils/utils';
+    import useEventsBus from '@cmp/eventBus';
 
     const utils = useUtils();
 
@@ -39,11 +39,9 @@
     }
 
     let throttleTimer = null;
+    let transitionTimer = null;
 
-    // Filter the data
-    function onUpdate(event = '') {
-        bookmarksStore.transition = false;
-
+    async function runFilter(event = '') {
         const bookmarks = cloneDeep(clonedBookmarks);
         let currentFolder = bookmarksStore.bookmarks[bookmarksStore.sliderIndex];
 
@@ -84,14 +82,27 @@
 
         emit(EMITS.FILTER_UPDATED, event ? event.toLowerCase() : '');
 
-        if (throttleTimer) {
-            clearTimeout(throttleTimer);
-            throttleTimer = null;
+        if (transitionTimer) {
+            clearTimeout(transitionTimer);
         }
 
+        transitionTimer = setTimeout(() => {
+            bookmarksStore.transitionDisabled = false;
+            transitionTimer = null;
+        }, 500);
+    }
+
+    // Filter the data
+    function onUpdate(event = '') {
+        bookmarksStore.transitionDisabled = true;
+
+        if (throttleTimer) {
+            clearTimeout(throttleTimer);
+        }
         throttleTimer = setTimeout(() => {
-            bookmarksStore.transition = true;
-        }, 1000);
+            throttleTimer = null;
+            runFilter(event);
+        }, 150);
     }
 
     const isEnabled = ref(false);

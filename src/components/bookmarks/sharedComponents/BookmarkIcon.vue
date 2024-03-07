@@ -35,11 +35,11 @@
     const bookmarksStore = useBookmarksStore();
 
     defineProps({
+        color: String,
         folder: Boolean,
+        hide: Boolean,
         image: String,
         loading: Boolean,
-        hide: Boolean,
-        color: String,
     });
 </script>
 
@@ -75,19 +75,20 @@
     }
 
     .lds-ring div {
-        box-sizing: border-box;
-        display: block;
-        position: absolute;
-        width: 36px;
-        height: 36px;
-        margin-left: -18px;
-        margin-top: -18px;
-        border: 5px solid var(--yellow);
-        border-radius: 50%;
         animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
         border-color: var(--yellow) transparent transparent transparent;
+        border-radius: 50%;
+        border-style: solid;
+        border-width: 5px;
+        box-sizing: border-box;
+        display: block;
+        height: 36px;
         left: 50%;
+        margin-left: -18px;
+        margin-top: -18px;
+        position: absolute;
         top: 50%;
+        width: 36px;
     }
 
     .lds-ring div:nth-child(1) {

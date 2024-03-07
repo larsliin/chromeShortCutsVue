@@ -232,26 +232,26 @@
 <style scoped lang="scss">
     .v-expansion-panel-title:after {
         content: '';
-        display: block;
-        width: 100%;
-        height: 100%;
-        position: absolute;
         background: linear-gradient(0deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,0) 100%);
+        display: block;
+        height: 100%;
         left: 0;
+        position: absolute;
         top: 0;
+        width: 100%;
     }
 
     .input {
         border: 1px solid transparent;
+        color: inherit;
         max-width: calc(48% - 30px);
         overflow: hidden;
         padding: 4px 6px;
         pointer-events: none;
+        position: relative;
         text-overflow: ellipsis;
         white-space: nowrap;
-        position: relative;
         z-index: 10;
-        color: inherit;
 
         &:focus {
             outline: none;
@@ -273,8 +273,8 @@
     }
 
     :deep(.v-expansion-panel-title__overlay) {
-        pointer-events: none;
         background-color: rgb(var(--v-theme-primary));
+        pointer-events: none;
     }
 
     .v-expansion-panel--active>.v-expansion-panel-title {
@@ -312,10 +312,10 @@
         display: inline-block;
         font-size: 15px;
         padding: 0 10px;
+        pointer-events: none;
         position: absolute;
         visibility: hidden;
-        pointer-events: none;
-        z-index: -1;
         white-space: nowrap;
+        z-index: -1;
     }
 </style>
