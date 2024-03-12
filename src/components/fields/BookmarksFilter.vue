@@ -23,7 +23,7 @@
         ref, onMounted, watch, nextTick,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useUtils } from '@/shared/utils/utils';
+    import { useUtils } from '@/shared/composables/utils';
     import useEventsBus from '@cmp/eventBus';
 
     const utils = useUtils();

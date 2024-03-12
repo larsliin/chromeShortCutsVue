@@ -18,7 +18,7 @@
 <script setup>
     import { computed, onMounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useUtils } from '@/shared/utils/utils';
+    import { useUtils } from '@/shared/composables/utils';
     import BookmarksGroup from '@/components/bookmarks/sharedComponents/BookmarksGroup.vue';
 
     const utils = useUtils();

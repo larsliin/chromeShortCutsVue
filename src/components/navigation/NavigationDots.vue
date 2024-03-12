@@ -77,7 +77,7 @@
     } from 'vue';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useUtils } from '@/shared/utils/utils';
+    import { useUtils } from '@/shared/composables/utils';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';

@@ -55,7 +55,7 @@
     import { ref, watch } from 'vue';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import { EMITS } from '@/constants';
-    import { useUtils } from '@/shared/utils/utils';
+    import { useUtils } from '@/shared/composables/utils';
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const bookmarksStore = useBookmarksStore();

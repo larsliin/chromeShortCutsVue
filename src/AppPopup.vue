@@ -11,8 +11,8 @@
     import BookmarkCreateForm from '@/components/forms/BookmarkCreateForm.vue';
     import { FOLDER } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useUtils } from '@/shared/utils/utils';
     import { useTheme } from 'vuetify';
+    import { useUtils } from '@/shared/composables/utils';
 
     const theme = useTheme();
 

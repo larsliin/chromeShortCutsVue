@@ -184,7 +184,7 @@
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
-    import { useUtils } from '@/shared/utils/utils';
+    import { useUtils } from '@/shared/composables/utils';
     import { useTheme } from 'vuetify';
     import ToolTip from '@/components/fields/ToolTip.vue';
 

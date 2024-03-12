@@ -125,7 +125,7 @@
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkCreateIcon from '@/components/forms/BookmarkCreateIcon.vue';
     import { FOLDER, EMITS } from '@/constants';
-    import { useUtils } from '@/shared/utils/utils';
+    import { useUtils } from '@/shared/composables/utils';
     import useEventsBus from '@cmp/eventBus';
 
     const { bus, emit } = useEventsBus();

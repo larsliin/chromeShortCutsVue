@@ -116,7 +116,7 @@
     import useEventsBus from '@cmp/eventBus';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useUtils } from '@/shared/utils/utils';
+    import { useUtils } from '@/shared/composables/utils';
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';
     import BookmarksFilter from '@/components/fields/BookmarksFilter.vue';

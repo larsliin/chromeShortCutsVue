@@ -29,7 +29,7 @@
     import { FOLDER, EMITS, ARGS } from '@/constants';
     import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
     import useEventsBus from '@cmp/eventBus';
-    import { useUtils } from '@/shared/utils/utils';
+    import { useUtils } from '@/shared/composables/utils';
     import { useTheme } from 'vuetify';
     import BookmarkAddLarge from '@/components/bookmarks/sharedComponents/BookmarkAddLarge.vue';
     import BookmarksBackground

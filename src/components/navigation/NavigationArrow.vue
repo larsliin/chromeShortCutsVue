@@ -14,7 +14,7 @@
     import { mdiChevronRight, mdiChevronLeft } from '@mdi/js';
     import { ref, onMounted, watch } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useUtils } from '@/shared/utils/utils';
+    import { useUtils } from '@/shared/composables/utils';
 
     const utils = useUtils();
 

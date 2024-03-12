@@ -65,7 +65,7 @@
         onMounted, ref, nextTick, watch,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useUtils } from '@/shared/utils/utils';
+    import { useUtils } from '@/shared/composables/utils';
     import BookmarksAccordionTitle
         from '@/components/bookmarks/accordion/BookmarksAccordionTitle.vue';
     import BookmarksGroup from '@/components/bookmarks/sharedComponents/BookmarksGroup.vue';

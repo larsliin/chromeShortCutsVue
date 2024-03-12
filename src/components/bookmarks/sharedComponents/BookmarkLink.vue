@@ -88,7 +88,7 @@
         from '@/components/fields/BookmarkFoldout.vue';
     import BookmarkColorEdit
         from '@/components/forms/BookmarkColorEdit.vue';
-    import { useUtils } from '@/shared/utils/utils';
+    import { useUtils } from '@/shared/composables/utils';
     import { uniq } from 'lodash';
 
     const utils = useUtils();

@@ -59,10 +59,8 @@ export function useUtils() {
         });
 
         Promise.all(promiseLocalStorageArr)
-            .then(() => {})
-            .catch((error) => {
-                console.error(error);
-            });
+            .then(() => true)
+            .catch((error) => error);
     }
 
     async function deleteBookmarkFolder(bookmark) {
@@ -127,9 +125,7 @@ export function useUtils() {
 
                 bookmarksStore.bookmarks = [];
             })
-            .catch((error) => {
-                console.error(error);
-            });
+            .catch((error) => error);
     }
 
     function getStoredBookmarkById(id) {
