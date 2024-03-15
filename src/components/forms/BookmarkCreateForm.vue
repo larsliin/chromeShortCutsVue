@@ -124,7 +124,7 @@
     import { ref, watch, onMounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkCreateIcon from '@/components/forms/BookmarkCreateIcon.vue';
-    import { FOLDER, EMITS } from '@/constants';
+    import { EMITS } from '@/constants';
     import { useUtils } from '@/shared/composables/utils';
     import useEventsBus from '@cmp/eventBus';
 
@@ -208,12 +208,13 @@
         // get folder text
         const folderStr = tabs.value === 1 ? folderSlct.value : folderTxt.value;
 
-        const getRootIdResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.name);
-        const getRootResponse = await bookmarksStore.get_bookmarkById(getRootIdResponse);
+        if (!bookmarksStore.rootId) {
+            await utils.buildRootFolder();
+        }
 
         // check if there is any existing folders with that folder name in our root folder
         const findFolderResponse = await bookmarksStore
-            .get_folderByTitle(getRootIdResponse, folderStr);
+            .get_folderByTitle(bookmarksStore.rootId, folderStr);
         let createBookmarkResponse;
 
         bookmarksStore.editBase64Image = base64Image.value;
@@ -235,10 +236,10 @@
             // if folder does NOT exist
             // then create a new folder
             const createFolderResponse = await bookmarksStore
-                .create_bookmark(getRootResponse.id, folderStr);
+                .create_bookmark(bookmarksStore.rootId, folderStr);
 
             if (id.value) {
-                // if bookmark is an exsisting bookmark that is being edited then update bookmark
+                // if bookmark is an existing bookmark that is being edited then update bookmark
                 createBookmarkResponse = await bookmarksStore
                     .update_bookmark(id.value, { title: titleTxt.value, url: urlTxt.value });
 
@@ -278,9 +279,15 @@
     }
 
     watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async () => {
-        const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
-        foldersArr.value = bookmarks[0].children.flatMap((e) => e.title);
-        foldersIdArr.value = bookmarks[0].children.map((e) => ({ [e.title]: e.id }));
+        if (bookmarksStore.rootId) {
+            const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+            foldersArr.value = bookmarks[0].children.flatMap((e) => e.title);
+            foldersIdArr.value = bookmarks[0].children.map((e) => ({ [e.title]: e.id }));
+        }
+
+        if (!bookmarksStore.bookmarks?.length) {
+            tabs.value = 2;
+        }
     });
 
     onMounted(async () => {

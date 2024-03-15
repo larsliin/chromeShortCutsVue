@@ -93,13 +93,17 @@
         setChromeEventListeners();
     }
 
-    async function isNewBookmarkInScope(id) {
+    async function isNewBookmarkInScope(bookmark) {
+        if (!bookmarksStore.rootId && bookmark.parentId !== FOLDER.ROOT.parentId) {
+            return false;
+        }
+
         return new Promise((resolve, reject) => {
             try {
                 bookmarksStore.get_bookmarks(bookmarksStore.rootId).then((event) => {
                     const inScope = event[0].children.some(item => {
-                        return item.id.toString() === id.toString() ||
-                            (item.children && item.children.some(child => child.id.toString() === id.toString()))
+                        return item.id.toString() === bookmark.id.toString() ||
+                            (item.children && item.children.some(child => child.id.toString() === bookmark.id.toString()))
                     });
                     resolve(inScope);
                 });
@@ -110,11 +114,13 @@
      }
 
     async function onCreated(event) {
+        const bookmarkResponse = await bookmarksStore.get_bookmarkById(event);
+
         if (bookmarksStore.isImporting) {
             return;
         }
 
-        const scope = await isNewBookmarkInScope(event);
+        const scope = await isNewBookmarkInScope(bookmarkResponse);
         // ensure that bookmark is ours in ROOT folder
         if (!scope) {
             return;
@@ -122,14 +128,16 @@
 
         await utils.buildRootFolder();
 
-        const bookmarkResponse = await bookmarksStore.get_bookmarkById(event);
-
         const folder = bookmarksStore.bookmarks.find(e => e.id === bookmarkResponse.parentId);
 
         if (bookmarkResponse.parentId === bookmarksStore.rootId) {
-            // if folder bookmark is a folder in root directory
-            bookmarksStore.bookmarks.splice(bookmarkResponse.index, 0, bookmarkResponse);
 
+            if (bookmarksStore.bookmarks.length) {
+                // if folder bookmark is a folder in root directory
+                bookmarksStore.bookmarks.splice(bookmarkResponse.index, 0, bookmarkResponse);
+            } else {
+                bookmarksStore.bookmarks.push(bookmarkResponse)
+            }
         } else if (folder){
             // if bookmark event is bookmark and not folder
             if (!folder.children) {
@@ -142,6 +150,7 @@
                 .findIndex(e => e.id === folder.id);
             utils.setSliderIndex(index, true);
         }
+
         emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.CREATED, id: event });
     }
 

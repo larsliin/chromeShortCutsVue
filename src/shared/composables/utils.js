@@ -157,6 +157,8 @@ export function useUtils() {
 
             await bookmarksStore.set_localStorage({ [FOLDER.ROOT.name]: createRootResponse.id });
 
+            bookmarksStore.accordionModel = [0];
+
             this.setSliderIndex(0, true);
         }
     }
