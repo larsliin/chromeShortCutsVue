@@ -305,7 +305,7 @@
             parentId.value = props.data.parentId;
             titleTxt.value = props.data.title;
             urlTxt.value = props.data.url;
-            // base64Image.value = props.data.image;
+
             if (props.data.image) {
                 base64Image.value = JSON.parse(JSON.stringify(props.data.image));
             }
