@@ -156,6 +156,10 @@
             border-radius: 10px;
             box-shadow: 0px 1px 5px 0px var(--v-shadow-key-penumbra-opacity, rgba(0, 0, 0, 0.25));
             padding: 4px 8px 0;
+
+            :deep(.bookmark-link:focus-visible) {
+                outline-offset: 5px;
+            }
         }
 
         @media (min-width: 1024px) and (min-height: 500px) {
