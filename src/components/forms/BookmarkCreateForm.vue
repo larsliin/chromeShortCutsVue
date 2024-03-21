@@ -290,8 +290,12 @@
         }
     });
 
-    onMounted(async () => {
+    async function init() {
         bookmarksStore.dialogOpen = true;
+
+        if (!bookmarksStore.rootId) {
+            return;
+        }
 
         const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
         foldersArr.value = bookmarks[0].children.flatMap((e) => e.title);
@@ -327,6 +331,10 @@
         if (slctDisabled) {
             tabs.value = 2;
         }
+    }
+
+    onMounted(() => {
+        init();
     });
 
 </script>

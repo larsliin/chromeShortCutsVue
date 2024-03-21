@@ -19,7 +19,7 @@
                                         class="text-body-1 mb-5">
                                         Import bookmarks data file <ToolTip
                                             :tooltip="`Select bookmarks JSON
-                                            data file import bookmarks.<br />This
+                                            data file to import bookmarks.<br />This
                                             will overwrite existing bookmarks`" />
                                     </p>
                                     <v-file-input
@@ -53,7 +53,7 @@
                                     <p
                                         class="text-body-1 mb-2">
                                         Import icons <ToolTip
-                                            :tooltip="`Select icons data file to import
+                                            :tooltip="`Select icons JSON data file to import
                                             bookmark icons. This is useful<br />for importing
                                             icons on other devices that share the same<br />
                                             Google account, as icons are not synced across
@@ -199,11 +199,9 @@
     const bookmarksStore = useBookmarksStore();
 
     const form = ref();
-    const enableArrowNavigation = ref();
     const enablePreferDarkMode = ref();
     const enableSystemDarkMode = ref();
     const enableAccordionNavigation = ref();
-    const enableSearchNavigation = ref();
 
     const bookmarksFileImport = ref();
     const isBookmarksFileValid = ref(false);

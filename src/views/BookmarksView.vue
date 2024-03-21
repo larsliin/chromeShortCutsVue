@@ -183,6 +183,7 @@
                     utils.setSliderIndex(0, true);
 
                     bookmarksStore.accordionModel = null;
+                    bookmarksStore.delete_syncStorageItem('accordion');
 
                     emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
 

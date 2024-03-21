@@ -148,6 +148,10 @@
     async function onDragUpdate(event) {
         const bookmark = props.bookmarks[event.newIndex];
 
+        if (!bookmark) {
+            return;
+        }
+
         const index = event.newIndex > event.oldIndex ? event.newIndex + 1 : event.newIndex;
 
         await nextTick();
