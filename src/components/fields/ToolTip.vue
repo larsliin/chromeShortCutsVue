@@ -9,7 +9,7 @@
             <span class="icon-container" v-bind="props">
                 <v-icon
                     size="small"
-                    :icon="mdiHelpCircleOutline"></v-icon>
+                    :icon="mdiHelpCircleOutline" />
             </span>
         </template>
         <span v-html="tooltip"></span>

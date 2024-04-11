@@ -17,9 +17,9 @@
             </div>
         </v-card-text>
         <v-spacer class="mt-2 mb-2" />
-        <v-divider></v-divider>
+        <v-divider />
         <v-card-actions>
-            <v-spacer  class="mt-2 mb-2" />
+            <v-spacer class="mt-2 mb-2" />
             <div class="btn-wrapper">
                 <div>
                     <v-btn
@@ -55,7 +55,10 @@
     const bookmarksStore = useBookmarksStore();
 
     const props = defineProps({
-        value: String,
+        value: {
+            type: String,
+            required: true,
+        },
     });
 
     const emits = defineEmits([

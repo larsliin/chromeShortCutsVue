@@ -1,7 +1,7 @@
 <template>
     <v-menu
         :class="{
-            'dark-mode-border': darkModeBorder, 'dark': bookmarksStore.enableDarkMode
+            'dark-mode-border': darkModeBorder, dark: bookmarksStore.enableDarkMode,
         }"
         location="end bottom"
         origin="start top"
@@ -11,12 +11,13 @@
                 class="button"
                 :size="size"
                 :icon="mdiDotsVertical"
-                v-bind="props"></v-btn>
+                v-bind="props" />
         </template>
         <v-list
             class="list">
             <v-list-item class="list-item"
-                v-for="(item, i) in list" :key="i">
+                v-for="(item, i) in list"
+                :key="i">
                 <v-list-item-title>
                     <!-- https://pictogrammers.com/library/mdi/ -->
                     <v-btn
@@ -75,22 +76,22 @@
 
     function onListItemClick(event) {
         switch (event) {
-            case EMITS.RENAME:
-                emits(EMITS.RENAME);
-                break;
-            case EMITS.OPEN_COLOR_EDITOR:
-                emits(EMITS.OPEN_COLOR_EDITOR);
-                break;
-            case EMITS.DELETE:
-                emits(EMITS.DELETE);
-                break;
-            case EMITS.EDIT:
-                emits(EMITS.EDIT);
-                break;
-            case EMITS.BOOKMARK_ADD:
-                emits(EMITS.BOOKMARK_ADD);
-                break;
-            default:
+        case EMITS.RENAME:
+            emits(EMITS.RENAME);
+            break;
+        case EMITS.OPEN_COLOR_EDITOR:
+            emits(EMITS.OPEN_COLOR_EDITOR);
+            break;
+        case EMITS.DELETE:
+            emits(EMITS.DELETE);
+            break;
+        case EMITS.EDIT:
+            emits(EMITS.EDIT);
+            break;
+        case EMITS.BOOKMARK_ADD:
+            emits(EMITS.BOOKMARK_ADD);
+            break;
+        default:
         }
     }
 

@@ -13,9 +13,9 @@
             </p>
         </v-card-text>
         <v-spacer class="mt-2 mb-2" />
-        <v-divider></v-divider>
+        <v-divider />
         <v-card-actions>
-            <v-spacer  class="mt-2 mb-2" />
+            <v-spacer class="mt-2 mb-2" />
             <div>
                 <v-btn
                     variant="text"

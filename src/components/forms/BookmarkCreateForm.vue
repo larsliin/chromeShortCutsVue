@@ -39,14 +39,12 @@
                                         :rules="[rules.required]"
                                         :disabled="!bookmarksStore.bookmarks
                                             || bookmarksStore.bookmarks.length === 0"
-                                        v-model="folderSlct">
-                                    </v-autocomplete>
+                                        v-model="folderSlct" />
                                     <v-text-field
                                         v-else
                                         label="Bookmark Folder Name"
                                         :rules="[rules.required]"
-                                        v-model="folderTxt">
-                                    </v-text-field>
+                                        v-model="folderTxt" />
                                 </v-col>
                             </v-row>
                             <template v-if="!data || (data && data.url)">
@@ -56,8 +54,7 @@
                                         <v-text-field
                                             v-model="titleTxt"
                                             :rules="[rules.required]"
-                                            label="Bookmark Title">
-                                        </v-text-field>
+                                            label="Bookmark Title" />
                                     </v-col>
                                 </v-row>
                                 <v-row>
@@ -67,8 +64,7 @@
                                             v-model="urlTxt"
                                             label="Bookmark URL"
                                             hint="bookmark link"
-                                            :rules="[rules.required, rules.urlvalid]">
-                                        </v-text-field>
+                                            :rules="[rules.required, rules.urlvalid]" />
                                     </v-col>
                                 </v-row>
                             </template>
@@ -94,7 +90,7 @@
                         </a>
                     </p>
                 </div>
-                <v-spacer></v-spacer>
+                <v-spacer />
                 <v-btn
                     v-if="data && data.id"
                     variant="tonal"
@@ -142,8 +138,15 @@
     ]);
 
     const props = defineProps({
-        data: Object,
-        folderPreSelected: String,
+        data: {
+            type: Object,
+            required: true,
+        },
+        folderPreSelected: {
+            type: String,
+            required: false,
+            default: null,
+        },
     });
 
     const rules = {

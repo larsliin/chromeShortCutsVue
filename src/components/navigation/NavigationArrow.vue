@@ -1,12 +1,13 @@
 <template>
     <button
+        type="button"
         class="navigation-arrow"
         :disabled="disabled"
-        :class="[ direction, bookmarksStore.enableDarkMode ? 'dark' : '' ]"
+        :class="[direction, bookmarksStore.enableDarkMode ? 'dark' : '']"
         @click="onClick()">
         <!-- https://pictogrammers.com/library/mdi/ -->
-        <v-icon size="large" :icon="mdiChevronRight" v-if="direction === 'right'" ></v-icon>
-        <v-icon size="large" :icon="mdiChevronLeft" v-if="direction === 'left'" ></v-icon>
+        <v-icon size="large" :icon="mdiChevronRight" v-if="direction === 'right'" />
+        <v-icon size="large" :icon="mdiChevronLeft" v-if="direction === 'left'" />
     </button>
 </template>
 

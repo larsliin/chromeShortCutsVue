@@ -10,14 +10,14 @@
                     :icon="mdiUnfoldLessHorizontal"
                     :disabled="bookmarksStore.accordionModel.length === 0
                         || !bookmarksStore.bookmarks.length"
-                    @click="onUnfoldAllClick()"></v-btn>
+                    @click="onUnfoldAllClick()" />
                 <v-btn
                     class="expansion-panels-toggle-btn"
                     :icon="mdiUnfoldMoreHorizontal"
                     :disabled="bookmarksStore.accordionModel.length
                         === bookmarksStore.bookmarks.length
                         || !bookmarksStore.bookmarks.length"
-                    @click="onFoldAllClick()"></v-btn>
+                    @click="onFoldAllClick()" />
             </div>
             <v-expansion-panels
                 class="expansion-panels"
@@ -48,7 +48,7 @@
                             <v-expansion-panel-text>
                                 <BookmarksGroup
                                     :folder="element"
-                                    :bookmarks="element.children"/>
+                                    :bookmarks="element.children" />
                             </v-expansion-panel-text>
                         </v-expansion-panel>
                     </template>

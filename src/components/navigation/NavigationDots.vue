@@ -10,6 +10,7 @@
             <div class="wrapper">
                 <div>
                     <input
+                        aria-label="Bookmark Folder Title"
                         class="input"
                         ref="input"
                         type="input"
@@ -17,9 +18,9 @@
                         :readonly="!active"
                         :class="[
                             active ? 'active' : '',
-                            bookmarksStore.enableDarkMode ? 'dark' : ''
+                            bookmarksStore.enableDarkMode ? 'dark' : '',
                         ]"
-                        :style="{width: inputWidth}"
+                        :style="{ width: inputWidth }"
                         v-model="bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title"
                         @click.stop="onClick($event)"
                         @focus="bookmarksStore.titleInputActive = true"
@@ -41,8 +42,10 @@
         </div>
         <div class="navigation-container">
             <button class="navigation-item"
-                v-for="(bookmark, index) in bookmarksStore.bookmarks" :key="index"
-                :class="{active: bookmarksStore.sliderIndex === index}"
+                type="button"
+                v-for="(bookmark, index) in bookmarksStore.bookmarks"
+                :key="index"
+                :class="{ active: bookmarksStore.sliderIndex === index }"
                 @click="onClick(index)">
                 <div class="navigation-item-border">
                     <div class="navigation-item-inner"></div>

@@ -4,7 +4,7 @@
             <v-btn
                 class="toolbar-add-button"
                 :icon="mdiStar"
-                @click="dialogAddOpen = true"></v-btn>
+                @click="dialogAddOpen = true" />
             <BookmarksFilter
                 class="toolbar-filter-input" />
         </div>
@@ -12,7 +12,7 @@
             <v-btn
                 class="toolbar-settings-button"
                 :icon="mdiWrench"
-                @click="dialogSettings = true"></v-btn>
+                @click="dialogSettings = true" />
         </div>
     </div>
     <Teleport to="body"
@@ -57,7 +57,7 @@
                                 <v-icon
                                     class="error-icon"
                                     size="large"
-                                    :icon="mdiAlertCircleOutline"></v-icon>
+                                    :icon="mdiAlertCircleOutline" />
                             </div>
                             <p class="text-center text-body-1 mt-3 mb-3">
                                 The icon generator service could not recognize the provided domain
@@ -72,9 +72,9 @@
                             </p>
                         </v-card-text>
                         <v-spacer class="mt-2 mb-2" />
-                        <v-divider></v-divider>
+                        <v-divider />
                         <v-card-actions>
-                            <v-spacer  class="mt-2 mb-2" />
+                            <v-spacer class="mt-2 mb-2" />
                             <v-btn
                                 variant="text"
                                 @click="showClearbitError = false; showClearbitDomain = undefined">

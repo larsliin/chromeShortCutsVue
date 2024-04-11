@@ -27,7 +27,7 @@
                                         :disabled="!!iconsFileImport"
                                         label="Bookmarks Data File"
                                         :prepend-icon="mdiDownload"
-                                        v-model="bookmarksFileImport"></v-file-input>
+                                        v-model="bookmarksFileImport" />
                                 </v-col>
                             </v-row>
                             <v-row>
@@ -66,7 +66,7 @@
                                             || !bookmarksStore.bookmarks?.length"
                                         label="Icons Data File input"
                                         :prepend-icon="mdiDownload"
-                                        v-model="iconsFileImport"></v-file-input>
+                                        v-model="iconsFileImport" />
                                 </v-col>
                             </v-row>
                             <v-row>
@@ -98,7 +98,7 @@
                                             label="Use OS Dark Mode Setting"
                                             color="info"
                                             hide-details="auto"
-                                            v-model="enableSystemDarkMode"></v-switch>
+                                            v-model="enableSystemDarkMode" />
                                         <ToolTip
                                             tooltip="Use OS system Dark Mode setting.<br />
                                             If enabled this setting will override Prefer
@@ -110,7 +110,7 @@
                                             color="info"
                                             hide-details="auto"
                                             :disabled="enableSystemDarkMode"
-                                            v-model="enablePreferDarkMode"></v-switch>
+                                            v-model="enablePreferDarkMode" />
                                         <ToolTip
                                             tooltip="Switch to Dark Mode theme" />
                                     </div>
@@ -120,7 +120,7 @@
                                             label="Use accordion layout"
                                             color="info"
                                             hide-details="auto"
-                                            v-model="enableAccordionNavigation"></v-switch>
+                                            v-model="enableAccordionNavigation" />
                                         <ToolTip
                                             tooltip="Toggle between Slider or Accordion layout" />
                                     </div>
@@ -131,7 +131,7 @@
                 </v-container>
             </v-card-text>
             <v-card-actions>
-                <v-spacer></v-spacer>
+                <v-spacer />
                 <v-btn
                     color="blue-darken-1"
                     variant="text"
@@ -163,7 +163,7 @@
                 </p>
             </v-card-text>
             <v-card-actions>
-                <v-spacer></v-spacer>
+                <v-spacer />
                 <v-btn
                     class="float-right"
                     color="primary"

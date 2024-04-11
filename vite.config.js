@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { crx } from '@crxjs/vite-plugin';
-import manifest from './manifest.json' assert { type: 'json' };
+// eslint-disable-next-line
+import manifest from './manifest.json';
 import { fileURLToPath, URL } from 'url';
 import { resolve } from 'path';
 
@@ -48,7 +49,7 @@ export default defineConfig({
             input: {
                 newtab: resolve(__dirname, 'index.html'),
                 popup: resolve(__dirname, 'popup.html'),
-              },
+            },
         },
 
     },

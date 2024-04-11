@@ -2,6 +2,7 @@
     <div class="outer"
         v-if="!bookmarksStore.bookmarks.length && !bookmarksStore.bookmarkSearch"
         :class="{ dark: bookmarksStore.enableDarkMode }"
+        @keyup.enter="onClick()"
         @click="onClick()">
         <v-icon
             class="icon"

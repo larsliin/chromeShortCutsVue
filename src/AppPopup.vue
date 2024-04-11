@@ -3,7 +3,7 @@
         style="width: 750px;"
         v-if="editBookmarkData"
         :data="editBookmarkData"
-        @save="onBookmarkSave()"/>
+        @save="onBookmarkSave()" />
 </template>
 
 <script setup>

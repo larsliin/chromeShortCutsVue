@@ -21,20 +21,20 @@
 </template>
 
 <script setup>
-    import { onMounted, watch } from 'vue';
-    import BookmarksSlider from '@/components/bookmarks/slider/BookmarksSlider.vue';
-    import BookmarksAccordion from '@/components/bookmarks/accordion/BookmarksAccordion.vue';
-    import NavigationDots from '@/components/navigation/NavigationDots.vue';
-    import { useBookmarksStore } from '@stores/bookmarks';
     import { FOLDER, EMITS, ARGS } from '@/constants';
-    import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
-    import useEventsBus from '@cmp/eventBus';
-    import { useUtils } from '@/shared/composables/utils';
+    import { onMounted, watch } from 'vue';
+    import { useBookmarksStore } from '@stores/bookmarks';
     import { useTheme } from 'vuetify';
+    import { useUtils } from '@/shared/composables/utils';
     import BookmarkAddLarge from '@/components/bookmarks/sharedComponents/BookmarkAddLarge.vue';
+    import BookmarksAccordion from '@/components/bookmarks/accordion/BookmarksAccordion.vue';
     import BookmarksBackground
         from '@/components/bookmarks/sharedComponents/BookmarksBackground.vue';
     import BookmarksPopular from '@/components/bookmarks/sharedComponents/BookmarksPopular.vue';
+    import BookmarksSlider from '@/components/bookmarks/slider/BookmarksSlider.vue';
+    import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
+    import NavigationDots from '@/components/navigation/NavigationDots.vue';
+    import useEventsBus from '@cmp/eventBus';
 
     const theme = useTheme();
 

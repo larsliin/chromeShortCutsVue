@@ -10,8 +10,7 @@
             :append-inner-icon="mdiMagnify"
             :disabled="!isEnabled"
             @click:clear="onClear($event)"
-            @update:modelValue="onUpdate($event)">
-        </v-text-field>
+            @update:modelValue="onUpdate($event)" />
     </div>
 </template>
 

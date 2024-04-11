@@ -100,8 +100,15 @@
             type: String,
             default: '-1',
         },
-        bookmark: Object,
-        size: String,
+        bookmark: {
+            type: Object,
+            required: true,
+        },
+        size: {
+            type: String,
+            required: false,
+            default: '',
+        },
         hideEdit: Boolean,
         draggable: {
             type: Boolean,

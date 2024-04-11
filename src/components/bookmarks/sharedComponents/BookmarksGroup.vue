@@ -2,7 +2,7 @@
     <div class="folder"
         :class="{
             'folder-max-height': !bookmarksStore.accordionNavigation,
-            'slider': !bookmarksStore.accordionNavigation
+            slider: !bookmarksStore.accordionNavigation,
         }">
         <div class="folder-inner" v-if="bookmarks">
             <draggable
@@ -21,7 +21,7 @@
                 @end="onDragEnd()"
                 @start="onDragStart()"
                 @update="onDragUpdate($event)">
-                <template #item="{element}">
+                <template #item="{ element }">
                     <li>
                         <BookmarkLink
                             :size="size"
@@ -80,8 +80,14 @@
     const { emit } = useEventsBus();
 
     const props = defineProps({
-        slideindex: Number,
-        folder: Object,
+        slideindex: {
+            type: Number,
+            required: true,
+        },
+        folder: {
+            type: Object,
+            required: true,
+        },
         bookmarks: {
             type: Array,
             default: () => [],

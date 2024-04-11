@@ -46,7 +46,7 @@ const vuetify = createVuetify({
                     anchor: '#f00',
                     secondary: '#f00',
                 },
-              },
+            },
         },
     },
 });

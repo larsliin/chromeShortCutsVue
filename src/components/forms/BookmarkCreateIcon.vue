@@ -63,9 +63,18 @@
     const utils = useUtils();
 
     const props = defineProps({
-        data: Object,
-        url: String,
-        iconUrl: String,
+        data: {
+            type: Object,
+            required: true,
+        },
+        url: {
+            type: String,
+            default: null,
+        },
+        iconUrl: {
+            type: String,
+            default: '',
+        },
     });
 
     const emits = defineEmits([

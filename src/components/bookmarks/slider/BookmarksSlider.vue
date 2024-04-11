@@ -1,7 +1,7 @@
 <template>
     <div class="folders-outer">
         <div class="folders-container d-flex"
-            :class="{' animated': !bookmarksStore.transitionDisabled}"
+            :class="{ ' animated': !bookmarksStore.transitionDisabled }"
             :style="{ transform: sliderPosition }">
             <template
                 v-for="(bookmark, index) in bookmarksStore.bookmarks"

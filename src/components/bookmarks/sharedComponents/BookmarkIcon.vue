@@ -1,14 +1,14 @@
 <template>
     <span class="bookmark-image-container"
         :style="{ backgroundColor: color }"
-        :class="{ 'dimmed': folder, dark: bookmarksStore.enableDarkMode }">
+        :class="{ dimmed: folder, dark: bookmarksStore.enableDarkMode }">
         <span
             class="visibility-toggle"
             :class="{ hide }">
             <v-icon v-if="folder"
                 :icon="mdiFolderOpen" />
             <template v-else-if="image">
-                <span class="bookmark-image-overlay" ></span>
+                <span class="bookmark-image-overlay"></span>
                 <span class="bookmark-image"
                     :style="{ 'background-image': `url(${image})` }"></span>
             </template>
@@ -35,10 +35,16 @@
     const bookmarksStore = useBookmarksStore();
 
     defineProps({
-        color: String,
+        color: {
+            type: String,
+            default: '',
+        },
         folder: Boolean,
         hide: Boolean,
-        image: String,
+        image: {
+            type: String,
+            default: null,
+        },
         loading: Boolean,
     });
 </script>

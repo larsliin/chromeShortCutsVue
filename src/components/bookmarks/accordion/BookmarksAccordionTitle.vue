@@ -9,12 +9,13 @@
             @openColorEditor="showColorEdit = true"
             @bookmarkAdd="onBookmarkAdd()" />
         <input
+            aria-label="Bookmark title"
             class="input"
             type="text"
             ref="input"
             tabindex="-1"
-            :class="[ bookmarksStore.enableDarkMode ? 'dark' : '']"
-            :style="{width: inputWidth}"
+            :class="[bookmarksStore.enableDarkMode ? 'dark' : '']"
+            :style="{ width: inputWidth }"
             @click.stop="onInputClick($event)"
             @blur.stop="onBlur($event)"
             @keydown.stop="keyDown($event)"
@@ -24,7 +25,7 @@
         <v-icon
             size="large"
             class="icon-drag"
-            :icon="mdiDragHorizontal"></v-icon>
+            :icon="mdiDragHorizontal" />
     </v-expansion-panel-title>
     <Teleport to="body"
         v-if="showConfirmDelete || showColorEdit">
@@ -86,7 +87,10 @@
     ]);
 
     const props = defineProps({
-        bookmark: Object,
+        bookmark: {
+            type: Object,
+            required: true,
+        },
     });
 
     // https://pictogrammers.com/library/mdi
