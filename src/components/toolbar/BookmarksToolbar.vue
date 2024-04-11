@@ -185,7 +185,7 @@
                 dialogAddOpen.value = true;
             })
             .catch((error) => {
-                console.error(error);
+                throw (error);
             });
     });
 

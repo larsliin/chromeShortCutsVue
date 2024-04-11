@@ -121,13 +121,8 @@
     }
 
     async function getBase64Data(file) {
-        try {
-            const base64Data = await bookmarksStore.toBase64(file);
-            return base64Data;
-        } catch (error) {
-            console.error(error);
-            throw error;
-        }
+        const base64Data = await bookmarksStore.toBase64(file);
+        return base64Data;
     }
 
     const imageFile = ref();

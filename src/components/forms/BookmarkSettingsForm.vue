@@ -349,7 +349,7 @@
                 bookmarksStore.isImporting = false;
             })
             .catch((error) => {
-                console.error(error);
+                throw (error);
             });
     }
 
@@ -400,7 +400,7 @@
                 saveImages(result, imagesArr);
             })
             .catch((error) => {
-                console.error(error);
+                throw (error);
             });
     }
 
@@ -435,7 +435,7 @@
                 onImportedFoldersCreated(result, importObj.bookmarks);
             })
             .catch((error) => {
-                console.error(error);
+                throw (error);
             });
     }
 
@@ -503,7 +503,7 @@
                 emit(EMITS.IMAGES_IMPORT);
             })
             .catch((error) => {
-                console.error(error);
+                throw (error);
             });
     }
 

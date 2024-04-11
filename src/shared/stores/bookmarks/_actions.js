@@ -52,7 +52,7 @@ export default {
                         resolve(returnObj);
                     })
                     .catch((error) => {
-                        console.error(error);
+                        throw (error);
                     });
             } catch (error) {
                 reject(error);
@@ -285,7 +285,7 @@ export default {
                     // eslint-disable-next-line no-undef
                     const error = chrome.runtime.lastError;
                     if (error) {
-                        console.error(error);
+                        throw (error);
                     }
                     resolve();
                 });
@@ -303,7 +303,7 @@ export default {
                     // eslint-disable-next-line no-undef
                     const error = chrome.runtime.lastError;
                     if (error) {
-                        console.error(error);
+                        throw (error);
                     }
                     resolve();
                 });
