@@ -16,7 +16,7 @@ function searchFolder(bookmarkTreeNodes, folderName) {
 }
 
 chrome.runtime.onInstalled.addListener((details) => {
-    const title = 'MyShortcuts';
+    const title = 'My Shortcuts Tab';
     const { reason } = details;
 
     if (reason === 'install') {

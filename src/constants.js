@@ -2,7 +2,7 @@ import UiFolder from './models/Folder';
 
 export const FOLDER = Object.freeze({
     ROOT: new UiFolder(
-        'MyShortcuts',
+        'My Shortcuts Tab',
         'root',
         '2',
     ),

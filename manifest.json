@@ -1,6 +1,6 @@
 {
 	"manifest_version": 3,
-	"name": "MyShortcuts",
+	"name": "My Shortcuts Tab",
 	"version": "1.0",
 	"description": "Add your most used shortcuts to your new tab",
 	"permissions": [
