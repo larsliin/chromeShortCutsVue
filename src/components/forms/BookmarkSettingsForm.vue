@@ -181,7 +181,7 @@
     import {
         ref, onMounted, watch, onUnmounted,
     } from 'vue';
-    import { EMITS } from '@/constants';
+    import { EMITS, FILE_NAMES } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/composables/utils';
@@ -250,7 +250,7 @@
         const a = document.createElement('a');
 
         a.href = URL.createObjectURL(new Blob([jsonString], { type: 'application/json' }));
-        a.download = 'bookmark-icons-exported.json';
+        a.download = `${FILE_NAMES.BOOKMARK_ICONS_EXPORT}.json`;
         a.click();
     }
 
@@ -278,7 +278,7 @@
 
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([jsonString], { type: 'application/json' }));
-        a.download = 'bookmarks-exported.json';
+        a.download = `${FILE_NAMES.BOOKMARKS_EXPORT}.json`;
         a.click();
     }
 

@@ -40,3 +40,8 @@ export const EMITS = Object.freeze({
 export const ARGS = Object.freeze({
     CREATED: 'created',
 });
+
+export const FILE_NAMES = Object.freeze({
+    BOOKMARKS_EXPORT: 'my-shortcuts-tab-bookmarks-exported',
+    BOOKMARK_ICONS_EXPORT: 'my-shortcuts-tab-icons-exported',
+});
