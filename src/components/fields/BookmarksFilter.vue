@@ -109,7 +109,7 @@
     async function getBookmarks() {
         try {
             const bookmarksResponse = await bookmarksStore
-                .get_coloredBookmarks(bookmarksStore.rootId);
+                .get_colorizedBookmarks(bookmarksStore.rootId);
 
             clonedBookmarks = bookmarksResponse[0]?.children
                 ? bookmarksResponse[0].children : [];

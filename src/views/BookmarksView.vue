@@ -77,15 +77,33 @@
         /* eslint-disable */
     }
 
+    // clean up local storage bookmarks, that are not in Chrome bookmarks
+    async function runCleanup() {
+        const localStorageItems = await bookmarksStore.get_localStorageAll(null);
+        const bookmarksFlatResponse = await utils.getBookmarksAsFlatArr();
+
+        const bookmarkIds = bookmarksFlatResponse.map(bookmark => bookmark.id);
+
+        const filteredItems = Object.values(localStorageItems).filter(item =>
+            item.parentId && !bookmarkIds.includes(item.id)
+        );
+
+        filteredItems.forEach(element => {
+            bookmarksStore.delete_localStorageItem(element.id);
+        });
+    }
+
     async function getBookmarks() {
         const rootResponse = await bookmarksStore.get_localStorage(FOLDER.ROOT.name);
 
         bookmarksStore.rootId = rootResponse;
 
         try {
-            const bookmarksResponse = await bookmarksStore.get_coloredBookmarks(rootResponse);
+            const bookmarksResponse = await bookmarksStore.get_colorizedBookmarks(rootResponse);
 
             bookmarksStore.bookmarks = bookmarksResponse[0]?.children ? bookmarksResponse[0].children : [];
+
+            runCleanup();
         } catch (error) {
             bookmarksStore.bookmarks = [];
         }
@@ -175,7 +193,7 @@
             ];
 
             Promise.all(promiseArr)
-                .then(async () => {
+            .then(async () => {
                     bookmarksStore.rootId = null;
 
                     bookmarksStore.bookmarks = [];
@@ -194,7 +212,9 @@
                 });
 
         } else {
+
             if (bookmark) { // if is type bookmark
+
                 // Filter away child object with the specified ID
                 bookmarksStore.bookmarks = bookmarksStore.bookmarks.map(parent => ({
                     ...parent,
@@ -209,6 +229,9 @@
 
                 children = folder ? folder.children.flatMap(e => e.id) : [];
 
+                children.forEach(element => {
+                    bookmarksStore.delete_localStorageItem(element);
+                });
                 utils.updateAccordionModel(index);
 
                 bookmarksStore.bookmarks = bookmarksStore.bookmarks.filter(e => e.id !== event);

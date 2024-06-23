@@ -47,6 +47,7 @@
                                 :bookmark="element" />
                             <v-expansion-panel-text>
                                 <BookmarksGroup
+                                    :slideindex="-1"
                                     :folder="element"
                                     :bookmarks="element.children" />
                             </v-expansion-panel-text>

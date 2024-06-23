@@ -1,10 +1,9 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { crx } from '@crxjs/vite-plugin';
-// eslint-disable-next-line
-import manifest from './manifest.json';
 import { fileURLToPath, URL } from 'url';
 import { resolve } from 'path';
+import manifest from './manifest.json';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -44,6 +43,7 @@ export default defineConfig({
         },
     },
     build: {
+        minify: true,
         chunkSizeWarningLimit: 1600,
         rollupOptions: {
             input: {
@@ -51,6 +51,5 @@ export default defineConfig({
                 popup: resolve(__dirname, 'popup.html'),
             },
         },
-
     },
 });

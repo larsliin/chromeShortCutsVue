@@ -15,7 +15,7 @@ export default {
         });
     },
 
-    async get_coloredBookmarks(id) {
+    async get_colorizedBookmarks(id) {
         return new Promise((resolve, reject) => {
             try {
                 const promiseArr = [];
