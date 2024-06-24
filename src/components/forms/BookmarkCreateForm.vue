@@ -138,10 +138,7 @@
     ]);
 
     const props = defineProps({
-        data: {
-            type: Object,
-            required: true,
-        },
+        data: Object,
         folderPreSelected: {
             type: String,
             required: false,

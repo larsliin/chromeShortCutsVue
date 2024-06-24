@@ -16,6 +16,7 @@ module.exports = {
         'import/no-cycle': ['error', { maxDepth: 4, ignoreExternal: true }],
         'import/extensions': ['error', 'ignorePackages', { js: 'never' }],
         'vue/first-attribute-linebreak': 'off',
+        'vue/require-default-prop': 'off',
         'vue/script-indent': ['error', 4, {
             baseIndent: 1,
         }],

@@ -2,13 +2,12 @@
 	"manifest_version": 3,
 	"name": "My Shortcuts Tab",
 	"version": "1.0",
-	"description": "My Shortcuts Tab transforms your new tab into a customizable dashboard for your bookmarks. Organize bookmarks into fold-out groups, access your most visited sites quickly, and use drag-and-drop to reorganize them effortlessly. Enjoy a user-friendly interface that makes managing bookmarks simple and efficient.",
+	"description": "Customize your new tab: organize bookmarks, access favorites instantly, and rearrange with drag-and-drop ease.",
 	"permissions": [
 		"bookmarks",
 		"storage",
 		"unlimitedStorage",
-		"tabs",
-		"activeTab"
+		"tabs"
 	],
 	"chrome_url_overrides": {
 		"newtab": "index.html"

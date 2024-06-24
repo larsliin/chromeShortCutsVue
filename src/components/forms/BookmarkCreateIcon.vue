@@ -63,10 +63,7 @@
     const utils = useUtils();
 
     const props = defineProps({
-        data: {
-            type: Object,
-            required: true,
-        },
+        data: Object,
         url: {
             type: String,
             default: null,
