@@ -4,7 +4,7 @@ This readme provides a quick reference for commonly used Vite commands when work
 
 ## Available Commands
 
-### 1. `npx vite` or 'vite'
+### 1. `npx vite` or simply 'vite'
 
 This command starts a development server that serves your Vue.js application in development mode. It provides features like hot module replacement (HMR) for a fast and enjoyable development experience.
 
@@ -14,7 +14,7 @@ npx vite
 
 This will start the development server, and you can access your application in your web browser at http://localhost:3000.
 
-### 2. npx vite build or 'vite build'
+### 2. npx vite build or simply `vite build`
 
 The build command is used to generate a production-ready build of your Vue.js application. This will bundle and optimize your code for deployment.
 
