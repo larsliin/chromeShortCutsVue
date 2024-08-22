@@ -4,17 +4,12 @@ export const FOLDER = Object.freeze({
     ROOT: new UiFolder(
         'My Shortcuts Tab',
         'root',
-        '2',
-    ),
-    HOME: new UiFolder(
-        'Home',
-        'home',
+        '1',
     ),
 });
 
 export const EMITS = Object.freeze({
     BOOKMARK_ADD: 'bookmarkAdd',
-    BOOKMARK_CREATED: 'bookmarkCreated',
     BOOKMARKS_IMPORT: 'bookmarksImport',
     BOOKMARKS_UPDATED: 'bookmarksUpdated',
     OPEN_COLOR_EDITOR: 'openColorEditor',

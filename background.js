@@ -1,3 +1,5 @@
+import { FOLDER } from '@/constants';
+
 /* eslint-disable */
 function searchFolder(bookmarkTreeNodes, folderName) {
     // eslint-disable-next-line no-restricted-syntax
@@ -16,17 +18,17 @@ function searchFolder(bookmarkTreeNodes, folderName) {
 }
 
 chrome.runtime.onInstalled.addListener((details) => {
-    const title = 'My Shortcuts Tab';
+    const title = FOLDER.ROOT.label;
     const { reason } = details;
 
     if (reason === 'install') {
-        chrome.bookmarks.getSubTree('2', (result) => {
+        chrome.bookmarks.getSubTree(FOLDER.ROOT.parentId, (result) => {
             const bookmarkTreeNodes = result[0].children;
             const folder = searchFolder(bookmarkTreeNodes, title);
 
             if (!folder) {
                 chrome.bookmarks.create(
-                    { parentId: '2', title },
+                    { parentId: FOLDER.ROOT.parentId, title },
                 );
             }
         });

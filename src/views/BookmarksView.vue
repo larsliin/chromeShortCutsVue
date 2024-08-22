@@ -349,6 +349,9 @@
             utils.buildRootFolder(),
         ];
 
+        chrome.bookmarks.getTree((bookmarkTreeNodes) => {
+    });
+
         Promise.all(promiseArr).then(([rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, buildRoot]) => {
             getBookmarks();
 

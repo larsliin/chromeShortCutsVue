@@ -152,7 +152,7 @@ export function useUtils() {
         } else {
             // if root folder does not exist then create root and home folders
             const createRootResponse = await bookmarksStore
-                .create_bookmark(2, FOLDER.ROOT.label);
+                .create_bookmark(FOLDER.ROOT.parentId, FOLDER.ROOT.label);
             bookmarksStore.rootId = createRootResponse.id;
 
             await bookmarksStore.set_localStorage({ [FOLDER.ROOT.name]: createRootResponse.id });
