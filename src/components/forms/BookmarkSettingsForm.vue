@@ -685,6 +685,6 @@
     }
 
     .form-divider {
-        border-right: solid 1px #333;
+        border-right: solid 1px rgb(var(--v-theme-on-surface-variant));
     }
 </style>
