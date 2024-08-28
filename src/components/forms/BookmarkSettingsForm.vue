@@ -11,121 +11,129 @@
                     </v-row>
                     <v-row>
                         <v-col
+                            class="form-divider"
                             cols="6">
-                            <v-row>
-                                <v-col
-                                    cols="12">
-                                    <p
-                                        class="text-body-1 mb-5">
-                                        Import bookmarks data file <ToolTip
-                                            :tooltip="`Select bookmarks JSON
-                                            data file to import bookmarks.<br />This
-                                            will overwrite existing bookmarks`" />
-                                    </p>
-                                    <v-file-input
-                                        @click:clear="clearFileInput()"
-                                        :disabled="!!iconsFileImport"
-                                        label="Bookmarks Data File"
-                                        :prepend-icon="mdiDownload"
-                                        v-model="bookmarksFileImport" />
-                                </v-col>
-                            </v-row>
-                            <v-row>
-                                <v-col
-                                    cols="12">
-                                    <p
-                                        class="text-body-1 mb-2">
-                                        Export bookmarks data file
-                                    </p>
-                                    <v-btn
-                                        color="blue-darken-1"
-                                        variant="tonal"
-                                        :prepend-icon="mdiUpload"
-                                        :disabled="!bookmarksStore.bookmarks?.length"
-                                        @click="onClickExportBookmarks()">
-                                        Export Bookmarks
-                                    </v-btn>
-                                </v-col>
-                            </v-row>
-                            <v-row>
-                                <v-col
-                                    cols="12">
-                                    <p
-                                        class="text-body-1 mb-2">
-                                        Import icons <ToolTip
-                                            :tooltip="`Select icons JSON data file to import
-                                            bookmark icons. This is useful<br />for importing
-                                            icons on other devices that share the same<br />
-                                            Google account, as icons are not synced across
-                                            devices.<br />This will overwrite existing bookmark
-                                            icons and colors!`" />
-                                    </p>
-                                    <v-file-input
-                                        @click:clear="clearFileInput()"
-                                        :disabled="!!bookmarksFileImport
-                                            || !bookmarksStore.bookmarks?.length"
-                                        label="Icons Data File input"
-                                        :prepend-icon="mdiDownload"
-                                        v-model="iconsFileImport" />
-                                </v-col>
-                            </v-row>
-                            <v-row>
-                                <v-col
-                                    cols="12">
-                                    <p
-                                        class="text-body-1 mb-5">
-                                        Export icons data file
-                                    </p>
-                                    <v-btn
-                                        color="blue-darken-1"
-                                        variant="tonal"
-                                        :prepend-icon="mdiUpload"
-                                        :disabled="!bookmarksStore.bookmarks?.length"
-                                        @click="onClickExportIcons()">
-                                        Export Icons
-                                    </v-btn>
-                                </v-col>
-                            </v-row>
+                            <div
+                                class="pr-3">
+                                <v-row>
+                                    <v-col
+                                        cols="12">
+                                        <p
+                                            class="text-body-1 mb-5">
+                                            Import bookmarks data file <ToolTip
+                                                :tooltip="`Select bookmarks JSON
+                                                data file to import bookmarks.<br />This
+                                                will overwrite existing bookmarks`" />
+                                        </p>
+                                        <v-file-input
+                                            @click:clear="clearFileInput()"
+                                            :disabled="!!$v.formData.iconsFileImport.$model"
+                                            label="Bookmarks Data File"
+                                            :prepend-icon="mdiDownload"
+                                            v-model="$v.formData.bookmarksFileImport.$model" />
+                                    </v-col>
+                                </v-row>
+                                <v-row>
+                                    <v-col
+                                        cols="12">
+                                        <p
+                                            class="text-body-1 mb-2">
+                                            Export bookmarks data file
+                                        </p>
+                                        <v-btn
+                                            color="blue-darken-1"
+                                            variant="tonal"
+                                            :prepend-icon="mdiUpload"
+                                            :disabled="!bookmarksStore.bookmarks?.length"
+                                            @click="onClickExportBookmarks()">
+                                            Export Bookmarks
+                                        </v-btn>
+                                    </v-col>
+                                </v-row>
+                                <v-row>
+                                    <v-col
+                                        cols="12">
+                                        <p
+                                            class="text-body-1 mb-2">
+                                            Import icons <ToolTip
+                                                :tooltip="`Select icons JSON data file to import
+                                                bookmark icons. This is useful<br />for importing
+                                                icons on other devices that share the same<br />
+                                                Google account, as icons are not synced across
+                                                devices.<br />This will overwrite existing bookmark
+                                                icons and colors!`" />
+                                        </p>
+                                        <v-file-input
+                                            @click:clear="clearFileInput()"
+                                            :disabled="!!$v.formData.bookmarksFileImport.$model
+                                                || !bookmarksStore.bookmarks?.length"
+                                            label="Icons Data File input"
+                                            :prepend-icon="mdiDownload"
+                                            v-model="$v.formData.iconsFileImport.$model" />
+                                    </v-col>
+                                </v-row>
+                                <v-row>
+                                    <v-col
+                                        cols="12">
+                                        <p
+                                            class="text-body-1 mb-5">
+                                            Export icons data file
+                                        </p>
+                                        <v-btn
+                                            color="blue-darken-1"
+                                            variant="tonal"
+                                            :prepend-icon="mdiUpload"
+                                            :disabled="!bookmarksStore.bookmarks?.length"
+                                            @click="onClickExportIcons()">
+                                            Export Icons
+                                        </v-btn>
+                                    </v-col>
+                                </v-row>
+                            </div>
                         </v-col>
                         <v-col
                             cols="6">
-                            <v-row>
-                                <v-col
-                                    cols="12">
-                                    <p>Dark mode color theme</p>
-                                    <div class="switch-container">
-                                        <v-switch
-                                            label="Use OS Dark Mode Setting"
-                                            color="info"
-                                            hide-details="auto"
-                                            v-model="enableSystemDarkMode" />
-                                        <ToolTip
-                                            tooltip="Use OS system Dark Mode setting.<br />
-                                            If enabled this setting will override Prefer
-                                            Dark Mode setting" />
-                                    </div>
-                                    <div class="switch-container">
-                                        <v-switch
-                                            label="Prefer Dark Mode"
-                                            color="info"
-                                            hide-details="auto"
-                                            :disabled="enableSystemDarkMode"
-                                            v-model="enablePreferDarkMode" />
-                                        <ToolTip
-                                            tooltip="Switch to Dark Mode theme" />
-                                    </div>
-                                    <p class="mt-5">Layout</p>
-                                    <div class="switch-container">
-                                        <v-switch
-                                            label="Use accordion layout"
-                                            color="info"
-                                            hide-details="auto"
-                                            v-model="enableAccordionNavigation" />
-                                        <ToolTip
-                                            tooltip="Toggle between Slider or Accordion layout" />
-                                    </div>
-                                </v-col>
-                            </v-row>
+                            <div
+                                class="pl-3">
+                                <v-row>
+                                    <v-col
+                                        cols="12">
+                                        <p>Dark mode color theme</p>
+                                        <div class="switch-container">
+                                            <v-switch
+                                                label="Use OS dark mode setting"
+                                                color="info"
+                                                hide-details="auto"
+                                                :disabled="formData.enablePreferDarkMode"
+                                                v-model="$v.formData.enableSystemDarkMode.$model" />
+                                            <ToolTip
+                                                tooltip="Use the operating system dark mode setting" />
+                                        </div>
+                                        <div class="switch-container">
+                                            <v-switch
+                                                label="Prefer dark mode"
+                                                color="info"
+                                                hide-details="auto"
+                                                v-model="$v.formData.enablePreferDarkMode.$model" />
+                                            <ToolTip
+                                                tooltip="Switch to dark mode theme.
+                                                If enabled this setting<br />will override operating
+                                                systems dark mode setting." />
+                                        </div>
+                                        <p class="mt-5">Layout</p>
+                                        <div class="switch-container">
+                                            <v-switch
+                                                label="Use accordion layout"
+                                                color="info"
+                                                hide-details="auto"
+                                                v-model="$v.formData
+                                                    .enableAccordionNavigation.$model" />
+                                            <ToolTip
+                                                tooltip="Toggle between slider or accordion layout" />
+                                        </div>
+                                    </v-col>
+                                </v-row>
+                            </div>
                         </v-col>
                     </v-row>
                 </v-container>
@@ -141,6 +149,7 @@
                 <v-btn
                     color="blue-darken-1"
                     variant="tonal"
+                    :disabled="!$v.$anyDirty"
                     @click="onClickSave()">
                     Save
                 </v-btn>
@@ -179,8 +188,10 @@
 <script setup>
     import { mdiDownload, mdiUpload } from '@mdi/js';
     import {
-        ref, onMounted, watch, onUnmounted,
+        ref, onMounted, watch, onUnmounted, reactive,
     } from 'vue';
+    // eslint-disable-next-line
+    import useVuelidate from '@vuelidate/core';
     import { EMITS, FILE_NAMES } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
@@ -199,20 +210,40 @@
     const bookmarksStore = useBookmarksStore();
 
     const form = ref();
-    const enablePreferDarkMode = ref();
-    const enableSystemDarkMode = ref();
-    const enableAccordionNavigation = ref();
 
-    const bookmarksFileImport = ref();
+    // Reactive form data
+    const formData = reactive({
+        enableSystemDarkMode: bookmarksStore.enableSystemDarkMode,
+        enablePreferDarkMode: bookmarksStore.enablePreferDarkMode,
+        enableAccordionNavigation: bookmarksStore.accordionNavigation,
+        bookmarksFileImport: null,
+        iconsFileImport: null,
+    });
+
+    const rules = {
+        formData: {
+            enableSystemDarkMode: {},
+            enablePreferDarkMode: {},
+            enableAccordionNavigation: {},
+            bookmarksFileImport: { },
+            iconsFileImport: { },
+        },
+    };
+
+    const $v = useVuelidate(rules, { formData });
+
     const isBookmarksFileValid = ref(false);
-    const errorDialog = ref(false);
-
-    const iconsFileImport = ref();
     const isIconsFileValid = ref();
 
+    const errorDialog = ref(false);
+
+    onMounted(async () => {
+        bookmarksStore.dialogOpen = true;
+    });
+
     function clearFileInput() {
-        iconsFileImport.value = null;
-        bookmarksFileImport.value = null;
+        formData.iconsFileImport = null;
+        formData.bookmarksFileImport = null;
     }
 
     async function onClickExportIcons() {
@@ -509,22 +540,22 @@
 
     function onClickSave() {
         // import
-        if (bookmarksFileImport.value && isBookmarksFileValid.value) {
+        if (formData.bookmarksFileImport && isBookmarksFileValid.value) {
             const reader = new FileReader();
             reader.onload = onBookmarksImportReaderLoad;
-            reader.readAsText(bookmarksFileImport.value[0]);
+            reader.readAsText(formData.bookmarksFileImport[0]);
         }
 
-        if (iconsFileImport.value) {
+        if (formData.iconsFileImport) {
             const reader = new FileReader();
             reader.onload = onIconsImportReaderLoad;
-            reader.readAsText(iconsFileImport.value[0]);
+            reader.readAsText(formData.iconsFileImport[0]);
         }
 
         // enableSystemDarkMode
-        bookmarksStore.enableSystemDarkMode = enableSystemDarkMode.value;
+        bookmarksStore.enableSystemDarkMode = formData.enableSystemDarkMode;
 
-        if (enableSystemDarkMode.value) {
+        if (formData.enableSystemDarkMode) {
             bookmarksStore.set_syncStorage({ systemDarkMode: true });
 
             bookmarksStore.enableDarkMode = window
@@ -536,11 +567,11 @@
         }
 
         // enablePreferDarkMode
-        if (!enableSystemDarkMode.value) {
-            bookmarksStore.enablePreferDarkMode = enablePreferDarkMode.value;
+        if (!formData.enableSystemDarkMode) {
+            bookmarksStore.enablePreferDarkMode = formData.enablePreferDarkMode;
             bookmarksStore.enableDarkMode = bookmarksStore.enablePreferDarkMode;
 
-            if (enablePreferDarkMode.value) {
+            if (formData.enablePreferDarkMode) {
                 bookmarksStore.set_syncStorage({ darkMode: true });
             } else {
                 bookmarksStore.delete_syncStorageItem('darkMode');
@@ -549,9 +580,9 @@
         theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
 
         // enableAccordionNavigation
-        bookmarksStore.accordionNavigation = enableAccordionNavigation.value;
+        bookmarksStore.accordionNavigation = formData.enableAccordionNavigation;
 
-        if (enableAccordionNavigation.value) {
+        if (formData.enableAccordionNavigation) {
             bookmarksStore.delete_syncStorageItem('accordionNavigation');
             bookmarksStore.set_syncStorage({ accordion: [bookmarksStore.sliderIndex] });
         } else {
@@ -591,14 +622,15 @@
         return !arr.includes(false);
     }
 
+    // eslint-disable-next-line
     function isImportIconsFileValid(args) {
         return args.type === 'icons' && args.bookmarks && args.folders;
     }
 
-    watch(bookmarksFileImport, (newVal) => {
+    watch(() => formData.bookmarksFileImport, (newVal) => {
         if (newVal) {
             if (!Object.keys(newVal).length) {
-                bookmarksFileImport.value = null;
+                formData.bookmarksFileImport = null;
                 return;
             }
 
@@ -612,14 +644,15 @@
                     errorDialog.value = true;
                 }
             };
-            reader.readAsText(bookmarksFileImport.value[0]);
+            reader.readAsText(formData.bookmarksFileImport[0]);
         }
     });
 
-    watch(iconsFileImport, (newVal) => {
+    // eslint-disable-next-line
+    watch(() => formData.iconsFileImport, (newVal) => {
         if (newVal) {
             if (!Object.keys(newVal).length) {
-                iconsFileImport.value = null;
+                formData.iconsFileImport = null;
                 return;
             }
 
@@ -633,16 +666,8 @@
                     errorDialog.value = true;
                 }
             };
-            reader.readAsText(iconsFileImport.value[0]);
+            reader.readAsText(formData.iconsFileImport[0]);
         }
-    });
-
-    onMounted(async () => {
-        enableAccordionNavigation.value = bookmarksStore.accordionNavigation;
-        enablePreferDarkMode.value = bookmarksStore.enablePreferDarkMode;
-        enableSystemDarkMode.value = bookmarksStore.enableSystemDarkMode;
-
-        bookmarksStore.dialogOpen = true;
     });
 
     onUnmounted(() => {
@@ -657,5 +682,9 @@
         > div:first-child {
             flex-grow: 0;
         }
+    }
+
+    .form-divider {
+        border-right: solid 1px #333;
     }
 </style>
