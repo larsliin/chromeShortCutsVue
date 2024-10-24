@@ -543,13 +543,13 @@
         if (formData.bookmarksFileImport && isBookmarksFileValid.value) {
             const reader = new FileReader();
             reader.onload = onBookmarksImportReaderLoad;
-            reader.readAsText(formData.bookmarksFileImport[0]);
+            reader.readAsText(formData.bookmarksFileImport);
         }
 
         if (formData.iconsFileImport) {
             const reader = new FileReader();
             reader.onload = onIconsImportReaderLoad;
-            reader.readAsText(formData.iconsFileImport[0]);
+            reader.readAsText(formData.iconsFileImport);
         }
 
         // enableSystemDarkMode
@@ -627,46 +627,65 @@
         return args.type === 'icons' && args.bookmarks && args.folders;
     }
 
+    // eslint-disable-next-line
     watch(() => formData.bookmarksFileImport, (newVal) => {
         if (newVal) {
-            if (!Object.keys(newVal).length) {
+            const file = Array.isArray(newVal) ? newVal[0] : newVal;
+
+            if (!file) {
                 formData.bookmarksFileImport = null;
                 return;
             }
 
+            formData.bookmarksFileImport = file;
+
             const reader = new FileReader();
             reader.onload = (e) => {
-                const importBookmarks = JSON.parse(e.target.result);
+                try {
+                    const importBookmarks = JSON.parse(e.target.result);
+                    isBookmarksFileValid.value = isImportBookmarksFileValid(importBookmarks);
 
-                isBookmarksFileValid.value = isImportBookmarksFileValid(importBookmarks);
-
-                if (!isBookmarksFileValid.value) {
+                    if (!isBookmarksFileValid.value) {
+                        errorDialog.value = true;
+                    }
+                } catch (error) {
+                    console.error('Error parsing JSON file', error);
+                    isBookmarksFileValid.value = false;
                     errorDialog.value = true;
                 }
             };
-            reader.readAsText(formData.bookmarksFileImport[0]);
+            reader.readAsText(file);
         }
     });
 
     // eslint-disable-next-line
     watch(() => formData.iconsFileImport, (newVal) => {
         if (newVal) {
-            if (!Object.keys(newVal).length) {
+            const file = Array.isArray(newVal) ? newVal[0] : newVal;
+
+            if (!file) {
                 formData.iconsFileImport = null;
                 return;
             }
 
+            formData.iconsFileImport = file;
+
             const reader = new FileReader();
             reader.onload = (e) => {
-                const importIcons = JSON.parse(e.target.result);
+                try {
+                    const importIcons = JSON.parse(e.target.result);
+                    isIconsFileValid.value = isImportIconsFileValid(importIcons);
 
-                isIconsFileValid.value = isImportIconsFileValid(importIcons);
-
-                if (!isIconsFileValid.value) {
+                    if (!isIconsFileValid.value) {
+                        errorDialog.value = true;
+                    }
+                } catch (error) {
+                    console.error('Error parsing JSON file', error);
+                    isIconsFileValid.value = false;
                     errorDialog.value = true;
                 }
             };
-            reader.readAsText(formData.iconsFileImport[0]);
+            reader.readAsText(file);
         }
     });
 
