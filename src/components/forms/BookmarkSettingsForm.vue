@@ -627,67 +627,55 @@
         return args.type === 'icons' && args.bookmarks && args.folders;
     }
 
-    // eslint-disable-next-line
-    watch(() => formData.bookmarksFileImport, (newVal) => {
-        if (newVal) {
-            const file = Array.isArray(newVal) ? newVal[0] : newVal;
+    function handleFileImport(file, importType, isValid, validationFn) {
+        if (!file) {
+            formData[importType] = null;
+            return;
+        }
 
-            if (!file) {
-                formData.bookmarksFileImport = null;
-                return;
-            }
+        const fileToImport = Array.isArray(file) ? file[0] : file;
+        formData[importType] = fileToImport;
 
-            formData.bookmarksFileImport = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const parsedData = JSON.parse(e.target.result);
+                isValid.value = validationFn(parsedData);
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const importBookmarks = JSON.parse(e.target.result);
-                    isBookmarksFileValid.value = isImportBookmarksFileValid(importBookmarks);
-
-                    if (!isBookmarksFileValid.value) {
-                        errorDialog.value = true;
-                    }
-                } catch (error) {
-                    console.error('Error parsing JSON file', error);
-                    isBookmarksFileValid.value = false;
+                if (!isValid.value) {
                     errorDialog.value = true;
                 }
-            };
-            reader.readAsText(file);
-        }
-    });
+            } catch (error) {
+                console.error('Error parsing JSON file', error);
+                isValid.value = false;
+                errorDialog.value = true;
+            }
+        };
+        reader.readAsText(fileToImport);
+    }
 
-    // eslint-disable-next-line
-    watch(() => formData.iconsFileImport, (newVal) => {
-        if (newVal) {
-            const file = Array.isArray(newVal) ? newVal[0] : newVal;
-
-            if (!file) {
-                formData.iconsFileImport = null;
-                return;
+    watch(
+        () => [formData.bookmarksFileImport, formData.iconsFileImport],
+        ([bookmarksFile, iconsFile]) => {
+            if (bookmarksFile) {
+                handleFileImport(
+                    bookmarksFile,
+                    'bookmarksFileImport',
+                    isBookmarksFileValid,
+                    isImportBookmarksFileValid,
+                );
             }
 
-            formData.iconsFileImport = file;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const importIcons = JSON.parse(e.target.result);
-                    isIconsFileValid.value = isImportIconsFileValid(importIcons);
-
-                    if (!isIconsFileValid.value) {
-                        errorDialog.value = true;
-                    }
-                } catch (error) {
-                    console.error('Error parsing JSON file', error);
-                    isIconsFileValid.value = false;
-                    errorDialog.value = true;
-                }
-            };
-            reader.readAsText(file);
-        }
-    });
+            if (iconsFile) {
+                handleFileImport(
+                    iconsFile,
+                    'iconsFileImport',
+                    isIconsFileValid,
+                    isImportIconsFileValid,
+                );
+            }
+        },
+    );
 
     onUnmounted(() => {
         bookmarksStore.dialogOpen = false;
