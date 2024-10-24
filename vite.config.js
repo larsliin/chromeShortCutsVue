@@ -35,6 +35,13 @@ export default defineConfig({
             },
         ],
     },
+    css: {
+        preprocessorOptions: {
+            scss: {
+                api: 'modern-compiler',
+            },
+        },
+    },
     server: {
         port: 5173,
         strictPort: true,
@@ -47,9 +54,12 @@ export default defineConfig({
         chunkSizeWarningLimit: 1600,
         rollupOptions: {
             input: {
-                newtab: resolve(__dirname, 'index.html'),
-                popup: resolve(__dirname, 'popup.html'),
+              newtab: resolve(__dirname, 'index.html'),
+              popup: resolve(__dirname, 'popup.html'),
             },
         },
+    },
+    define: {
+        __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(true),
     },
 });
