@@ -247,29 +247,43 @@
     }
 
     async function onClickExportIcons() {
-        const localStorageItems = await bookmarksStore.get_localStorageAll(null);
-        const localStorageItemsImageArr = Object.values(localStorageItems).filter((e) => e.image);
+        // Safely get and filter local storage items
+        const localStorageItems = await bookmarksStore.get_localStorageAll(null) || {};
+        const localStorageItemsImageArr = Object.values(localStorageItems)
+            .filter((e) => e && e.image);
 
+        // Get color data from sync storage
         const folderColorsResponse = await bookmarksStore.get_syncStorage('folderColors');
         const bookmarkColorsResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
 
+        // Process folders with colors
         let foldersWithColors = [];
-        if (folderColorsResponse) {
-            foldersWithColors = Object.entries(folderColorsResponse).map((e) => ({
-                id: e[0],
-                color: e[1],
-                title: bookmarksStore.bookmarks.find((a) => a.id === e[0]).title,
-            }));
+        if (folderColorsResponse && bookmarksStore.bookmarks) {
+            foldersWithColors = Object.entries(folderColorsResponse)
+                .map((e) => {
+                    if (!e || !e[0]) return null;
+                    const folder = bookmarksStore.bookmarks.find((a) => a.id === e[0]);
+                    if (!folder || !folder.title) return null;
+                    return {
+                        id: e[0],
+                        color: e[1],
+                        title: folder.title,
+                    };
+                })
+                .filter((folder) => folder !== null);
         }
 
-        let bookmarksWithColors = [];
-        if (bookmarkColorsResponse) {
-            bookmarksWithColors = localStorageItemsImageArr.map((obj) => ({
-                ...obj,
-                color: bookmarkColorsResponse[obj.id] || obj.color || null,
-            }));
-        }
+        // Process bookmarks with colors
+        const bookmarksWithColors = bookmarkColorsResponse
+            ? localStorageItemsImageArr
+                .filter((obj) => obj && obj.id)
+                .map((obj) => ({
+                    ...obj,
+                    color: bookmarkColorsResponse[obj.id] || obj.color || null,
+                }))
+            : [];
 
+        // Prepare and export data
         const exportArr = {
             folders: foldersWithColors,
             bookmarks: bookmarksWithColors,
@@ -277,12 +291,17 @@
         };
 
         const jsonString = JSON.stringify(exportArr);
-
+        const blob = new Blob([jsonString], { type: 'application/json' });
         const a = document.createElement('a');
+        const url = URL.createObjectURL(blob);
 
-        a.href = URL.createObjectURL(new Blob([jsonString], { type: 'application/json' }));
-        a.download = `${FILE_NAMES.BOOKMARK_ICONS_EXPORT}.json`;
-        a.click();
+        try {
+            a.href = url;
+            a.download = `${FILE_NAMES.BOOKMARK_ICONS_EXPORT}.json`;
+            a.click();
+        } finally {
+            URL.revokeObjectURL(url);
+        }
     }
 
     async function onClickExportBookmarks() {
