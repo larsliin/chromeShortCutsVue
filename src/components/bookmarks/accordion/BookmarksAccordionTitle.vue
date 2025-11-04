@@ -1,5 +1,6 @@
 <template>
     <v-expansion-panel-title
+        ref="expansionPanelTitle"
         :color="color">
         <BookmarkFoldout
             :list="list"
@@ -15,13 +16,13 @@
             ref="input"
             tabindex="-1"
             :class="[bookmarksStore.enableDarkMode ? 'dark' : '']"
-            :style="{ width: inputWidth }"
+            :style="{ '--dynamic-border-color': inputBorderColor }"
             @click.stop="onInputClick($event)"
+            @focus.stop="onInputFocus()"
             @blur.stop="onBlur($event)"
             @keydown.stop="keyDown($event)"
             @keyup.stop="keyUp($event)"
             v-model="model" />
-        <span ref="textWidth" class="text-width">{{ model }}</span>
         <v-icon
             size="large"
             class="icon-drag"
@@ -118,8 +119,7 @@
     ]);
 
     const input = ref();
-    const inputWidth = ref(0);
-    const textWidth = ref();
+    const expansionPanelTitle = ref();
 
     function onBookmarkAdd() {
         emit(EMITS.BOOKMARK_ADD, props.bookmark.id);
@@ -130,6 +130,14 @@
     const selectedColor = ref();
 
     const color = ref();
+    const inputBorderColor = ref('');
+
+    function updateInputBorderColor() {
+        if (expansionPanelTitle.value && expansionPanelTitle.value instanceof Element) {
+            const computedStyle = getComputedStyle(expansionPanelTitle.value);
+            inputBorderColor.value = computedStyle.color;
+        }
+    }
 
     async function onColorConfirm(event) {
         selectedColor.value = event;
@@ -156,11 +164,13 @@
         } else {
             bookmarksStore.set_syncStorage({ folderColors: colorsObj });
         }
+
+        // Update input border color after color change
+        await nextTick();
+        updateInputBorderColor();
     }
 
     function onRename() {
-        inputWidth.value = `${textWidth.value.clientWidth + 0}px`;
-
         input.value.focus();
     }
 
@@ -191,22 +201,21 @@
         event.preventDefault();
     }
 
+    function onInputFocus() {
+        updateInputBorderColor();
+    }
+
     const model = ref(props.bookmark.title);
 
     function onBlur() {
         bookmarksStore.update_bookmark(props.bookmark.id, { title: model.value });
+        inputBorderColor.value = '';
     }
 
     async function keyDown(event) {
         if (event.keyCode === 13) {
             input.value.blur();
         }
-
-        const add = event.keyCode === 8 ? -6 : 6;
-
-        await nextTick();
-
-        inputWidth.value = `${textWidth.value.clientWidth + add}px`;
     }
 
     function keyUp(event) {
@@ -219,16 +228,22 @@
         if (getColorResponse) {
             color.value = getColorResponse[props.bookmark.id];
         }
+
+        // Update input border color after color update
+        await nextTick();
+        updateInputBorderColor();
     }
 
     watch(() => bus.value.get(EMITS.IMAGES_IMPORT), () => {
         updateColor();
     });
 
-    onMounted(() => {
-        inputWidth.value = `${textWidth.value.clientWidth + 0}px`;
-
+    onMounted(async () => {
         color.value = props.bookmark.color;
+
+        // Initialize input border color
+        await nextTick();
+        updateInputBorderColor();
     });
 
 </script>
@@ -246,9 +261,14 @@
     }
 
     .input {
-        border: 1px solid transparent;
+        border-color: transparent;
+        border-radius: 5px;
+        border-style: solid;
+        border-width: 1px;
         color: inherit;
+        field-sizing: content;
         max-width: calc(48% - 30px);
+        min-inline-size: 5ch;
         overflow: hidden;
         padding: 4px 6px;
         pointer-events: none;
@@ -258,13 +278,10 @@
         z-index: 10;
 
         &:focus {
+            border-color: var(--dynamic-border-color, currentColor);
+            border-style: solid;
             outline: none;
             pointer-events: auto;
-            border: 1px solid rgba(0,0,0,.12);
-
-            &.dark {
-                border: 1px solid var(--darkmode-300);
-            }
         }
     }
 
@@ -310,16 +327,5 @@
         top: 50%;
         transform: translate(-50%, -50%);
         z-index: 0;
-    }
-
-    .text-width {
-        display: inline-block;
-        font-size: 15px;
-        padding: 0 10px;
-        pointer-events: none;
-        position: absolute;
-        visibility: hidden;
-        white-space: nowrap;
-        z-index: -1;
     }
 </style>

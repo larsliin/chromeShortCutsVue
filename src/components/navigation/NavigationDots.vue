@@ -20,7 +20,6 @@
                             active ? 'active' : '',
                             bookmarksStore.enableDarkMode ? 'dark' : '',
                         ]"
-                        :style="{ width: inputWidth }"
                         v-model="bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title"
                         @click.stop="onClick($event)"
                         @focus="bookmarksStore.titleInputActive = true"
@@ -35,9 +34,6 @@
                         @bookmarkAdd="onBookmarkAdd()"
                         @rename="onRename()" />
                 </div>
-                <span ref="textwidth" class="text-width">
-                    {{ bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title }}
-                </span>
             </div>
         </div>
         <div class="navigation-container">
@@ -75,18 +71,15 @@
 
 <script setup>
     import { mdiRename, mdiDeleteOutline, mdiStar } from '@mdi/js';
-    import {
-        ref, onMounted, watch, nextTick,
-    } from 'vue';
+    import { ref } from 'vue';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/composables/utils';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
-    import BookmarkConfirmDelete
-        from '@/components/forms/BookmarkConfirmDelete.vue';
+    import BookmarkConfirmDelete from '@/components/forms/BookmarkConfirmDelete.vue';
     import useEventsBus from '@cmp/eventBus';
 
-    const { bus, emit } = useEventsBus();
+    const { emit } = useEventsBus();
 
     const utils = useUtils();
 
@@ -116,8 +109,6 @@
 
     const active = ref(false);
     const input = ref();
-    const inputWidth = ref(0);
-    const textwidth = ref();
 
     const showConfirmDelete = ref(false);
 
@@ -138,7 +129,6 @@
 
     function onRename() {
         active.value = true;
-        inputWidth.value = `${textwidth.value.clientWidth + 0}px`;
         input.value.focus();
     }
 
@@ -156,35 +146,13 @@
     function onChange(event) {
         if (event.keyCode === 13 || event.keyCode === 27) {
             input.value.blur();
-            return;
         }
-
-        const add = event.keyCode === 8 ? -5 : 10;
-        inputWidth.value = `${textwidth.value.clientWidth + add}px`;
     }
-
-    async function updateWidth() {
-        await nextTick();
-        inputWidth.value = `${textwidth.value.clientWidth}px`;
-    }
-
-    watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async () => {
-        updateWidth();
-    });
-
-    watch(() => bookmarksStore.sliderIndex, async () => {
-        updateWidth();
-    });
-
-    onMounted(() => {
-        updateWidth();
-    });
 </script>
 
 <style scoped lang="scss">
     .navigation-outer {
         $breakpoint: 540px;
-
         bottom: 0;
         left: 0;
         position: fixed;
@@ -266,13 +234,12 @@
         transition: all 0.15s ease-out;
     }
 
-    //
     .wrapper  {
-        display: flex;
-        position: relative;
-        flex-direction: row;
         align-items: center;
+        display: flex;
+        flex-direction: row;
         margin-bottom: 10px;
+        position: relative;
 
         &:hover .foldout {
             opacity: 1;
@@ -280,10 +247,12 @@
      }
 
      .input {
-        border-radius: 4px;
+        border-radius: 5px;
         border: 1px solid transparent;
         cursor: default;
+        field-sizing: content;
         font-size: 16px;
+        min-inline-size: 5ch;
         padding: 6px;
         pointer-events: none;
         width: auto;
@@ -307,18 +276,6 @@
         &.enabled {
             pointer-events: initial;
         }
-    }
-
-    .text-width {
-        display: inline-block;
-        font-size: 16px;
-        font-weight: 700;
-        padding: 6px;
-        position: absolute;
-        visibility: hidden;
-        pointer-events: none;
-        z-index: -1;
-        white-space: nowrap;
     }
 
     .foldout {

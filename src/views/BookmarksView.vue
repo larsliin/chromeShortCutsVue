@@ -389,7 +389,7 @@
         if (bookmarksStore.enableSystemDarkMode) {
             theme.global.name.value = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
-
+        
         init();
     });
 
