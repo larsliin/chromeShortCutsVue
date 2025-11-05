@@ -16,7 +16,7 @@
             ref="input"
             tabindex="-1"
             :class="[bookmarksStore.enableDarkMode ? 'dark' : '']"
-            :style="{ '--dynamic-border-color': inputBorderColor }"
+            :style="{ '--dynamic-background-color': inputBackgroundColor }"
             @click.stop="onInputClick($event)"
             @focus.stop="onInputFocus()"
             @blur.stop="onBlur($event)"
@@ -130,12 +130,30 @@
     const selectedColor = ref();
 
     const color = ref();
-    const inputBorderColor = ref('');
+    const inputBackgroundColor = ref('');
 
-    function updateInputBorderColor() {
-        if (expansionPanelTitle.value && expansionPanelTitle.value instanceof Element) {
-            const computedStyle = getComputedStyle(expansionPanelTitle.value);
-            inputBorderColor.value = computedStyle.color;
+    function updateInputBackgroundColor() {
+        if (input.value) {
+            const computedStyle = getComputedStyle(input.value);
+            const textColor = computedStyle.color;
+
+            // If text is light, use black background, otherwise use white background
+            const rgbMatch = textColor.match(/rgba?\((\d+),?\s*(\d+),?\s*(\d+)/);
+
+            if (rgbMatch) {
+                const r = parseInt(rgbMatch[1], 10);
+                const g = parseInt(rgbMatch[2], 10);
+                const b = parseInt(rgbMatch[3], 10);
+
+                // Simple luminance calculation
+                const luminance = (r + g + b) / 3;
+
+                // If text is light (white-ish), use black background
+                // If text is dark (black-ish), use white background
+                inputBackgroundColor.value = luminance > 127
+                    ? 'rgba(0, 0, 0, 0.6)'
+                    : 'rgba(255, 255, 255, 0.6)';
+            }
         }
     }
 
@@ -165,9 +183,9 @@
             bookmarksStore.set_syncStorage({ folderColors: colorsObj });
         }
 
-        // Update input border color after color change
+        // Update input background color after color change
         await nextTick();
-        updateInputBorderColor();
+        updateInputBackgroundColor();
     }
 
     function onRename() {
@@ -202,14 +220,14 @@
     }
 
     function onInputFocus() {
-        updateInputBorderColor();
+        updateInputBackgroundColor();
     }
 
     const model = ref(props.bookmark.title);
 
     function onBlur() {
         bookmarksStore.update_bookmark(props.bookmark.id, { title: model.value });
-        inputBorderColor.value = '';
+        inputBackgroundColor.value = '';
     }
 
     async function keyDown(event) {
@@ -229,21 +247,33 @@
             color.value = getColorResponse[props.bookmark.id];
         }
 
-        // Update input border color after color update
+        // Update input background color after color update
         await nextTick();
-        updateInputBorderColor();
+        updateInputBackgroundColor();
     }
 
     watch(() => bus.value.get(EMITS.IMAGES_IMPORT), () => {
         updateColor();
     });
 
+    // Watch for color changes to update input background
+    watch(color, async () => {
+        await nextTick();
+        updateInputBackgroundColor();
+    });
+
+    // Watch for dark mode changes to update input background
+    watch(() => bookmarksStore.enableDarkMode, async () => {
+        await nextTick();
+        updateInputBackgroundColor();
+    });
+
     onMounted(async () => {
         color.value = props.bookmark.color;
 
-        // Initialize input border color
+        // Initialize input background color
         await nextTick();
-        updateInputBorderColor();
+        updateInputBackgroundColor();
     });
 
 </script>
@@ -261,10 +291,9 @@
     }
 
     .input {
-        border-color: transparent;
+        background-color: transparent;
+        border: none;
         border-radius: 5px;
-        border-style: solid;
-        border-width: 1px;
         color: inherit;
         field-sizing: content;
         max-width: calc(48% - 30px);
@@ -276,10 +305,10 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         z-index: 10;
+        transition: background-color 0.2s ease;
 
         &:focus {
-            border-color: var(--dynamic-border-color, currentColor);
-            border-style: solid;
+            background-color: var(--dynamic-background-color, rgba(128, 128, 128, 0.2));
             outline: none;
             pointer-events: auto;
         }

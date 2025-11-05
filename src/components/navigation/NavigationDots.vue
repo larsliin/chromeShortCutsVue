@@ -248,20 +248,17 @@
 
      .input {
         border-radius: 5px;
-        border: 1px solid transparent;
-        cursor: default;
         field-sizing: content;
         font-size: 16px;
         min-inline-size: 5ch;
         padding: 6px;
-        pointer-events: none;
         width: auto;
 
         &.active {
-            border: 1px solid rgba(0,0,0,.12);
+            background-color: rgba(0,0,0,.12);
 
             &.dark {
-                border: 1px solid var(--darkmode-400);
+                background-color: var(--darkmode-200);
             }
         }
 
