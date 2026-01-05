@@ -112,7 +112,7 @@
     }
 
     async function isNewBookmarkInScope(bookmark) {
-        if (!bookmarksStore.rootId && bookmark.parentId !== FOLDER.ROOT.parentId) {
+        if (!bookmarksStore.rootId && bookmark.parentId !== bookmarksStore.bookmarksBarId) {
             return false;
         }
 
@@ -339,18 +339,26 @@
     }
 
     async function init() {
+        const tree = await chrome.bookmarks.getTree();
+        const bookmarksBar = tree[0].children.find((node) => node.folderType === FOLDER.ROOT.parentFolderType);
+
+        if(!bookmarksBar) {
+            return;
+        }
+        
+        const bookmarksBarId = bookmarksBar.id;
+
+        bookmarksStore.setBookmarksBarId(bookmarksBarId);
+
         // load all settings
         const promiseArr = [
-            bookmarksStore.get_folderByTitle(FOLDER.ROOT.parentId, FOLDER.ROOT.label),
+            bookmarksStore.get_folderByTitle(bookmarksStore.bookmarksBarId, FOLDER.ROOT.label),
             bookmarksStore.get_syncStorage('sliderIndex'),
             bookmarksStore.get_syncStorage('darkMode'),
             bookmarksStore.get_syncStorage('systemDarkMode'),
             bookmarksStore.get_syncStorage('accordionNavigation'),
             utils.buildRootFolder(),
         ];
-
-        chrome.bookmarks.getTree((bookmarkTreeNodes) => {
-    });
 
         Promise.all(promiseArr).then(([rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, buildRoot]) => {
             getBookmarks();

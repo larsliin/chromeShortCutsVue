@@ -46,6 +46,7 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         hmr: {
+            host: 'localhost',
             port: 5173,
         },
     },
@@ -54,8 +55,8 @@ export default defineConfig({
         chunkSizeWarningLimit: 1600,
         rollupOptions: {
             input: {
-              newtab: resolve(__dirname, 'index.html'),
-              popup: resolve(__dirname, 'popup.html'),
+                newtab: resolve(__dirname, 'index.html'),
+                popup: resolve(__dirname, 'popup.html'),
             },
         },
     },

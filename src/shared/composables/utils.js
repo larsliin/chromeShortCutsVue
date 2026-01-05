@@ -140,7 +140,7 @@ export function useUtils() {
     async function buildRootFolder() {
         const bookmarksStore = useBookmarksStore();
 
-        const rootFolderResponse = await bookmarksStore.get_bookmarks(FOLDER.ROOT.parentId);
+        const rootFolderResponse = await bookmarksStore.get_bookmarks(bookmarksStore.bookmarksBarId);
 
         const rootFolder = rootFolderResponse[0]
             .children.find((e) => e.title === FOLDER.ROOT.label);
@@ -152,7 +152,7 @@ export function useUtils() {
         } else {
             // if root folder does not exist then create root and home folders
             const createRootResponse = await bookmarksStore
-                .create_bookmark(FOLDER.ROOT.parentId, FOLDER.ROOT.label);
+                .create_bookmark(bookmarksStore.bookmarksBarId, FOLDER.ROOT.label);
             bookmarksStore.rootId = createRootResponse.id;
 
             await bookmarksStore.set_localStorage({ [FOLDER.ROOT.name]: createRootResponse.id });

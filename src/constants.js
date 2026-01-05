@@ -4,7 +4,7 @@ export const FOLDER = Object.freeze({
     ROOT: new UiFolder(
         'My Shortcuts Tab',
         'root',
-        '1',
+        'bookmarks-bar',
     ),
 });
 

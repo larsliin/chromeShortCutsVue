@@ -39,7 +39,7 @@
 
     async function getBookmarks() {
         const rootFolderResponse = await bookmarksStore
-            .get_folderByTitle(FOLDER.ROOT.parentId, FOLDER.ROOT.label);
+            .get_folderByTitle(bookmarksStore.bookmarksBarId, FOLDER.ROOT.label);
 
         bookmarksStore.rootId = rootFolderResponse[0].id;
 

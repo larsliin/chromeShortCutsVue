@@ -26,6 +26,7 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         titleInputActive: false,
         transition: true,
         transitionDisabled: false,
+        bookmarksBarId: null,
     }),
     actions,
     getters,

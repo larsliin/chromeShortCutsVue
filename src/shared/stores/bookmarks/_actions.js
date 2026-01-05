@@ -212,6 +212,19 @@ export default {
         });
     },
 
+    async get_tree() {
+        return new Promise((resolve, reject) => {
+            try {
+                // eslint-disable-next-line no-undef
+                chrome.bookmarks.getTree((event) => {
+                    resolve(event);
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    },
+
     async set_localStorage(storageObj) {
         return new Promise((resolve, reject) => {
             try {
@@ -320,5 +333,9 @@ export default {
             reader.onload = () => resolve(reader.result);
             reader.onerror = reject;
         });
+    },
+
+    setBookmarksBarId(id) {
+        this.bookmarksBarId = id;
     },
 };
