@@ -109,7 +109,7 @@
 
         if (utils.isValidURL(props.url)) {
             const domain = utils.getDomainFromUrl(props.url);
-            const imageUrl = `https://logo.clearbit.com/${domain}?size=200`;
+            const imageUrl = `https://img.logo.dev/${domain}?token=pk_PdnB3t3aTiqenIQ-fVCWpA`;
 
             fetchClearBitImage(imageUrl);
         }
