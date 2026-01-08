@@ -49,8 +49,22 @@
     }
 
     onMounted(async () => {
-        const tree = await bookmarksStore.get_tree();
-        const bookmarksBar = tree[0].children.find((node) => node.folderType === FOLDER.ROOT.parentFolderType);
+        // Fetch initial data in parallel for better performance
+        const [
+            tree,
+            slideIndexResponse,
+            preferDarkModeResponse,
+            systemDarkModeResponse,
+        ] = await Promise.all([
+            bookmarksStore.get_tree(),
+            bookmarksStore.get_syncStorage('sliderIndex'),
+            bookmarksStore.get_syncStorage('darkMode'),
+            bookmarksStore.get_syncStorage('systemDarkMode'),
+        ]);
+
+        // Locate and set up the bookmarks bar
+        const bookmarksBar = tree[0].children
+            .find((node) => node.folderType === FOLDER.ROOT.parentFolderType);
 
         if (!bookmarksBar) {
             return;
@@ -58,21 +72,14 @@
 
         bookmarksStore.setBookmarksBarId(bookmarksBar.id);
 
-        const slideIndexResponse = await bookmarksStore.get_syncStorage('sliderIndex');
+        // Configure slider index from saved settings
+        bookmarksStore.sliderIndex = typeof slideIndexResponse === 'number' ? slideIndexResponse : 0;
 
-        if (typeof slideIndexResponse === 'number') {
-            bookmarksStore.sliderIndex = slideIndexResponse;
-        } else {
-            bookmarksStore.sliderIndex = 0;
-        }
-
-        // dark mode color theme
-        const preferDarkModeResponse = await bookmarksStore.get_syncStorage('darkMode');
+        // Configure dark mode theme
         bookmarksStore.enablePreferDarkMode = !!preferDarkModeResponse;
-
-        const systemDarkModeResponse = await bookmarksStore.get_syncStorage('systemDarkMode');
         bookmarksStore.enableSystemDarkMode = !!systemDarkModeResponse;
 
+        // Determine active dark mode setting based on priority: system > preference > light
         if (bookmarksStore.enableSystemDarkMode) {
             bookmarksStore.enableDarkMode = window
                 .matchMedia('(prefers-color-scheme: dark)').matches;
@@ -81,12 +88,15 @@
         } else {
             bookmarksStore.enableDarkMode = false;
         }
+
+        // Apply theme to Vuetify
         theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
 
+        // Initialize bookmarks data structure
         await utils.buildRootFolder();
-
         await getBookmarks();
 
+        // Get current tab information for the form
         // eslint-disable-next-line no-undef
         chrome.tabs.query({ active: true, currentWindow: true }, onGetTab);
     });

@@ -345,10 +345,8 @@
         if(!bookmarksBar) {
             return;
         }
-        
-        const bookmarksBarId = bookmarksBar.id;
 
-        bookmarksStore.setBookmarksBarId(bookmarksBarId);
+        bookmarksStore.setBookmarksBarId(bookmarksBar.id);
 
         // load all settings
         const promiseArr = [
@@ -406,7 +404,7 @@
 <style scoped lang="scss">
     .bookmarks-container {
         $breakpoint: 540px;
-
+        
         position: relative;
         width: $breakpoint;
 
