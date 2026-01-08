@@ -40,3 +40,8 @@ export const FILE_NAMES = Object.freeze({
     BOOKMARKS_EXPORT: 'my-shortcuts-tab-bookmarks-exported',
     BOOKMARK_ICONS_EXPORT: 'my-shortcuts-tab-icons-exported',
 });
+
+export const LOGO_GENERATOR = Object.freeze({
+    LOGO_GENERATOR_DOMAIN: 'https://img.logo.dev',
+    LOGO_GENERATOR_TOKEN: 'pk_PdnB3t3aTiqenIQ-fVCWpA',
+});

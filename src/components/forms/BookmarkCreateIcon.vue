@@ -54,9 +54,9 @@
 <script setup>
     import { ref, watch } from 'vue';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
-    import { EMITS } from '@/constants';
     import { useUtils } from '@/shared/composables/utils';
     import { useBookmarksStore } from '@stores/bookmarks';
+    import { EMITS, LOGO_GENERATOR } from '@/constants';
 
     const bookmarksStore = useBookmarksStore();
 
@@ -109,7 +109,7 @@
 
         if (utils.isValidURL(props.url)) {
             const domain = utils.getDomainFromUrl(props.url);
-            const imageUrl = `https://img.logo.dev/${domain}?token=pk_PdnB3t3aTiqenIQ-fVCWpA`;
+            const imageUrl = `${LOGO_GENERATOR.LOGO_GENERATOR_DOMAIN}/${domain}?token=${LOGO_GENERATOR.LOGO_GENERATOR_TOKEN}`;
 
             fetchClearBitImage(imageUrl);
         }

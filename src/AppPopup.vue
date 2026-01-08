@@ -49,6 +49,15 @@
     }
 
     onMounted(async () => {
+        const tree = await bookmarksStore.get_tree();
+        const bookmarksBar = tree[0].children.find((node) => node.folderType === FOLDER.ROOT.parentFolderType);
+
+        if (!bookmarksBar) {
+            return;
+        }
+
+        bookmarksStore.setBookmarksBarId(bookmarksBar.id);
+
         const slideIndexResponse = await bookmarksStore.get_syncStorage('sliderIndex');
 
         if (typeof slideIndexResponse === 'number') {

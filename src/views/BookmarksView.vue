@@ -339,7 +339,7 @@
     }
 
     async function init() {
-        const tree = await chrome.bookmarks.getTree();
+        const tree = await bookmarksStore.get_tree();
         const bookmarksBar = tree[0].children.find((node) => node.folderType === FOLDER.ROOT.parentFolderType);
 
         if(!bookmarksBar) {
