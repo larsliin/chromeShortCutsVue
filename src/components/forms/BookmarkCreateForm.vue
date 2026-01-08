@@ -82,14 +82,14 @@
                 </v-container>
             </v-card-text>
             <v-card-actions>
-                <div class="ml-6">
+                <!-- <div class="ml-6">
                     <p class="clearbit-note">
                         <a href="https://clearbit.com"
                             :class="{ dark: bookmarksStore.enableDarkMode }">
-                            Generated logos provided by Clearbit
+                            Logos provided by Logo.dev
                         </a>
                     </p>
-                </div>
+                </div> -->
                 <v-spacer />
                 <v-btn
                     v-if="data && data.id"
