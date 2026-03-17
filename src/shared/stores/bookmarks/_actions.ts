@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { BookmarkNode } from '@/types/bookmark';
+
 export default {
-    async get_bookmarks(id) {
+    async get_bookmarks(this: any, id: string): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.bookmarks.getSubTree(
                     id,
                     (event) => {
@@ -15,7 +17,7 @@ export default {
         });
     },
 
-    async get_colorizedBookmarks(id) {
+    async get_colorizedBookmarks(this: any, id: string): Promise<BookmarkNode[]> {
         return new Promise((resolve, reject) => {
             try {
                 const promiseArr = [];
@@ -24,13 +26,14 @@ export default {
                 promiseArr.push(this.get_syncStorage('bookmarkColors'));
 
                 Promise.all(promiseArr)
-                    .then(([response1, response2, response3]) => {
+                    .then((responses: any[]) => {
+                        const [response1, response2, response3] = responses;
                         const returnObj = [...response1];
 
                         if (response2) {
                             Object.entries(response2).forEach((item) => {
                                 const bookmarkFolder = returnObj[0].children
-                                    .find((e) => e.id === item[0]);
+                                    .find((e: any) => e.id === item[0]);
                                 if (bookmarkFolder) {
                                     const [, bookmarkFolderColor] = item;
                                     bookmarkFolder.color = bookmarkFolderColor;
@@ -40,12 +43,12 @@ export default {
                         if (response3) {
                             Object.entries(response3).forEach((item) => {
                                 const bookmarksFlatArr = returnObj[0].children
-                                    .flatMap((obj) => obj.children);
+                                    .flatMap((obj: any) => obj.children);
                                 const bookmark = bookmarksFlatArr
-                                    .find((e) => e.id === item[0]);
+                                    .find((e: any) => e.id === item[0]);
                                 if (bookmark) {
                                     const [, bookmarkColor] = item;
-                                    bookmark.color = bookmarkColor;
+                                    (bookmark as any).color = bookmarkColor;
                                 }
                             });
                         }
@@ -59,10 +62,10 @@ export default {
             }
         });
     },
-    async get_bookmarkById(id) {
+
+    async get_bookmarkById(this: any, id: string): Promise<chrome.bookmarks.BookmarkTreeNode> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.bookmarks.get(id, (event) => {
                     if (event && event.length > 0) {
                         resolve(event[0]);
@@ -76,15 +79,18 @@ export default {
         });
     },
 
-    searchFolder(bookmarkTreeNodes, folderName) {
-        const t = this;
+    searchFolder(
+        this: any,
+        bookmarkTreeNodes: chrome.bookmarks.BookmarkTreeNode[],
+        folderName: string,
+    ): chrome.bookmarks.BookmarkTreeNode | false {
         // eslint-disable-next-line no-restricted-syntax
         for (const node of bookmarkTreeNodes) {
             if (node.title === folderName && node.children) {
                 return node;
             }
             if (node.children) {
-                const result = t.searchFolder(node.children, folderName);
+                const result = this.searchFolder(node.children, folderName);
                 if (result) {
                     return result;
                 }
@@ -93,14 +99,16 @@ export default {
         return false;
     },
 
-    async get_folderByTitle(parentFolderId, title) {
-        const t = this;
+    async get_folderByTitle(
+        this: any,
+        parentFolderId: string,
+        title: string,
+    ): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.bookmarks.getSubTree(parentFolderId, (result) => {
-                    const bookmarkTreeNodes = result[0].children;
-                    const folder = t.searchFolder(bookmarkTreeNodes, title);
+                    const bookmarkTreeNodes = result[0].children ?? [];
+                    const folder = this.searchFolder(bookmarkTreeNodes, title);
                     const folderResult = folder ? [folder] : [];
                     resolve(folderResult);
                 });
@@ -110,10 +118,14 @@ export default {
         });
     },
 
-    async create_bookmark(parentId, title, url) {
+    async create_bookmark(
+        this: any,
+        parentId: string,
+        title: string,
+        url?: string,
+    ): Promise<chrome.bookmarks.BookmarkTreeNode> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.bookmarks.create(
                     { parentId: parentId.toString(), title, url },
                     (bookmark) => {
@@ -126,10 +138,13 @@ export default {
         });
     },
 
-    async update_bookmark(id, data) {
+    async update_bookmark(
+        this: any,
+        id: string,
+        data: { title?: string; url?: string },
+    ): Promise<chrome.bookmarks.BookmarkTreeNode> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.bookmarks.update(
                     id,
                     {
@@ -146,10 +161,13 @@ export default {
         });
     },
 
-    async move_bookmark(id, targetId) {
+    async move_bookmark(
+        this: any,
+        id: string,
+        targetId: { parentId?: string; index?: number },
+    ): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.bookmarks.move(
                     id,
                     targetId,
@@ -163,10 +181,9 @@ export default {
         });
     },
 
-    async reorder_bookmark(id, index) {
+    async reorder_bookmark(this: any, id: string, index: number): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.bookmarks.move(
                     id,
                     { index },
@@ -180,10 +197,9 @@ export default {
         });
     },
 
-    async remove_bookmark(id) {
+    async remove_bookmark(this: any, id: string): Promise<string> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.bookmarks.remove(
                     id,
                     () => {
@@ -196,10 +212,9 @@ export default {
         });
     },
 
-    async remove_bookmarkFolder(id) {
+    async remove_bookmarkFolder(this: any, id: string): Promise<string> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.bookmarks.removeTree(
                     id,
                     () => {
@@ -212,10 +227,9 @@ export default {
         });
     },
 
-    async get_tree() {
+    async get_tree(this: any): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.bookmarks.getTree((event) => {
                     resolve(event);
                 });
@@ -225,10 +239,9 @@ export default {
         });
     },
 
-    async set_localStorage(storageObj) {
+    async set_localStorage(this: any, storageObj: Record<string, unknown>): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.storage.local.set(storageObj).then((event) => {
                     resolve(event);
                 });
@@ -238,10 +251,9 @@ export default {
         });
     },
 
-    async get_localStorage(id) {
+    async get_localStorage(this: any, id: string): Promise<any> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.storage.local.get(id.toString()).then((event) => {
                     resolve(event[id]);
                 });
@@ -251,10 +263,9 @@ export default {
         });
     },
 
-    async set_syncStorage(storageObj) {
+    async set_syncStorage(this: any, storageObj: Record<string, unknown>): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.storage.sync.set(storageObj).then((event) => {
                     resolve(event);
                 });
@@ -264,10 +275,9 @@ export default {
         });
     },
 
-    async get_syncStorage(id) {
+    async get_syncStorage(this: any, id: string): Promise<any> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.storage.sync.get(id.toString()).then((event) => {
                     resolve(event[id]);
                 });
@@ -277,10 +287,9 @@ export default {
         });
     },
 
-    async get_localStorageAll() {
+    async get_localStorageAll(this: any): Promise<Record<string, unknown>> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.storage.local.get(null).then((event) => {
                     resolve(event);
                 });
@@ -290,12 +299,10 @@ export default {
         });
     },
 
-    async delete_localStorageItem(id) {
+    async delete_localStorageItem(this: any, id: string): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.storage.local.remove([id], () => {
-                    // eslint-disable-next-line no-undef
                     const error = chrome.runtime.lastError;
                     if (error) {
                         throw (error);
@@ -308,12 +315,10 @@ export default {
         });
     },
 
-    async delete_syncStorageItem(id) {
+    async delete_syncStorageItem(this: any, id: string): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
-                // eslint-disable-next-line no-undef
                 chrome.storage.sync.remove([id], () => {
-                    // eslint-disable-next-line no-undef
                     const error = chrome.runtime.lastError;
                     if (error) {
                         throw (error);
@@ -326,7 +331,7 @@ export default {
         });
     },
 
-    async toBase64(file) {
+    async toBase64(this: any, file: File): Promise<string | ArrayBuffer | null> {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -335,7 +340,7 @@ export default {
         });
     },
 
-    setBookmarksBarId(id) {
+    setBookmarksBarId(this: any, id: string): void {
         this.bookmarksBarId = id;
     },
 };

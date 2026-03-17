@@ -51,7 +51,7 @@
     </template>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { ref, watch } from 'vue';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import { useUtils } from '@/shared/composables/utils';
@@ -62,17 +62,13 @@
 
     const utils = useUtils();
 
-    const props = defineProps({
-        data: Object,
-        url: {
-            type: String,
-            default: null,
-        },
-        iconUrl: {
-            type: String,
-            default: '',
-        },
-    });
+    interface Props {
+        data?: { url?: string };
+        url?: string | null;
+        iconUrl?: string;
+    }
+
+    const props = withDefaults(defineProps<Props>(), { url: null, iconUrl: '' });
 
     const emits = defineEmits([
         EMITS.CLEARBIT_ERROR,
@@ -85,7 +81,7 @@
 
     const base64Image = ref();
 
-    async function fetchClearBitImage(imageUrl) {
+    async function fetchClearBitImage(imageUrl: string): Promise<void> {
         isIconLoading.value = true;
         try {
             const response = await utils.getBase64ImageFromUrl(imageUrl);
@@ -117,7 +113,7 @@
         showClearbitError.value = false;
     }
 
-    async function getBase64Data(file) {
+    async function getBase64Data(file: File): Promise<string | ArrayBuffer | null> {
         const base64Data = await bookmarksStore.toBase64(file);
         return base64Data;
     }
@@ -125,9 +121,9 @@
     const imageFile = ref();
     let init = false;
 
-    async function onImageInpChange(event) {
-        // eslint-disable-next-line prefer-destructuring
-        imageFile.value = event.target.files[0];
+    async function onImageInpChange(event: Event): Promise<void> {
+        const input = event.target as HTMLInputElement;
+        imageFile.value = input.files?.[0];
 
         const base64Response = await getBase64Data(imageFile.value);
         base64Image.value = base64Response;
@@ -135,8 +131,8 @@
         emits(EMITS.UPDATE, base64Image.value);
     }
 
-    function onClickFindImage() {
-        document.getElementById('inp_image').click();
+    function onClickFindImage(): void {
+        (document.getElementById('inp_image') as HTMLElement)?.click();
     }
 
     function onClearImage() {

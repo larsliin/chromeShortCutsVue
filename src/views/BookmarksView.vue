@@ -20,9 +20,10 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { FOLDER, EMITS, ARGS } from '@/constants';
-    import { onMounted, watch } from 'vue';
+    import { onMounted, onUnmounted, watch } from 'vue';
+    import type { BookmarkNode } from '@/types/bookmark';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useTheme } from 'vuetify';
     import { useUtils } from '@/shared/composables/utils';
@@ -44,13 +45,13 @@
 
     const bookmarksStore = useBookmarksStore();
 
-    function isBookmarkInScope(id) {
+    function isBookmarkInScope(id: string): boolean {
         if (id === bookmarksStore.rootId) {
             return true;
         }
-        const flatMapBookmarks = bookmarksStore.bookmarks.flatMap((obj) => obj.children);
-        const bookmarkExists = flatMapBookmarks.some((e) => e.id === id);
-        const folderExists = bookmarksStore.bookmarks.some((e) => e.id === id);
+        const flatMapBookmarks = (bookmarksStore.bookmarks ?? []).flatMap((obj) => obj.children ?? []);
+        const bookmarkExists = flatMapBookmarks.some((e) => e?.id === id);
+        const folderExists = (bookmarksStore.bookmarks ?? []).some((e) => e.id === id);
 
         return bookmarkExists || folderExists;
     }
@@ -65,30 +66,28 @@
 
         const bookmarks = await bookmarksStore.get_bookmarks(getRootResponse);
 
-        bookmarksStore.bookmarks = bookmarks[0].children;
+        const rawChildren = bookmarks[0].children ?? [];
+        bookmarksStore.bookmarks = rawChildren as BookmarkNode[];
     }
 
-    function setChromeEventListeners() {
-        /* eslint-disable */
+    function setChromeEventListeners(): void {
         chrome.bookmarks.onCreated.addListener(onCreated);
         chrome.bookmarks.onRemoved.addListener(onRemoved);
         chrome.bookmarks.onMoved.addListener(onMoved);
         chrome.bookmarks.onChanged.addListener(onChanged);
-        /* eslint-disable */
     }
 
     // clean up local storage bookmarks, that are not in Chrome bookmarks
-    async function runCleanup() {
-        const localStorageItems = await bookmarksStore.get_localStorageAll(null);
+    async function runCleanup(): Promise<void> {
+        const localStorageItems = await bookmarksStore.get_localStorageAll() as Record<string, { parentId?: string; id: string }>;
         const bookmarksFlatResponse = await utils.getBookmarksAsFlatArr();
 
-        const bookmarkIds = bookmarksFlatResponse.map(bookmark => bookmark.id);
+        if (!bookmarksFlatResponse) return;
+        const bookmarkIds = bookmarksFlatResponse.map((bookmark) => bookmark.id);
 
-        const filteredItems = Object.values(localStorageItems).filter(item =>
-            item.parentId && !bookmarkIds.includes(item.id)
-        );
+        const filteredItems = Object.values(localStorageItems).filter((item) => item.parentId && !bookmarkIds.includes(item.id));
 
-        filteredItems.forEach(element => {
+        filteredItems.forEach((element) => {
             bookmarksStore.delete_localStorageItem(element.id);
         });
     }
@@ -101,9 +100,10 @@
         try {
             const bookmarksResponse = await bookmarksStore.get_colorizedBookmarks(rootResponse);
 
-            bookmarksStore.bookmarks = bookmarksResponse[0]?.children ? bookmarksResponse[0].children : [];
+            const children = bookmarksResponse[0]?.children ?? [];
+            bookmarksStore.bookmarks = children as BookmarkNode[];
 
-            runCleanup();
+            await runCleanup();
         } catch (error) {
             bookmarksStore.bookmarks = [];
         }
@@ -111,27 +111,25 @@
         setChromeEventListeners();
     }
 
-    async function isNewBookmarkInScope(bookmark) {
+    async function isNewBookmarkInScope(bookmark: chrome.bookmarks.BookmarkTreeNode): Promise<boolean> {
         if (!bookmarksStore.rootId && bookmark.parentId !== bookmarksStore.bookmarksBarId) {
             return false;
         }
 
         return new Promise((resolve, reject) => {
             try {
-                bookmarksStore.get_bookmarks(bookmarksStore.rootId).then((event) => {
-                    const inScope = event[0].children.some(item => {
-                        return item.id.toString() === bookmark.id.toString() ||
-                            (item.children && item.children.some(child => child.id.toString() === bookmark.id.toString()))
-                    });
+                bookmarksStore.get_bookmarks(bookmarksStore.rootId as string).then((event) => {
+                    const inScope = (event[0].children ?? []).some((item) => item.id.toString() === bookmark.id.toString()
+                        || (item.children && item.children.some((child) => child.id.toString() === bookmark.id.toString())));
                     resolve(inScope);
                 });
             } catch (error) {
                 reject(error);
             }
         });
-     }
+    }
 
-    async function onCreated(event) {
+    async function onCreated(event: string): Promise<void> {
         const bookmarkResponse = await bookmarksStore.get_bookmarkById(event);
 
         if (bookmarksStore.isImporting) {
@@ -146,33 +144,34 @@
 
         await utils.buildRootFolder();
 
-        const folder = bookmarksStore.bookmarks.find(e => e.id === bookmarkResponse.parentId);
+        const folder = (bookmarksStore.bookmarks ?? []).find((e) => e.id === bookmarkResponse.parentId);
 
         if (bookmarkResponse.parentId === bookmarksStore.rootId) {
-
-            if (bookmarksStore.bookmarks.length) {
+            if (bookmarksStore.bookmarks?.length) {
                 // if folder bookmark is a folder in root directory
-                bookmarksStore.bookmarks.splice(bookmarkResponse.index, 0, bookmarkResponse);
+                const bm = bookmarkResponse as BookmarkNode;
+                bookmarksStore.bookmarks.splice(bookmarkResponse.index ?? 0, 0, bm);
             } else {
-                bookmarksStore.bookmarks.push(bookmarkResponse)
+                bookmarksStore.bookmarks = [bookmarkResponse as BookmarkNode];
             }
-        } else if (folder){
+        } else if (folder) {
             // if bookmark event is bookmark and not folder
             if (!folder.children) {
                 // create bookmarks children object if folder is empty
                 folder.children = [];
             }
-            folder.children.splice(bookmarkResponse.index, 0, bookmarkResponse);
+            const bmNode = bookmarkResponse as BookmarkNode;
+            folder.children.splice(bookmarkResponse.index ?? 0, 0, bmNode);
 
-            const index = bookmarksStore.bookmarks
-                .findIndex(e => e.id === folder.id);
+            const index = (bookmarksStore.bookmarks ?? [])
+                .findIndex((e) => e.id === folder.id);
             utils.setSliderIndex(index, true);
         }
 
         emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.CREATED, id: event });
     }
 
-    async function onRemoved(event) {
+    async function onRemoved(event: string): Promise<void> {
         if (!isBookmarkInScope(event)) {
             return;
         }
@@ -193,7 +192,7 @@
             ];
 
             Promise.all(promiseArr)
-            .then(async () => {
+                .then(async () => {
                     bookmarksStore.rootId = null;
 
                     bookmarksStore.bookmarks = [];
@@ -204,47 +203,42 @@
                     bookmarksStore.delete_syncStorageItem('accordion');
 
                     emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
-
-                    return;
                 })
                 .catch((error) => {
                     console.error(error);
                 });
-
         } else {
-
             if (bookmark) { // if is type bookmark
-
                 // Filter away child object with the specified ID
-                bookmarksStore.bookmarks = bookmarksStore.bookmarks.map(parent => ({
+                bookmarksStore.bookmarks = (bookmarksStore.bookmarks ?? []).map((parent) => ({
                     ...parent,
-                    children: parent.children.filter(child => child.id !== event)
+                    children: (parent.children ?? []).filter((child) => child.id !== event),
                 }));
 
                 // delete image in local storage
                 bookmarksStore.delete_localStorageItem(event);
             } else { // if is type folder
-                const index = bookmarksStore.bookmarks.findIndex(e => e.id === event);
-                const folder = bookmarksStore.bookmarks.find(e => e.id === event)
+                const index = (bookmarksStore.bookmarks ?? []).findIndex((e) => e.id === event);
+                const folder = (bookmarksStore.bookmarks ?? []).find((e) => e.id === event);
 
-                children = folder ? folder.children.flatMap(e => e.id) : [];
+                children = folder ? (folder.children ?? []).map((e) => e.id) : [];
 
-                children.forEach(element => {
+                children.forEach((element) => {
                     bookmarksStore.delete_localStorageItem(element);
                 });
                 utils.updateAccordionModel(index);
 
-                bookmarksStore.bookmarks = bookmarksStore.bookmarks.filter(e => e.id !== event);
+                bookmarksStore.bookmarks = (bookmarksStore.bookmarks ?? []).filter((e) => e.id !== event);
             }
 
-            if (bookmarksStore.sliderIndex >= bookmarksStore.bookmarks.length) {
-                utils.setSliderIndex(bookmarksStore.bookmarks.length - 1, true);
+            if ((bookmarksStore.sliderIndex ?? 0) >= (bookmarksStore.bookmarks?.length ?? 0)) {
+                utils.setSliderIndex((bookmarksStore.bookmarks?.length ?? 1) - 1, true);
             }
 
             emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event, children });
         }
     }
-    async function onChanged(event) {
+    async function onChanged(event: string): Promise<void> {
         // ensure that bookmark is ours in ROOT folder
         if (!isBookmarkInScope(event)) {
             return;
@@ -261,7 +255,7 @@
         ];
 
         Promise.all(promiseArr)
-            .then(async(results) => {
+            .then(async (results) => {
                 if (results[0]) {
                     await bookmarksStore.set_localStorage({
                         [event]: {
@@ -284,7 +278,7 @@
 
         // update UI titles
         // find folder with id
-        const folder = bookmarksStore.bookmarks.find(e => e.id === event);
+        const folder = (bookmarksStore.bookmarks ?? []).find((e) => e.id === event);
 
         if (folder) {
             // if is a folder
@@ -293,15 +287,17 @@
             const bookmark = utils.getStoredBookmarkById(event);
             // if not a folder then this is a bookmark
             // update bookmark title/url/parent id
-            bookmark.parentId = bookmarkResponse.parentId;
-            bookmark.url = bookmarkResponse.url;
-            bookmark.title = bookmarkResponse.title;
+            if (bookmark) {
+                bookmark.parentId = bookmarkResponse.parentId;
+                bookmark.url = bookmarkResponse.url;
+                bookmark.title = bookmarkResponse.title;
+            }
         }
 
-        emit(EMITS.BOOKMARKS_UPDATED,  { type: 'update', id: event });
+        emit(EMITS.BOOKMARKS_UPDATED, { type: 'update', id: event });
     }
 
-    async function onMoved(event) {
+    async function onMoved(event: string): Promise<void> {
         // ensure that bookmark is ours in ROOT folder
         if (!isBookmarkInScope(event)) {
             return;
@@ -309,13 +305,13 @@
 
         await update();
 
-        const index = bookmarksStore.bookmarks.findIndex(a => a.id === event.toString());
+        const index = (bookmarksStore.bookmarks ?? []).findIndex((a) => a.id === event.toString());
 
         if (index) {
             utils.setSliderIndex(index, true);
         }
 
-        emit(EMITS.BOOKMARKS_UPDATED,  { type: 'moved', id: event });
+        emit(EMITS.BOOKMARKS_UPDATED, { type: 'moved', id: event });
     }
 
     // force event trigger if bookmark data is not updated
@@ -324,11 +320,7 @@
         onChanged(id[0]);
     });
 
-    watch(() => bookmarksStore.accordionNavigation, (val) => {
-        toggleOverflowHidden();
-    });
-
-    function toggleOverflowHidden() {
+    function toggleOverflowHidden(): void {
         if (bookmarksStore.accordionNavigation) {
             document.getElementsByTagName('html')[0].classList.remove('overflow-hidden');
             document.getElementsByTagName('body')[0].classList.remove('overflow-hidden');
@@ -338,11 +330,18 @@
         }
     }
 
-    async function init() {
-        const tree = await bookmarksStore.get_tree();
-        const bookmarksBar = tree[0].children.find((node) => node.folderType === FOLDER.ROOT.parentFolderType);
+    watch(() => bookmarksStore.accordionNavigation, (_val) => {
+        toggleOverflowHidden();
+    });
 
-        if(!bookmarksBar) {
+    async function init(): Promise<void> {
+        const tree = await bookmarksStore.get_tree();
+        const bookmarksBar = (tree[0].children ?? []).find((node) => {
+            const n = node as chrome.bookmarks.BookmarkTreeNode & { folderType?: string };
+            return n.folderType === FOLDER.ROOT.parentFolderType;
+        });
+
+        if (!bookmarksBar) {
             return;
         }
 
@@ -350,7 +349,10 @@
 
         // load all settings
         const promiseArr = [
-            bookmarksStore.get_folderByTitle(bookmarksStore.bookmarksBarId, FOLDER.ROOT.label),
+            bookmarksStore.get_folderByTitle(
+                bookmarksStore.bookmarksBarId as string,
+                FOLDER.ROOT.label,
+            ),
             bookmarksStore.get_syncStorage('sliderIndex'),
             bookmarksStore.get_syncStorage('darkMode'),
             bookmarksStore.get_syncStorage('systemDarkMode'),
@@ -358,44 +360,52 @@
             utils.buildRootFolder(),
         ];
 
-        Promise.all(promiseArr).then(([rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, buildRoot]) => {
-            getBookmarks();
+        const [
+            _rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, _buildRoot,
+        ] = await Promise.all(promiseArr);
+        getBookmarks();
 
-            // sliderIndex
-            if (typeof sliderIndex === 'number') {
-                bookmarksStore.sliderIndex = sliderIndex;
-            } else {
-                bookmarksStore.sliderIndex = 0;
-            }
+        // sliderIndex
+        if (typeof sliderIndex === 'number') {
+            bookmarksStore.sliderIndex = sliderIndex;
+        } else {
+            bookmarksStore.sliderIndex = 0;
+        }
 
-            // prefer dark mode
-            bookmarksStore.enablePreferDarkMode = !!darkMode;
+        // prefer dark mode
+        bookmarksStore.enablePreferDarkMode = !!darkMode;
 
-            // system dark mode
-            bookmarksStore.enableSystemDarkMode = !!systemDarkMode;
+        // system dark mode
+        bookmarksStore.enableSystemDarkMode = !!systemDarkMode;
 
-            if (bookmarksStore.enableSystemDarkMode) {
-                bookmarksStore.enableDarkMode = window
-                    .matchMedia('(prefers-color-scheme: dark)').matches;
-            } else if (bookmarksStore.enablePreferDarkMode) {
-                bookmarksStore.enableDarkMode = true;
-            } else {
-                bookmarksStore.enableDarkMode = false;
-            }
-            theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
+        if (bookmarksStore.enableSystemDarkMode) {
+            bookmarksStore.enableDarkMode = window
+                .matchMedia('(prefers-color-scheme: dark)').matches;
+        } else if (bookmarksStore.enablePreferDarkMode) {
+            bookmarksStore.enableDarkMode = true;
+        } else {
+            bookmarksStore.enableDarkMode = false;
+        }
+        theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
 
-            // accordion navigation
-            bookmarksStore.accordionNavigation = !accordionNavigation;
+        // accordion navigation
+        bookmarksStore.accordionNavigation = !accordionNavigation;
 
-            toggleOverflowHidden();
-        });
+        toggleOverflowHidden();
     }
+
+    onUnmounted(() => {
+        chrome.bookmarks.onCreated.removeListener(onCreated);
+        chrome.bookmarks.onRemoved.removeListener(onRemoved);
+        chrome.bookmarks.onMoved.removeListener(onMoved);
+        chrome.bookmarks.onChanged.removeListener(onChanged);
+    });
 
     onMounted(() => {
         if (bookmarksStore.enableSystemDarkMode) {
             theme.global.name.value = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
-        
+
         init();
     });
 
@@ -404,7 +414,7 @@
 <style scoped lang="scss">
     .bookmarks-container {
         $breakpoint: 540px;
-        
+
         position: relative;
         width: $breakpoint;
 

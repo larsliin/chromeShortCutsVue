@@ -15,7 +15,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { computed, onMounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/composables/utils';
@@ -25,22 +25,22 @@
 
     const bookmarksStore = useBookmarksStore();
 
-    const sliderPosition = computed(() => `translateX(${bookmarksStore.sliderIndex * -100}%)`);
+    const sliderPosition = computed(() => `translateX(${(bookmarksStore.sliderIndex ?? 0) * -100}%)`);
 
-    function onKeydown(event) {
+    function onKeydown(event: KeyboardEvent): void {
         if (bookmarksStore.titleInputActive) {
             return;
         }
 
+        const idx = bookmarksStore.sliderIndex ?? 0;
+        const len = bookmarksStore.bookmarks?.length ?? 0;
+
         if (event.keyCode === 39) {
-            utils.setSliderIndex(Math.min(
-                bookmarksStore.sliderIndex + 1,
-                bookmarksStore.bookmarks.length - 1,
-            ), true);
+            utils.setSliderIndex(Math.min(idx + 1, len - 1), true);
         }
 
         if (event.keyCode === 37) {
-            utils.setSliderIndex(Math.max(bookmarksStore.sliderIndex - 1, 0), true);
+            utils.setSliderIndex(Math.max(idx - 1, 0), true);
         }
     }
 

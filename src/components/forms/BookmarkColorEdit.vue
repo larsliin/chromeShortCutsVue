@@ -47,19 +47,18 @@
     </v-card>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { onMounted, onUnmounted, ref } from 'vue';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const bookmarksStore = useBookmarksStore();
 
-    const props = defineProps({
-        value: {
-            type: String,
-            required: true,
-        },
-    });
+    interface Props {
+        value?: string;
+    }
+
+    const props = withDefaults(defineProps<Props>(), { value: '' });
 
     const emits = defineEmits([
         EMITS.CANCEL, EMITS.CONFIRM,

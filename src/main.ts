@@ -25,7 +25,7 @@ const vuetify = createVuetify({
         },
     },
     theme: {
-        dark: true,
+        defaultTheme: 'dark',
         themes: {
             light: {
                 colors: {
@@ -55,7 +55,7 @@ const appElement = document.getElementById('app');
 
 if (appElement) {
     const app = createApp(App);
-    app.config.globalProperties.emitter = emitter;
+    (app.config.globalProperties as Record<string, unknown>).emitter = emitter;
     app.use(pinia).use(vuetify).mount('#app');
 }
 
@@ -63,6 +63,6 @@ const appPopupElement = document.getElementById('appPopup');
 
 if (appPopupElement) {
     const appPopup = createApp(AppPopup);
-    appPopup.config.globalProperties.emitter = emitter;
+    (appPopup.config.globalProperties as Record<string, unknown>).emitter = emitter;
     appPopup.use(pinia).use(vuetify).mount('#appPopup');
 }

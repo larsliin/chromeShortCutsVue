@@ -1,6 +1,6 @@
 <template>
     <div class="outer"
-        v-if="!bookmarksStore.bookmarks.length && !bookmarksStore.bookmarkSearch"
+        v-if="!(bookmarksStore.bookmarks?.length) && !bookmarksStore.bookmarkSearch"
         :class="{ dark: bookmarksStore.enableDarkMode }"
         @keyup.enter="onClick()"
         @click="onClick()">
@@ -10,7 +10,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { mdiStar } from '@mdi/js';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';

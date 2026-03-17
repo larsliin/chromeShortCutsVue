@@ -15,7 +15,7 @@
                 @keyup.enter="onClick($event)"
                 @click="onClick($event)">
                 <BookmarkIcon
-                    :color="color"
+                    :color="color ?? undefined"
                     :hide="!ready && fadeInIcon"
                     :folder="!bookmark.url"
                     :image="image" />
@@ -73,14 +73,15 @@
     </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { mdiRename, mdiDeleteOutline, mdiPalette } from '@mdi/js';
     import {
-        ref, onMounted, watch, toRef,
+        ref, onMounted, watch, toRef, type Ref,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
     import useEventsBus from '@cmp/eventBus';
+    import type { BookmarkNode, FoldoutListItem } from '@/types/bookmark';
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
@@ -95,35 +96,26 @@
 
     const { emit, bus } = useEventsBus();
 
-    const props = defineProps({
-        tabIndex: {
-            type: String,
-            default: '-1',
-        },
-        bookmark: {
-            type: Object,
-            required: true,
-        },
-        size: {
-            type: String,
-            required: false,
-            default: '',
-        },
-        hideEdit: Boolean,
-        draggable: {
-            type: Boolean,
-            default: true,
-        },
-        fadeInIcon: {
-            type: Boolean,
-            default: true,
-        },
+    interface Props {
+        tabIndex?: string;
+        bookmark: BookmarkNode;
+        size?: string;
+        hideEdit?: boolean;
+        draggable?: boolean;
+        fadeInIcon?: boolean;
+    }
+
+    const props = withDefaults(defineProps<Props>(), {
+        tabIndex: '-1',
+        size: '',
+        draggable: true,
+        fadeInIcon: true,
     });
 
     const isFoldoutOpen = ref(false);
-    const image = toRef(props.bookmark, 'image');
+    const image = toRef(props.bookmark, 'image') as Ref<string | null | undefined>;
     const ready = ref(false);
-    const list = ref([
+    const list = ref<FoldoutListItem[]>([
         {
             title: 'Delete',
             icon: mdiDeleteOutline,
@@ -149,10 +141,10 @@
         emits(EMITS.UPDATE);
     }
 
-    function onClick(event) {
+    function onClick(event: MouseEvent | KeyboardEvent): void {
         event.preventDefault();
 
-        if (event.pointerId < 0 || !props.bookmark.url) {
+        if ((event as PointerEvent).pointerId < 0 || !props.bookmark.url) {
             return;
         }
 
@@ -160,16 +152,16 @@
             bookmarksStore.statistics = [];
         }
 
-        const bookmarkStats = bookmarksStore.statistics
-            .find((item) => item.url === (props.bookmark.url));
+        const bookmarkStats = (bookmarksStore.statistics ?? [])
+            .find((item) => item.url === props.bookmark.url);
 
-        const bookmarkStatsIndex = bookmarksStore.statistics
+        const bookmarkStatsIndex = (bookmarksStore.statistics ?? [])
             .findIndex((item) => Object.values(item.id).includes(props.bookmark.id));
 
         const index = (bookmarkStatsIndex) === -1 ? bookmarksStore.statistics.length
             : bookmarkStatsIndex;
         const clicks = bookmarkStats?.clicks !== undefined
-            ? parseInt(bookmarkStats.clicks, 10) + 1 : 1;
+            ? parseInt(String(bookmarkStats.clicks), 10) + 1 : 1;
 
         let idArr;
         if (bookmarkStats) {
@@ -204,7 +196,7 @@
         }
     }
 
-    const color = toRef(props.bookmark, 'color');
+    const color = toRef(props.bookmark, 'color') as Ref<string | null | undefined>;
 
     async function updateColor() {
         const getColorResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
@@ -220,7 +212,7 @@
         showConfirmDelete.value = true;
     }
 
-    function onDeleteConfirm() {
+    function onDeleteConfirm(_event?: unknown): void {
         showConfirmDelete.value = false;
 
         if (props.bookmark.url) {
@@ -230,7 +222,7 @@
         }
     }
 
-    function onToggle(event) {
+    function onToggle(event: boolean): void {
         isFoldoutOpen.value = event;
     }
 
@@ -249,7 +241,7 @@
 
     const showColorEdit = ref(false);
 
-    async function onColorConfirm(event) {
+    async function onColorConfirm(event: string | null): Promise<void> {
         selectedColor.value = event;
 
         showColorEdit.value = false;
@@ -261,11 +253,11 @@
 
         if (event) {
             colorsObj[props.bookmark.id] = selectedColor.value;
-            bookmark.color = selectedColor.value;
+            if (bookmark) { bookmark.color = selectedColor.value; }
             color.value = selectedColor.value;
         } else if (colorsObj[props.bookmark.id]) {
             delete colorsObj[props.bookmark.id];
-            bookmark.color = '';
+            if (bookmark) { bookmark.color = ''; }
             color.value = null;
         }
 

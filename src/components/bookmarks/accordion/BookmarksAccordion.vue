@@ -8,15 +8,15 @@
                 <v-btn
                     class="expansion-panels-toggle-btn mb-2"
                     :icon="mdiUnfoldLessHorizontal"
-                    :disabled="bookmarksStore.accordionModel.length === 0
-                        || !bookmarksStore.bookmarks.length"
+                    :disabled="(bookmarksStore.accordionModel?.length ?? 0) === 0
+                        || !(bookmarksStore.bookmarks?.length)"
                     @click="onUnfoldAllClick()" />
                 <v-btn
                     class="expansion-panels-toggle-btn"
                     :icon="mdiUnfoldMoreHorizontal"
-                    :disabled="bookmarksStore.accordionModel.length
-                        === bookmarksStore.bookmarks.length
-                        || !bookmarksStore.bookmarks.length"
+                    :disabled="(bookmarksStore.accordionModel?.length ?? 0)
+                        === (bookmarksStore.bookmarks?.length ?? 0)
+                        || !(bookmarksStore.bookmarks?.length)"
                     @click="onFoldAllClick()" />
             </div>
             <v-expansion-panels
@@ -25,7 +25,7 @@
                 ref="expansionPanels"
                 v-model="bookmarksStore.accordionModel"
                 multiple
-                @update:modelValue="onUpdate($event)">
+                @update:modelValue="onUpdate()">
                 <draggable
                     :animation="200"
                     :fallbackTolerance="10"
@@ -59,12 +59,13 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { EMITS } from '@/constants';
     import { mdiUnfoldLessHorizontal, mdiUnfoldMoreHorizontal } from '@mdi/js';
     import {
         onMounted, ref, nextTick, watch,
     } from 'vue';
+    import type { DragEventInfo } from '@/types/bookmark';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/composables/utils';
     import BookmarksAccordionTitle
@@ -88,9 +89,9 @@
         await nextTick();
 
         const panelsSelector = expansionPanels.value.$el.querySelectorAll('.v-expansion-panel');
-        const arr2 = [];
+        const arr2: number[] = [];
 
-        panelsSelector.forEach((element, i) => {
+        panelsSelector.forEach((element: Element, i: number) => {
             const isOpen = element.classList.contains('v-expansion-panel--active');
 
             if (isOpen) {
@@ -101,12 +102,12 @@
         bookmarksStore.set_syncStorage({ accordion: arr2 });
     }
 
-    function onDragStart() {
+    function onDragStart(_event?: unknown): void {
         emit(EMITS.DRAG_START);
     }
 
-    async function onDragEnd(event) {
-        const bookmark = bookmarksStore.bookmarks[event.newIndex];
+    async function onDragEnd(event: DragEventInfo): Promise<void> {
+        const bookmark = bookmarksStore.bookmarks![event.newIndex];
 
         const index = event.newIndex > event.oldIndex ? event.newIndex + 1 : event.newIndex;
 
@@ -118,8 +119,8 @@
         // update active panels array
         const panelsSelector = expansionPanels.value.$el.querySelectorAll('.v-expansion-panel');
 
-        const arr = [];
-        panelsSelector.forEach((element, i) => {
+        const arr: number[] = [];
+        panelsSelector.forEach((element: Element, i: number) => {
             const isOpen = element.classList.contains('v-expansion-panel--active');
 
             if (isOpen) {
@@ -128,11 +129,10 @@
         });
         bookmarksStore.set_syncStorage({ accordion: arr });
 
-        // update accordion items classes
         const panelsCollection = expansionPanels.value
             .$el.getElementsByClassName('v-expansion-panel');
 
-        panelsCollection.forEach((elem, i) => {
+        panelsCollection.forEach((elem: Element, i: number) => {
             elem.classList.remove('v-expansion-panel--active');
             elem.classList.remove('v-expansion-panel--before-active');
             elem.classList.remove('v-expansion-panel--after-active');
@@ -169,17 +169,17 @@
     }
 
     watch(() => bus.value.get(EMITS.BOOKMARKS_IMPORT), () => {
-        utils.updateAccordionModel([0]);
+        utils.updateAccordionModel(0);
     });
 
-    let tmpPanelsModel;
+    let tmpPanelsModel: number[] | null = null;
 
     watch(() => bus.value.get(EMITS.FILTER_UPDATED), (newVal, oldVal) => {
         if ((oldVal && !oldVal[0]) || newVal[0] !== '') {
             if (!tmpPanelsModel) {
-                tmpPanelsModel = Array.from(bookmarksStore.accordionModel);
+                tmpPanelsModel = Array.from(bookmarksStore.accordionModel ?? []);
                 bookmarksStore.accordionModel = Array
-                    .from({ length: bookmarksStore.bookmarks.length }, (_, index) => index);
+                    .from({ length: bookmarksStore.bookmarks?.length ?? 0 }, (_, index) => index);
             }
         } else if (tmpPanelsModel) {
             bookmarksStore.accordionModel = Array.from(tmpPanelsModel);

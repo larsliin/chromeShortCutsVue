@@ -27,26 +27,22 @@
     </span>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { mdiFolderOpen } from '@mdi/js';
     import { BIconStarFill } from 'bootstrap-icons-vue';
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const bookmarksStore = useBookmarksStore();
 
-    defineProps({
-        color: {
-            type: String,
-            default: '',
-        },
-        folder: Boolean,
-        hide: Boolean,
-        image: {
-            type: String,
-            default: null,
-        },
-        loading: Boolean,
-    });
+    interface Props {
+        color?: string;
+        folder?: boolean;
+        hide?: boolean;
+        image?: string | null;
+        loading?: boolean;
+    }
+
+    withDefaults(defineProps<Props>(), { color: '', image: null });
 </script>
 
 <style scoped lang="scss">

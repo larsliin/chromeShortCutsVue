@@ -108,13 +108,14 @@
     </v-card>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { ref, watch, onMounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkCreateIcon from '@/components/forms/BookmarkCreateIcon.vue';
     import { EMITS } from '@/constants';
     import { useUtils } from '@/shared/composables/utils';
     import useEventsBus from '@cmp/eventBus';
+    import type { BookmarkFormData } from '@/types/bookmark';
 
     const { bus, emit } = useEventsBus();
 
@@ -129,19 +130,16 @@
         EMITS.DELETE,
     ]);
 
-    const props = defineProps({
-        data: Object,
-        folderPreSelected: {
-            type: String,
-            required: false,
-            default: null,
-        },
-    });
+    interface Props {
+        data?: BookmarkFormData;
+        folderPreSelected?: string | null;
+    }
+
+    const props = withDefaults(defineProps<Props>(), { folderPreSelected: null });
 
     const rules = {
-        required: (value) => !!value || 'Field is required',
-        // eslint-disable-next-line no-use-before-define
-        urlvalid: (value) => utils.isValidURL(value) || 'Field requires a valid URL',
+        required: (value: unknown) => !!value || 'Field is required',
+        urlvalid: (value: unknown) => utils.isValidURL(String(value ?? '')) || 'Field requires a valid URL',
     };
 
     const bookmarksStore = useBookmarksStore();
@@ -159,24 +157,18 @@
     const titleTxt = ref('');
     const urlTxt = ref('');
 
-    async function moveToFolder(folderStr, newFolderId) {
+    async function moveToFolder(folderStr: string, newFolderId?: string): Promise<void> {
         if (newFolderId) {
-            // move bookmark to a newly created folder
-            await bookmarksStore.move_bookmark(id.value, { parentId: newFolderId });
+            await bookmarksStore.move_bookmark(id.value as string, { parentId: newFolderId });
         } else {
-            // move bookmark to an exsisting folder if the provided prop parent id
-            // does not match the parent id from the select dropdown
-            const isSameFolder = !!(foldersIdArr.value
-                .find((item) => item[folderStr] === parentId.value));
+            const folders: Record<string, string>[] = foldersIdArr.value ?? [];
+            const isSameFolder = !!folders.find((item) => item[folderStr] === parentId.value);
 
-            // if bookmark is existing bookmark that is being edited
-            // and bookmark is being moved to another folder
             if (!isSameFolder) {
-                const targetId = foldersIdArr.value
-                    // eslint-disable-next-line no-prototype-builtins
-                    .find((item) => item.hasOwnProperty(folderStr))[folderStr];
-
-                await bookmarksStore.move_bookmark(id.value, { parentId: targetId });
+                const target = folders.find((item) => Object.prototype.hasOwnProperty.call(item, folderStr));
+                if (target) {
+                    await bookmarksStore.move_bookmark(id.value as string, { parentId: target[folderStr] });
+                }
             }
         }
     }
@@ -206,7 +198,7 @@
 
         // check if there is any existing folders with that folder name in our root folder
         const findFolderResponse = await bookmarksStore
-            .get_folderByTitle(bookmarksStore.rootId, folderStr);
+            .get_folderByTitle(bookmarksStore.rootId as string, folderStr);
         let createBookmarkResponse;
 
         bookmarksStore.editBase64Image = base64Image.value;
@@ -214,31 +206,24 @@
         if (findFolderResponse && findFolderResponse.length) {
             // if we have a folder with the provided folder name already
             if (id.value) {
-                // if bookmark is existing bookmark that is being edited
                 createBookmarkResponse = await bookmarksStore
                     .update_bookmark(id.value, { title: titleTxt.value, url: urlTxt.value });
 
-                moveToFolder(folderStr);
+                await moveToFolder(folderStr);
             } else {
-                // bookmark is new bookmark
                 createBookmarkResponse = await bookmarksStore
                     .create_bookmark(findFolderResponse[0].id, titleTxt.value, urlTxt.value);
             }
         } else {
-            // if folder does NOT exist
-            // then create a new folder
             const createFolderResponse = await bookmarksStore
-                .create_bookmark(bookmarksStore.rootId, folderStr);
+                .create_bookmark(bookmarksStore.rootId as string, folderStr);
 
             if (id.value) {
-                // if bookmark is an existing bookmark that is being edited then update bookmark
                 createBookmarkResponse = await bookmarksStore
                     .update_bookmark(id.value, { title: titleTxt.value, url: urlTxt.value });
 
-                // move to the newly created folder
                 await moveToFolder(folderStr, createFolderResponse.id);
             } else {
-                // if bookmark is a new bookmark then create a new bookmark
                 createBookmarkResponse = await bookmarksStore
                     .create_bookmark(createFolderResponse.id, titleTxt.value, urlTxt.value);
             }
@@ -262,19 +247,20 @@
         emits(EMITS.SAVE);
     }
 
-    function onIconUpdate(event) {
+    function onIconUpdate(event: string): void {
         base64Image.value = event;
     }
 
-    function onClearbitError(event) {
+    function onClearbitError(event: string): void {
         emits(EMITS.CLEARBIT_ERROR, event);
     }
 
     watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async () => {
         if (bookmarksStore.rootId) {
             const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
-            foldersArr.value = bookmarks[0].children.flatMap((e) => e.title);
-            foldersIdArr.value = bookmarks[0].children.map((e) => ({ [e.title]: e.id }));
+            const children = bookmarks[0].children ?? [];
+            foldersArr.value = children.map((e) => e.title);
+            foldersIdArr.value = children.map((e) => ({ [e.title]: e.id }));
         }
 
         if (!bookmarksStore.bookmarks?.length) {
@@ -289,35 +275,34 @@
             return;
         }
 
-        const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
-        foldersArr.value = bookmarks[0].children.flatMap((e) => e.title);
-        foldersIdArr.value = bookmarks[0].children.map((e) => ({ [e.title]: e.id }));
+        const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId as string);
+        const folderChildren = bookmarks[0].children ?? [];
+        foldersArr.value = folderChildren.map((e) => e.title);
+        foldersIdArr.value = folderChildren.map((e) => ({ [e.title]: e.id }));
 
         const slctDisabled = !bookmarksStore.bookmarks
             || bookmarksStore.bookmarks.length === 0;
 
         if (props.data) {
-            id.value = props.data.id;
-            parentId.value = props.data.parentId;
-            titleTxt.value = props.data.title;
-            urlTxt.value = props.data.url;
+            id.value = props.data.id ?? null;
+            parentId.value = props.data.parentId ?? null;
+            titleTxt.value = props.data.title ?? '';
+            urlTxt.value = props.data.url ?? '';
 
             if (props.data.image) {
                 base64Image.value = JSON.parse(JSON.stringify(props.data.image));
             }
         }
 
-        if (!slctDisabled && props.data && props.data.parentId) {
-            const parentIndex = bookmarks[0].children
-                .findIndex((e) => e.id === props.data.parentId);
-            folderSlct.value = bookmarksStore.bookmarks[parentIndex].title;
+        if (!slctDisabled && props.data?.parentId) {
+            const parentIndex = folderChildren.findIndex((e) => e.id === props.data!.parentId);
+            folderSlct.value = bookmarksStore.bookmarks?.[parentIndex]?.title ?? null;
         }
 
         if (props.folderPreSelected && !props.data) {
             const folder = bookmarksStore.bookmarks
-                .find((e) => e.id === props.folderPreSelected);
-            const title = folder ? folder.title : null;
-            folderSlct.value = title;
+                ?.find((e) => e.id === props.folderPreSelected);
+            folderSlct.value = folder?.title ?? null;
         }
 
         if (slctDisabled) {

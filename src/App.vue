@@ -3,7 +3,7 @@
     <BookmarksContainer />
 </template>
 
-<script setup>
+<script setup lang="ts">
     import BookmarksToolbar from '@/components/toolbar/BookmarksToolbar.vue';
     import BookmarksContainer from '@/views/BookmarksView.vue';
     import { useBookmarksStore } from '@stores/bookmarks';

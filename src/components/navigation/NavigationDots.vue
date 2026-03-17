@@ -20,8 +20,8 @@
                             active ? 'active' : '',
                             bookmarksStore.enableDarkMode ? 'dark' : '',
                         ]"
-                        v-model="bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title"
-                        @click.stop="onClick($event)"
+                        v-model="bookmarksStore.currentFolder!.title"
+                        @click.stop
                         @focus="bookmarksStore.titleInputActive = true"
                         @blur="onBlur()"
                         @keydown="onChange($event)" />
@@ -59,8 +59,8 @@
                     width="450">
                     <BookmarkConfirmDelete
                         :showFolderMessage="true"
-                        :title="bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title"
-                        :id="bookmarksStore.bookmarks[bookmarksStore.sliderIndex].id"
+                        :title="bookmarksStore.currentFolder?.title"
+                        :id="bookmarksStore.currentFolder?.id ?? ''"
                         @cancel="showConfirmDelete = false"
                         @confirm="onDeleteConfirm()" />
                 </v-dialog>
@@ -69,7 +69,7 @@
     </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { mdiRename, mdiDeleteOutline, mdiStar } from '@mdi/js';
     import { ref } from 'vue';
     import { EMITS } from '@/constants';
@@ -85,7 +85,7 @@
 
     const bookmarksStore = useBookmarksStore();
 
-    function onClick(index) {
+    function onClick(index: number): void {
         utils.setSliderIndex(index, true);
     }
 
@@ -120,11 +120,15 @@
         showConfirmDelete.value = false;
 
         // delete all bookmarks in folder from local storage
-        utils.deleteBookmarkFolder(bookmarksStore.bookmarks[bookmarksStore.sliderIndex]);
+        if (bookmarksStore.currentFolder) {
+            utils.deleteBookmarkFolder(bookmarksStore.currentFolder);
+        }
     }
 
     function onBookmarkAdd() {
-        emit(EMITS.BOOKMARK_ADD, bookmarksStore.bookmarks[bookmarksStore.sliderIndex].id);
+        if (bookmarksStore.currentFolder) {
+            emit(EMITS.BOOKMARK_ADD, bookmarksStore.currentFolder.id);
+        }
     }
 
     function onRename() {
@@ -135,15 +139,17 @@
     function onBlur() {
         active.value = false;
 
-        bookmarksStore.update_bookmark(
-            bookmarksStore.bookmarks[bookmarksStore.sliderIndex].id,
-            { title: bookmarksStore.bookmarks[bookmarksStore.sliderIndex].title },
-        );
+        if (bookmarksStore.currentFolder) {
+            bookmarksStore.update_bookmark(
+                bookmarksStore.currentFolder.id,
+                { title: bookmarksStore.currentFolder.title },
+            );
+        }
 
         bookmarksStore.titleInputActive = false;
     }
 
-    function onChange(event) {
+    function onChange(event: KeyboardEvent): void {
         if (event.keyCode === 13 || event.keyCode === 27) {
             input.value.blur();
         }
