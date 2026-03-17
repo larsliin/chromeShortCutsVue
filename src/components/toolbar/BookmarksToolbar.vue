@@ -114,7 +114,7 @@
     import BookmarkCreateForm from '@/components/forms/BookmarkCreateForm.vue';
     import BookmarkSettingsForm from '@/components/forms/BookmarkSettingsForm.vue';
     import useEventsBus from '@cmp/eventBus';
-    import { EMITS } from '@/constants';
+    import { EMITS, TIMEOUTS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/composables/utils';
     import BookmarkConfirmDelete
@@ -208,7 +208,7 @@
             setTimeout(() => {
                 editBookmarkData.value = null;
                 folderPreSelected.value = null;
-            }, 1000);
+            }, TIMEOUTS.DIALOG_CLOSE_MS);
         }
     });
 

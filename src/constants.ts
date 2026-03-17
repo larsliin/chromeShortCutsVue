@@ -45,3 +45,7 @@ export const LOGO_GENERATOR = Object.freeze({
     LOGO_GENERATOR_DOMAIN: 'https://img.logo.dev',
     LOGO_GENERATOR_TOKEN: 'pk_PdnB3t3aTiqenIQ-fVCWpA',
 });
+
+export const TIMEOUTS = Object.freeze({
+    DIALOG_CLOSE_MS: 1000,
+});

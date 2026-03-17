@@ -42,6 +42,10 @@
         const rootFolderResponse = await bookmarksStore
             .get_folderByTitle(bookmarksStore.bookmarksBarId as string, FOLDER.ROOT.label);
 
+        if (!rootFolderResponse.length) {
+            return;
+        }
+
         bookmarksStore.rootId = rootFolderResponse[0].id;
 
         const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId as string);

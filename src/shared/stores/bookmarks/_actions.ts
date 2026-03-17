@@ -4,78 +4,64 @@ import type { BookmarkNode } from '@/types/bookmark';
 export default {
     async get_bookmarks(this: any, id: string): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
         return new Promise((resolve, reject) => {
-            try {
-                chrome.bookmarks.getSubTree(
-                    id,
-                    (event) => {
-                        resolve(event);
-                    },
-                );
-            } catch (error) {
-                reject(error);
-            }
+            chrome.bookmarks.getSubTree(id, (event) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+                resolve(event);
+            });
         });
     },
 
     async get_colorizedBookmarks(this: any, id: string): Promise<BookmarkNode[]> {
-        return new Promise((resolve, reject) => {
-            try {
-                const promiseArr = [];
-                promiseArr.push(this.get_bookmarks(id));
-                promiseArr.push(this.get_syncStorage('folderColors'));
-                promiseArr.push(this.get_syncStorage('bookmarkColors'));
+        const [response1, response2, response3]: any[] = await Promise.all([
+            this.get_bookmarks(id),
+            this.get_syncStorage('folderColors'),
+            this.get_syncStorage('bookmarkColors'),
+        ]);
 
-                Promise.all(promiseArr)
-                    .then((responses: any[]) => {
-                        const [response1, response2, response3] = responses;
-                        const returnObj = [...response1];
+        const returnObj = [...response1];
 
-                        if (response2) {
-                            Object.entries(response2).forEach((item) => {
-                                const bookmarkFolder = returnObj[0].children
-                                    .find((e: any) => e.id === item[0]);
-                                if (bookmarkFolder) {
-                                    const [, bookmarkFolderColor] = item;
-                                    bookmarkFolder.color = bookmarkFolderColor;
-                                }
-                            });
-                        }
-                        if (response3) {
-                            Object.entries(response3).forEach((item) => {
-                                const bookmarksFlatArr = returnObj[0].children
-                                    .flatMap((obj: any) => obj.children);
-                                const bookmark = bookmarksFlatArr
-                                    .find((e: any) => e.id === item[0]);
-                                if (bookmark) {
-                                    const [, bookmarkColor] = item;
-                                    (bookmark as any).color = bookmarkColor;
-                                }
-                            });
-                        }
-                        resolve(returnObj);
-                    })
-                    .catch((error) => {
-                        throw (error);
-                    });
-            } catch (error) {
-                reject(error);
-            }
-        });
+        if (response2) {
+            Object.entries(response2).forEach((item) => {
+                const bookmarkFolder = returnObj[0].children
+                    .find((e: any) => e.id === item[0]);
+                if (bookmarkFolder) {
+                    const [, bookmarkFolderColor] = item;
+                    bookmarkFolder.color = bookmarkFolderColor;
+                }
+            });
+        }
+        if (response3) {
+            Object.entries(response3).forEach((item) => {
+                const bookmarksFlatArr = returnObj[0].children
+                    .flatMap((obj: any) => obj.children);
+                const bookmark = bookmarksFlatArr
+                    .find((e: any) => e.id === item[0]);
+                if (bookmark) {
+                    const [, bookmarkColor] = item;
+                    (bookmark as any).color = bookmarkColor;
+                }
+            });
+        }
+
+        return returnObj;
     },
 
     async get_bookmarkById(this: any, id: string): Promise<chrome.bookmarks.BookmarkTreeNode> {
         return new Promise((resolve, reject) => {
-            try {
-                chrome.bookmarks.get(id, (event) => {
-                    if (event && event.length > 0) {
-                        resolve(event[0]);
-                    } else {
-                        reject(new Error('Bookmark not found'));
-                    }
-                });
-            } catch (error) {
-                reject(error);
-            }
+            chrome.bookmarks.get(id, (event) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+                if (event && event.length > 0) {
+                    resolve(event[0]);
+                } else {
+                    reject(new Error('Bookmark not found'));
+                }
+            });
         });
     },
 
@@ -105,16 +91,16 @@ export default {
         title: string,
     ): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
         return new Promise((resolve, reject) => {
-            try {
-                chrome.bookmarks.getSubTree(parentFolderId, (result) => {
-                    const bookmarkTreeNodes = result[0].children ?? [];
-                    const folder = this.searchFolder(bookmarkTreeNodes, title);
-                    const folderResult = folder ? [folder] : [];
-                    resolve(folderResult);
-                });
-            } catch (error) {
-                reject(error);
-            }
+            chrome.bookmarks.getSubTree(parentFolderId, (result) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+                const bookmarkTreeNodes = result[0].children ?? [];
+                const folder = this.searchFolder(bookmarkTreeNodes, title);
+                const folderResult = folder ? [folder] : [];
+                resolve(folderResult);
+            });
         });
     },
 
@@ -125,16 +111,16 @@ export default {
         url?: string,
     ): Promise<chrome.bookmarks.BookmarkTreeNode> {
         return new Promise((resolve, reject) => {
-            try {
-                chrome.bookmarks.create(
-                    { parentId: parentId.toString(), title, url },
-                    (bookmark) => {
-                        resolve(bookmark);
-                    },
-                );
-            } catch (error) {
-                reject(error);
-            }
+            chrome.bookmarks.create(
+                { parentId: parentId.toString(), title, url },
+                (bookmark) => {
+                    if (chrome.runtime.lastError) {
+                        reject(new Error(chrome.runtime.lastError.message));
+                        return;
+                    }
+                    resolve(bookmark);
+                },
+            );
         });
     },
 
@@ -144,20 +130,17 @@ export default {
         data: { title?: string; url?: string },
     ): Promise<chrome.bookmarks.BookmarkTreeNode> {
         return new Promise((resolve, reject) => {
-            try {
-                chrome.bookmarks.update(
-                    id,
-                    {
-                        title: data.title,
-                        url: data.url,
-                    },
-                    (bookmark) => {
-                        resolve(bookmark);
-                    },
-                );
-            } catch (error) {
-                reject(error);
-            }
+            chrome.bookmarks.update(
+                id,
+                { title: data.title, url: data.url },
+                (bookmark) => {
+                    if (chrome.runtime.lastError) {
+                        reject(new Error(chrome.runtime.lastError.message));
+                        return;
+                    }
+                    resolve(bookmark);
+                },
+            );
         });
     },
 
@@ -167,75 +150,61 @@ export default {
         targetId: { parentId?: string; index?: number },
     ): Promise<void> {
         return new Promise((resolve, reject) => {
-            try {
-                chrome.bookmarks.move(
-                    id,
-                    targetId,
-                    () => {
-                        resolve();
-                    },
-                );
-            } catch (error) {
-                reject(error);
-            }
+            chrome.bookmarks.move(id, targetId, () => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+                resolve();
+            });
         });
     },
 
     async reorder_bookmark(this: any, id: string, index: number): Promise<void> {
         return new Promise((resolve, reject) => {
-            try {
-                chrome.bookmarks.move(
-                    id,
-                    { index },
-                    () => {
-                        resolve();
-                    },
-                );
-            } catch (error) {
-                reject(error);
-            }
+            chrome.bookmarks.move(id, { index }, () => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+                resolve();
+            });
         });
     },
 
     async remove_bookmark(this: any, id: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            try {
-                chrome.bookmarks.remove(
-                    id,
-                    () => {
-                        resolve(id);
-                    },
-                );
-            } catch (error) {
-                reject(error);
-            }
+            chrome.bookmarks.remove(id, () => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+                resolve(id);
+            });
         });
     },
 
     async remove_bookmarkFolder(this: any, id: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            try {
-                chrome.bookmarks.removeTree(
-                    id,
-                    () => {
-                        resolve(id);
-                    },
-                );
-            } catch (error) {
-                reject(error);
-            }
+            chrome.bookmarks.removeTree(id, () => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+                resolve(id);
+            });
         });
     },
 
     async get_tree(this: any): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
         return new Promise((resolve, reject) => {
-            try {
-                chrome.bookmarks.getTree((event) => {
-                    resolve(event);
-                });
-            } catch (error) {
-                reject(error);
-            }
+            chrome.bookmarks.getTree((event) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+                resolve(event);
+            });
         });
     },
 

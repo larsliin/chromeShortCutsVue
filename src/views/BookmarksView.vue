@@ -116,17 +116,9 @@
             return false;
         }
 
-        return new Promise((resolve, reject) => {
-            try {
-                bookmarksStore.get_bookmarks(bookmarksStore.rootId as string).then((event) => {
-                    const inScope = (event[0].children ?? []).some((item) => item.id.toString() === bookmark.id.toString()
-                        || (item.children && item.children.some((child) => child.id.toString() === bookmark.id.toString())));
-                    resolve(inScope);
-                });
-            } catch (error) {
-                reject(error);
-            }
-        });
+        const event = await bookmarksStore.get_bookmarks(bookmarksStore.rootId as string);
+        return (event[0].children ?? []).some((item) => item.id.toString() === bookmark.id.toString()
+            || (item.children && item.children.some((child) => child.id.toString() === bookmark.id.toString())));
     }
 
     async function onCreated(event: string): Promise<void> {
@@ -191,22 +183,19 @@
                 utils.deleteLocalStoreImages(),
             ];
 
-            Promise.all(promiseArr)
-                .then(async () => {
-                    bookmarksStore.rootId = null;
+            try {
+                await Promise.all(promiseArr);
 
-                    bookmarksStore.bookmarks = [];
+                bookmarksStore.rootId = null;
+                bookmarksStore.bookmarks = [];
+                utils.setSliderIndex(0, true);
+                bookmarksStore.accordionModel = null;
+                bookmarksStore.delete_syncStorageItem('accordion');
 
-                    utils.setSliderIndex(0, true);
-
-                    bookmarksStore.accordionModel = null;
-                    bookmarksStore.delete_syncStorageItem('accordion');
-
-                    emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
-                })
-                .catch((error) => {
-                    console.error(error);
-                });
+                emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
+            } catch (error) {
+                console.error(error);
+            }
         } else {
             if (bookmark) { // if is type bookmark
                 // Filter away child object with the specified ID
@@ -249,49 +238,46 @@
         if (!bookmarksStore.editBase64Image) {
             bookmarksStore.delete_localStorageItem(event);
         }
-        const promiseArr = [
-            bookmarksStore.get_bookmarkById(event),
-            bookmarksStore.get_localStorage(event),
-        ];
 
-        Promise.all(promiseArr)
-            .then(async (results) => {
-                if (results[0]) {
-                    await bookmarksStore.set_localStorage({
-                        [event]: {
-                            parentId: results[0].parentId,
-                            id: event,
-                            image: bookmarksStore.editBase64Image,
-                            url: results[0].url,
-                            title: results[0].title,
-                        },
-                    });
+        try {
+            const [bookmarkResponse] = await Promise.all([
+                bookmarksStore.get_bookmarkById(event),
+                bookmarksStore.get_localStorage(event),
+            ]);
 
-                    emit(EMITS.ICON_UPDATE, event);
+            if (bookmarkResponse) {
+                await bookmarksStore.set_localStorage({
+                    [event]: {
+                        parentId: bookmarkResponse.parentId,
+                        id: event,
+                        image: bookmarksStore.editBase64Image,
+                        url: bookmarkResponse.url,
+                        title: bookmarkResponse.title,
+                    },
+                });
+
+                emit(EMITS.ICON_UPDATE, event);
+
+                // update UI titles
+                // find folder with id
+                const folder = (bookmarksStore.bookmarks ?? []).find((e) => e.id === event);
+
+                if (folder) {
+                    // if is a folder
+                    folder.title = bookmarkResponse.title;
+                } else {
+                    const bookmark = utils.getStoredBookmarkById(event);
+                    // if not a folder then this is a bookmark
+                    // update bookmark title/url/parent id
+                    if (bookmark) {
+                        bookmark.parentId = bookmarkResponse.parentId;
+                        bookmark.url = bookmarkResponse.url;
+                        bookmark.title = bookmarkResponse.title;
+                    }
                 }
-            })
-            .catch((error) => {
-                console.error(error);
-            });
-
-        const bookmarkResponse = await bookmarksStore.get_bookmarkById(event);
-
-        // update UI titles
-        // find folder with id
-        const folder = (bookmarksStore.bookmarks ?? []).find((e) => e.id === event);
-
-        if (folder) {
-            // if is a folder
-            folder.title = bookmarkResponse.title;
-        } else {
-            const bookmark = utils.getStoredBookmarkById(event);
-            // if not a folder then this is a bookmark
-            // update bookmark title/url/parent id
-            if (bookmark) {
-                bookmark.parentId = bookmarkResponse.parentId;
-                bookmark.url = bookmarkResponse.url;
-                bookmark.title = bookmarkResponse.title;
             }
+        } catch (error) {
+            console.error(error);
         }
 
         emit(EMITS.BOOKMARKS_UPDATED, { type: 'update', id: event });

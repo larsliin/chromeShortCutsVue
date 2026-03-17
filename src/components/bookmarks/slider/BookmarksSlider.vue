@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-    import { computed, onMounted } from 'vue';
+    import { computed, onMounted, onUnmounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/composables/utils';
     import BookmarksGroup from '@/components/bookmarks/sharedComponents/BookmarksGroup.vue';
@@ -46,7 +46,10 @@
 
     onMounted(() => {
         document.addEventListener('keydown', onKeydown);
-        document.hasFocus();
+    });
+
+    onUnmounted(() => {
+        document.removeEventListener('keydown', onKeydown);
     });
 </script>
 
