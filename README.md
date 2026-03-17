@@ -157,6 +157,21 @@ Tests the MV3 service worker in `background.js`.
 
 ---
 
+#### `filter.test.ts` — Bookmark Filtering
+
+Tests the pure filter logic from `BookmarksFilter.vue → runFilter()`. The logic is extracted as a standalone function and tested across all meaningful scenarios.
+
+| Test Group | What it covers |
+|---|---|
+| **Basic matching** | Returns only children whose title contains the search term; case-insensitive matching; partial term match in the middle of a title; matches across multiple folders simultaneously; returns empty array when nothing matches |
+| **Folder pruning** | Removes folders with zero matching children; keeps folders with at least one match; drops unmatched siblings within the same folder |
+| **Sub-folder exclusion** | Child nodes that are themselves folders (have `.children`) are never included in filter results, even when their title matches |
+| **Empty / clear term** | Returns the full unfiltered tree on empty string; does not mutate the original bookmarks array; restoring full tree after a prior filter |
+| **sliderIndex re-anchoring** | Index is 0 when the active folder is first in results; correct non-zero index when folder is deeper in results; clamps to 0 when the active folder is filtered out; `store.sliderIndex` reflects the new position |
+| **Store integration** | `store.bookmarks` is updated to the filtered result; restores full tree when term is cleared; `store.bookmarkSearch` reflects the active term; `store.bookmarkSearch` is `null` by default |
+
+---
+
 #### `import-files.test.ts` — Import Bookmarks & Icons Files
 
 Tests the logic that processes the two exported file formats produced by the app: a bookmarks JSON file and an icons JSON file. Fixtures are representative slices that match the exact shape of the real files in `files/exports/`.
