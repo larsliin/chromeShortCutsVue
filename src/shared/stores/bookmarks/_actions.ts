@@ -258,13 +258,7 @@ export default {
 
     async get_localStorageAll(this: any): Promise<Record<string, unknown>> {
         return new Promise((resolve, reject) => {
-            try {
-                chrome.storage.local.get(null).then((event) => {
-                    resolve(event);
-                });
-            } catch (error) {
-                reject(error);
-            }
+            chrome.storage.local.get(null).then(resolve).catch(reject);
         });
     },
 
