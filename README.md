@@ -157,6 +157,38 @@ Tests the MV3 service worker in `background.js`.
 
 ---
 
+#### `import-files.test.ts` — Import Bookmarks & Icons Files
+
+Tests the logic that processes the two exported file formats produced by the app: a bookmarks JSON file and an icons JSON file. Fixtures are representative slices that match the exact shape of the real files in `files/exports/`.
+
+**Import bookmarks file** (`{ bookmarks: Folder[], type: 'bookmarks' }`)
+
+| Test | What it covers |
+|---|---|
+| Parses folder count and structure | Reads 3 folders from the fixture and verifies `type`, folder titles |
+| Parses child bookmark fields | Verifies `title`, `url`, and `parentId` on bookmark children |
+| Creates a Chrome folder per top-level folder | Calls `create_bookmark` once per folder; verifies titles on results |
+| Builds the `oldId → newId` folder map | Maps each old folder ID to the newly assigned Chrome ID |
+| Creates bookmarks under the correct new folder IDs | Uses the folder map to route each child to the right new parent; asserts correct `parentId` on created nodes |
+| Skips creation for empty folders | Confirms no extra `create_bookmark` calls when a folder has no children |
+| Full end-to-end import flow | 3 folders + 3 bookmarks = 6 total `create_bookmark` calls; verifies all parent assignments |
+
+**Import icons file** (`{ folders: FolderIcon[], bookmarks: BookmarkIcon[], type: 'icons' }`)
+
+| Test | What it covers |
+|---|---|
+| Parses folder and bookmark icon arrays | Reads 2 folder icons and 3 bookmark icons from the fixture |
+| Reads folder colors | Verifies `color` and `title` on each folder icon entry |
+| Reads bookmark image data | Verifies `url` and `data:image/png;base64,…` image string |
+| Matches bookmark icons to live store bookmarks by URL | Calls `set_localStorage` with image data for each URL match; asserts correct payload shape |
+| Builds `bookmarkColors` map | Only adds color entries for bookmark icons that include a `color` field |
+| Builds `folderColors` map | Matches folder icons to live store folders by title; maps new folder ID to color |
+| Persists both color maps to sync storage | Calls `set_syncStorage` with `bookmarkColors` and `folderColors` |
+| Skips icons with null image | No `set_localStorage` call when the bookmark icon's `image` is `null` |
+| Handles unmatched folder titles | No color entry created when no live folder title matches the icon entry |
+
+---
+
 ### E2E Tests (`e2e/`)
 
 E2E tests load the built extension into a real Chromium browser using Playwright. Tests run sequentially (non-parallel) to avoid shared Chrome storage conflicts. A global setup step builds the extension before any test runs.
