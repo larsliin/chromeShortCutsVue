@@ -37,76 +37,91 @@ As a web coder, you possess expert knowledge across 15 key domains:
 Semantic HTML5, document structure, elements, attributes, accessibility tree, void elements, metadata, and proper markup patterns.
 
 **Key Concepts**: Semantic elements, document structure, forms, metadata
+**Reference**: [HTML & Markup Reference](references/html-markup.md)
 
 ### 2. CSS & Styling
 Cascading stylesheets, selectors, properties, layout systems (Flexbox, Grid), responsive design, preprocessors, and modern CSS features.
 
 **Key Concepts**: Selectors, box model, layouts, responsiveness, animations
+**Reference**: [CSS & Styling Reference](references/css-styling.md)
 
 ### 3. JavaScript & Programming
 ES6+, TypeScript, data types, functions, classes, async/await, closures, prototypes, and modern JavaScript patterns.
 
 **Key Concepts**: Types, control flow, functions, async patterns, modules
+**Reference**: [JavaScript & Programming Reference](references/javascript-programming.md)
 
 ### 4. Web APIs & DOM
 Document Object Model, Browser APIs, Web Storage, Service Workers, WebRTC, WebGL, and modern web platform features.
 
 **Key Concepts**: DOM manipulation, event handling, storage, communication
+**Reference**: [Web APIs & DOM Reference](references/web-apis-dom.md)
 
 ### 5. HTTP & Networking
 HTTP/1.1, HTTP/2, HTTP/3, request/response cycle, headers, status codes, REST, caching, and network fundamentals.
 
 **Key Concepts**: Request methods, headers, status codes, caching strategies
+**Reference**: [HTTP & Networking Reference](references/http-networking.md)
 
 ### 6. Security & Authentication
 HTTPS, TLS, authentication, authorization, CORS, CSP, XSS prevention, CSRF protection, and secure coding practices.
 
 **Key Concepts**: Encryption, certificates, same-origin policy, secure headers
+**Reference**: [Security & Authentication Reference](references/security-authentication.md)
 
 ### 7. Performance & Optimization
 Load times, rendering performance, Core Web Vitals, lazy loading, code splitting, minification, and performance budgets.
 
 **Key Concepts**: LCP, FID, CLS, caching, compression, optimization techniques
+**Reference**: [Performance & Optimization Reference](references/performance-optimization.md)
 
 ### 8. Accessibility
 WCAG guidelines, ARIA roles and attributes, semantic HTML, screen reader compatibility, keyboard navigation, and inclusive design.
 
 **Key Concepts**: ARIA, semantic markup, keyboard access, screen readers
+**Reference**: [Accessibility Reference](references/accessibility.md)
 
 ### 9. Web Protocols & Standards
 W3C specifications, WHATWG standards, ECMAScript versions, browser APIs, and web platform features.
 
 **Key Concepts**: Standards organizations, specifications, compatibility
+**Reference**: [Web Protocols & Standards Reference](references/web-protocols-standards.md)
 
 ### 10. Browsers & Engines
 Chrome (Blink), Firefox (Gecko), Safari (WebKit), Edge, rendering engines, browser dev tools, and cross-browser compatibility.
 
 **Key Concepts**: Rendering engines, browser differences, dev tools
+**Reference**: [Browsers & Engines Reference](references/browsers-engines.md)
 
 ### 11. Development Tools
 Version control (Git), IDEs, build tools, package managers, testing frameworks, CI/CD, and development workflows.
 
 **Key Concepts**: Git, npm, webpack, testing, debugging, automation
+**Reference**: [Development Tools Reference](references/development-tools.md)
 
 ### 12. Data Formats & Encoding
 JSON, XML, Base64, character encodings (UTF-8, UTF-16), MIME types, and data serialization.
 
 **Key Concepts**: JSON, character encoding, data formats, serialization
+**Reference**: [Data Formats & Encoding Reference](references/data-formats-encoding.md)
 
 ### 13. Media & Graphics
 Canvas, SVG, WebGL, image formats (JPEG, PNG, WebP), video/audio elements, and multimedia handling.
 
 **Key Concepts**: Canvas API, SVG, image optimization, video/audio
+**Reference**: [Media & Graphics Reference](references/media-graphics.md)
 
 ### 14. Architecture & Patterns
 MVC, SPA, SSR, CSR, PWA, JAMstack, microservices, and web application architecture patterns.
 
 **Key Concepts**: Design patterns, architecture styles, rendering strategies
+**Reference**: [Architecture & Patterns Reference](references/architecture-patterns.md)
 
 ### 15. Servers & Infrastructure
 Web servers, CDN, DNS, proxies, load balancing, SSL/TLS certificates, and deployment strategies.
 
 **Key Concepts**: Server configuration, DNS, CDN, hosting, deployment
+**Reference**: [Servers & Infrastructure Reference](references/servers-infrastructure.md)
 
 ## Working with Web Terminology
 
@@ -156,23 +171,25 @@ Different contexts require different interpretations:
 When given web-related requirements:
 
 1. **Identify the domain** - Which of the 15 competency areas does this fall under?
-2. **Translate terminology** - Convert colloquial terms to technical equivalents
-3. **Apply web standards** - Use W3C/WHATWG specifications as guidance
-4. **Implement with best practices** - Follow modern patterns and conventions
-5. **Validate against standards** - Check accessibility, performance, security
+2. **Consult relevant reference** - Read the appropriate reference file for terminology and best practices
+3. **Translate terminology** - Convert colloquial terms to technical equivalents
+4. **Apply web standards** - Use W3C/WHATWG specifications as guidance
+5. **Implement with best practices** - Follow modern patterns and conventions
+6. **Validate against standards** - Check accessibility, performance, security
 
 #### Example: "Make the form accessible"
 
 1. **Domain**: Accessibility (Competency #8)
-2. **Translate**: "Accessible" = WCAG compliant, screen reader friendly, keyboard navigable
-3. **Standards**: WCAG 2.1 Level AA
-4. **Implement**:
+2. **Reference**: [Accessibility Reference](references/accessibility.md)
+3. **Translate**: "Accessible" = WCAG compliant, screen reader friendly, keyboard navigable
+4. **Standards**: WCAG 2.1 Level AA
+5. **Implement**:
    - Add proper `<label>` elements
    - Include ARIA attributes where needed
    - Ensure keyboard navigation
    - Provide error messaging
    - Test with screen readers
-5. **Validate**: Run accessibility audit tools
+6. **Validate**: Run accessibility audit tools
 
 ### Workflow 2: Debug Web Issues
 
@@ -372,6 +389,7 @@ Lazy loading, code splitting, and efficient loading:
 Implement Real User Monitoring (RUM):
 
 ```javascript
+// Measure Core Web Vitals
 const observer = new PerformanceObserver((list) => {
   for (const entry of list.getEntries()) {
     console.log('Performance metric:', {
@@ -395,35 +413,37 @@ class AccessibleTabs {
     this.tablist = element.querySelector('[role="tablist"]');
     this.tabs = Array.from(this.tablist.querySelectorAll('[role="tab"]'));
     this.panels = Array.from(element.querySelectorAll('[role="tabpanel"]'));
-
+    
     this.tabs.forEach((tab, index) => {
       tab.addEventListener('click', () => this.selectTab(index));
       tab.addEventListener('keydown', (e) => this.handleKeydown(e, index));
     });
   }
-
+  
   selectTab(index) {
+    // Deselect all tabs
     this.tabs.forEach(tab => {
       tab.setAttribute('aria-selected', 'false');
       tab.setAttribute('tabindex', '-1');
     });
     this.panels.forEach(panel => panel.hidden = true);
-
+    
+    // Select target tab
     this.tabs[index].setAttribute('aria-selected', 'true');
     this.tabs[index].setAttribute('tabindex', '0');
     this.tabs[index].focus();
     this.panels[index].hidden = false;
   }
-
+  
   handleKeydown(event, index) {
     const { key } = event;
     let newIndex = index;
-
+    
     if (key === 'ArrowRight') newIndex = (index + 1) % this.tabs.length;
     if (key === 'ArrowLeft') newIndex = (index - 1 + this.tabs.length) % this.tabs.length;
     if (key === 'Home') newIndex = 0;
     if (key === 'End') newIndex = this.tabs.length - 1;
-
+    
     if (newIndex !== index) {
       event.preventDefault();
       this.selectTab(newIndex);
@@ -434,8 +454,10 @@ class AccessibleTabs {
 
 ### 3. Modern CSS Techniques
 
+Use modern CSS features for layouts:
+
 ```css
-/* Container queries */
+/* Container queries (modern browsers) */
 @container (min-width: 400px) {
   .card {
     display: grid;
@@ -470,19 +492,49 @@ class AccessibleTabs {
 
 ### 4. Security Headers
 
+Implement comprehensive security headers:
+
 ```javascript
 // Express.js example
 app.use((req, res, next) => {
-  res.setHeader('Content-Security-Policy',
+  // Content Security Policy
+  res.setHeader('Content-Security-Policy', 
     "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
+  
+  // Strict Transport Security
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  
+  // XSS Protection
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Referrer Policy
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
   next();
 });
 ```
+
+## Reference Files
+
+This skill includes 15 comprehensive reference files covering all aspects of web development:
+
+1. [HTML & Markup](references/html-markup.md) - Semantic HTML, elements, attributes
+2. [CSS & Styling](references/css-styling.md) - Selectors, layouts, responsive design
+3. [JavaScript & Programming](references/javascript-programming.md) - ES6+, types, patterns
+4. [Web APIs & DOM](references/web-apis-dom.md) - Browser APIs, DOM manipulation
+5. [HTTP & Networking](references/http-networking.md) - Protocols, headers, REST
+6. [Security & Authentication](references/security-authentication.md) - HTTPS, auth, security
+7. [Performance & Optimization](references/performance-optimization.md) - Core Web Vitals, optimization
+8. [Accessibility](references/accessibility.md) - WCAG, ARIA, inclusive design
+9. [Web Protocols & Standards](references/web-protocols-standards.md) - W3C, WHATWG, specs
+10. [Browsers & Engines](references/browsers-engines.md) - Rendering engines, compatibility
+11. [Development Tools](references/development-tools.md) - Git, build tools, testing
+12. [Data Formats & Encoding](references/data-formats-encoding.md) - JSON, encodings, formats
+13. [Media & Graphics](references/media-graphics.md) - Canvas, SVG, images, video
+14. [Architecture & Patterns](references/architecture-patterns.md) - MVC, SPA, SSR, patterns
+15. [Servers & Infrastructure](references/servers-infrastructure.md) - Servers, CDN, deployment
 
 ## Validation Checklist
 

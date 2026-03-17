@@ -1,4 +1,12 @@
-import { test, expect, createBookmarkFolder, createBookmark, getRootId } from './fixtures';
+import {
+    test,
+    expect,
+    createBookmarkFolder,
+    createBookmark,
+    getRootId,
+    removeBookmarkNode,
+    cleanupBookmarksByTitle,
+} from './fixtures';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,21 +48,19 @@ test.describe('New tab page — loading', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Toolbar', () => {
-    test('add-bookmark button is visible', async ({ extensionPage }) => {
+    test.beforeEach(async ({ extensionPage }) => {
         await waitForAppReady(extensionPage);
+    });
 
+    test('add-bookmark button is visible', async ({ extensionPage }) => {
         await expect(extensionPage.locator('.toolbar-add-button')).toBeVisible();
     });
 
     test('settings button is visible', async ({ extensionPage }) => {
-        await waitForAppReady(extensionPage);
-
         await expect(extensionPage.locator('.toolbar-settings-button')).toBeVisible();
     });
 
     test('filter input is visible', async ({ extensionPage }) => {
-        await waitForAppReady(extensionPage);
-
         await expect(extensionPage.locator('.toolbar-filter-input')).toBeVisible();
     });
 });
@@ -64,17 +70,17 @@ test.describe('Toolbar', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Add-bookmark dialog', () => {
-    test('opens when add button is clicked', async ({ extensionPage }) => {
+    test.beforeEach(async ({ extensionPage }) => {
         await waitForAppReady(extensionPage);
+    });
 
+    test('opens when add button is clicked', async ({ extensionPage }) => {
         await extensionPage.locator('.toolbar-add-button').click();
 
         await expect(extensionPage.getByText('New Bookmark')).toBeVisible();
     });
 
     test('closes when Cancel is clicked', async ({ extensionPage }) => {
-        await waitForAppReady(extensionPage);
-
         await extensionPage.locator('.toolbar-add-button').click();
         await expect(extensionPage.getByText('New Bookmark')).toBeVisible();
 
@@ -89,17 +95,17 @@ test.describe('Add-bookmark dialog', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Settings dialog', () => {
-    test('opens when settings button is clicked', async ({ extensionPage }) => {
+    test.beforeEach(async ({ extensionPage }) => {
         await waitForAppReady(extensionPage);
+    });
 
+    test('opens when settings button is clicked', async ({ extensionPage }) => {
         await extensionPage.locator('.toolbar-settings-button').click();
 
         await expect(extensionPage.getByText('Settings')).toBeVisible();
     });
 
     test('closes when Close is clicked', async ({ extensionPage }) => {
-        await waitForAppReady(extensionPage);
-
         await extensionPage.locator('.toolbar-settings-button').click();
         await expect(extensionPage.getByText('Settings')).toBeVisible();
 
@@ -109,16 +115,12 @@ test.describe('Settings dialog', () => {
     });
 
     test('dark mode switch is present', async ({ extensionPage }) => {
-        await waitForAppReady(extensionPage);
-
         await extensionPage.locator('.toolbar-settings-button').click();
 
         await expect(extensionPage.getByText('Prefer dark mode')).toBeVisible();
     });
 
     test('accordion layout switch is present', async ({ extensionPage }) => {
-        await waitForAppReady(extensionPage);
-
         await extensionPage.locator('.toolbar-settings-button').click();
 
         await expect(extensionPage.getByText('Use accordion layout')).toBeVisible();
@@ -130,9 +132,15 @@ test.describe('Settings dialog', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Bookmark creation via UI', () => {
-    test('creating a bookmark via the form adds it to the page', async ({ extensionPage }) => {
+    test.beforeEach(async ({ extensionPage }) => {
         await waitForAppReady(extensionPage);
+    });
 
+    test.afterEach(async ({ extensionPage }) => {
+        await cleanupBookmarksByTitle(extensionPage, 'E2E Test Folder');
+    });
+
+    test('creating a bookmark via the form adds it to the page', async ({ extensionPage }) => {
         // Open dialog
         await extensionPage.locator('.toolbar-add-button').click();
         await expect(extensionPage.getByText('New Bookmark')).toBeVisible();
@@ -168,9 +176,20 @@ test.describe('Bookmark creation via UI', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Bookmarks display', () => {
-    test('folder title is shown after creating a folder via Chrome API', async ({ extensionPage }) => {
-        await waitForAppReady(extensionPage);
+    let createdFolderId: string | null = null;
 
+    test.beforeEach(async ({ extensionPage }) => {
+        await waitForAppReady(extensionPage);
+    });
+
+    test.afterEach(async ({ extensionPage }) => {
+        if (createdFolderId) {
+            await removeBookmarkNode(extensionPage, createdFolderId);
+            createdFolderId = null;
+        }
+    });
+
+    test('folder title is shown after creating a folder via Chrome API', async ({ extensionPage }) => {
         // Wait for the root folder to be initialised
         let rootId: string | null = null;
         await expect.poll(async () => {
@@ -182,6 +201,7 @@ test.describe('Bookmarks display', () => {
         // The bookmark must be inside the folder so the folder is not empty (empty
         // folders are not rendered by the app).
         const folder = await createBookmarkFolder(extensionPage, rootId!, 'API Test Folder');
+        createdFolderId = folder.id;
         await createBookmark(extensionPage, folder.id, 'placeholder', 'https://placeholder.com');
 
         // Reload so the UI picks up the new Chrome bookmark

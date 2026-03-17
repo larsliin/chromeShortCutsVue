@@ -79,9 +79,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
 export { expect };
 
 // ---------------------------------------------------------------------------
-// Helper: inject a Chrome bookmark folder + child bookmark via page.evaluate.
-// The new-tab page runs inside the extension context, so it has full access
-// to chrome.bookmarks.
+// Helper: inject a Chrome bookmark folder via page.evaluate.
 // ---------------------------------------------------------------------------
 
 export async function createBookmarkFolder(
@@ -103,6 +101,10 @@ export async function createBookmarkFolder(
     );
 }
 
+// ---------------------------------------------------------------------------
+// Helper: inject a Chrome bookmark via page.evaluate.
+// ---------------------------------------------------------------------------
+
 export async function createBookmark(
     page: Page,
     parentId: string,
@@ -123,11 +125,64 @@ export async function createBookmark(
     );
 }
 
+// ---------------------------------------------------------------------------
+// Helper: recursively remove a bookmark node (folder or leaf) by ID.
+// ---------------------------------------------------------------------------
+
+export async function removeBookmarkNode(page: Page, id: string): Promise<void> {
+    return page.evaluate(
+        (nodeId) => new Promise<void>((resolve, reject) => {
+            chrome.bookmarks.removeTree(nodeId, () => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve();
+                }
+            });
+        }),
+        id,
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Helper: search for bookmark nodes by title and remove all matches.
+// Used to clean up bookmarks created through the UI (where we don't have IDs).
+// ---------------------------------------------------------------------------
+
+export async function cleanupBookmarksByTitle(page: Page, title: string): Promise<void> {
+    return page.evaluate(
+        (t) => new Promise<void>((resolve) => {
+            chrome.bookmarks.search({ title: t }, (results) => {
+                if (chrome.runtime.lastError || !results.length) {
+                    resolve();
+                    return;
+                }
+                let pending = results.length;
+                results.forEach((node) => {
+                    chrome.bookmarks.removeTree(node.id, () => {
+                        pending -= 1;
+                        if (pending === 0) resolve();
+                    });
+                });
+            });
+        }),
+        title,
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Helper: get the root "My Shortcuts Tab" folder ID from chrome.storage.local.
+// ---------------------------------------------------------------------------
+
 /** Get the root "My Shortcuts Tab" folder ID from chrome.storage.local. */
 export async function getRootId(page: Page): Promise<string | null> {
     return page.evaluate(
-        () => new Promise<string | null>((resolve) => {
+        () => new Promise<string | null>((resolve, reject) => {
             chrome.storage.local.get('root', (result) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
                 resolve((result.root as string) ?? null);
             });
         }),

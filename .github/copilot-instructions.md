@@ -260,6 +260,21 @@ npm run lint
 
 Load the extension in Chrome: open `chrome://extensions`, enable Developer Mode, click **Load unpacked**, select the `dist/` folder.
 
+
+---
+
+## Documentation
+
+### README
+
+`README.md` is the single source of truth for the project's test suite documentation. **Always update `README.md`** whenever tests are:
+
+- **Added** — document the new test file and describe each test group and what it covers
+- **Removed** — remove the corresponding section from `README.md`
+- **Updated** — keep the table rows and descriptions in sync with the actual test names and behaviour
+
+This rule applies to both unit tests (`src/test/`) and E2E tests (`e2e/`). A test change is not complete until `README.md` reflects it.
+
 ---
 
 ## Known Patterns to Follow
@@ -275,6 +290,7 @@ Load the extension in Chrome: open `chrome://extensions`, enable Developer Mode,
 | Color management | One store action, called from all components |
 | Dark mode toggle | `useTheme()` from Vuetify |
 | Magic number / timeout | Named constant in `constants.js` |
+| Test added / updated / removed | Update README.md test suite section to match |
 
 ## Known Anti-Patterns to Avoid
 

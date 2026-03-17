@@ -11,7 +11,8 @@
     "test": "vitest --config vitest.config.ts",
     "test:run": "vitest run --config vitest.config.ts",
     "test:e2e": "playwright test",
-    "test:all": "vitest run --config vitest.config.ts && playwright test"
+    "test:all": "vitest run --config vitest.config.ts && playwright test",
+    "test:coverage": "vitest run --config vitest.config.ts --coverage"
   },
   "dependencies": {
     "@mdi/js": "^7.3.67",

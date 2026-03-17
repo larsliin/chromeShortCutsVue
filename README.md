@@ -64,6 +64,9 @@ npm test
 # Unit tests (single run)
 npm run test:run
 
+# Unit tests with coverage report
+npm run test:coverage
+
 # E2E tests (requires built extension in dist/)
 npm run test:e2e
 
@@ -75,11 +78,21 @@ npm run test:all
 
 ## Test Suite
 
-The project has two test suites: **unit tests** (Vitest) covering store actions, getters, and utilities, and **end-to-end tests** (Playwright) that run the full extension in a real Chromium browser.
+The project has two test suites: **unit tests** (Vitest) covering store actions, getters, utilities, and components, and **end-to-end tests** (Playwright) that run the full extension in a real Chromium browser.
 
 ### Unit Tests (`src/test/`)
 
-All unit tests mock the Chrome extension APIs via a shared mock in `src/test/mocks/chrome.ts`, which simulates `chrome.bookmarks`, `chrome.storage`, `chrome.runtime`, `chrome.tabs`, and `chrome.action`. Mocks are reset between each test.
+All unit tests mock the Chrome extension APIs via a shared mock in `src/test/mocks/chrome.ts`, which simulates `chrome.bookmarks`, `chrome.storage`, `chrome.runtime`, `chrome.tabs`, and `chrome.action`. Mocks are reset between each test via `beforeEach` in `src/test/setup.ts`.
+
+#### Test helpers (`src/test/test-utils.ts`)
+
+Shared utilities available to all test files:
+
+| Helper | Purpose |
+|---|---|
+| `withSetup(composable)` | Runs a composable inside a minimal Vue app so that lifecycle hooks (`onMounted`, `onUnmounted`) and `inject()` work correctly. Call `app.unmount()` in `afterEach` to trigger cleanup. |
+| `mountWithPlugins(component, options)` | Single mount entry point that pre-wires Vuetify and `createTestingPinia` so test files stay free of plugin boilerplate. Pass `piniaState` to seed initial store state. |
+| `vuetify` | Shared Vuetify instance (created once per file, not per test) for use in component tests. |
 
 ---
 
@@ -204,11 +217,38 @@ Tests the logic that processes the two exported file formats produced by the app
 
 ---
 
+#### `components/ToolTip.test.ts` — Component Tests
+
+Tests the `ToolTip.vue` component using the blackbox approach via `mountWithPlugins` from `src/test/test-utils.ts`. Vuetify is fully mounted so component behaviour is tested in a realistic render environment.
+
+| Test Group | What it covers |
+|---|---|
+| **Rendering** | Component mounts without errors; `.icon-container` activator element is present; a `.v-icon` is rendered inside the activator |
+| **Props** | Accepts a plain-text `tooltip` prop; accepts HTML content in the `tooltip` prop without throwing; each mounted instance renders its own independent icon container |
+| **Accessibility** | `.icon-container` is present for Vuetify to bind its `aria-describedby`/`aria-expanded` activator attributes |
+
+---
+
 ### E2E Tests (`e2e/`)
 
-E2E tests load the built extension into a real Chromium browser using Playwright. Tests run sequentially (non-parallel) to avoid shared Chrome storage conflicts. A global setup step builds the extension before any test runs.
+E2E tests load the built extension into a real Chromium browser using Playwright. Tests run sequentially (non-parallel, single worker) to avoid shared Chrome storage conflicts. A global setup step builds the extension automatically before any test runs if `dist/` is missing.
+
+#### E2E helpers (`e2e/fixtures.ts`)
+
+| Helper | Purpose |
+|---|---|
+| `extensionContext` | Worker-scoped: single Chromium instance with the extension loaded for the entire suite |
+| `extensionId` | Worker-scoped: the extension's Chrome ID, resolved from the background service worker URL |
+| `extensionPage` | Test-scoped: fresh page navigated to `chrome-extension://<id>/index.html` for every test |
+| `createBookmarkFolder(page, parentId, title)` | Injects a bookmark folder via `chrome.bookmarks.create`; checks `lastError` |
+| `createBookmark(page, parentId, title, url)` | Injects a bookmark leaf node; checks `lastError` |
+| `removeBookmarkNode(page, id)` | Recursively removes a folder or leaf by ID via `chrome.bookmarks.removeTree`; used in `afterEach` cleanup |
+| `cleanupBookmarksByTitle(page, title)` | Searches for nodes by title and removes all matches; used to clean up bookmarks created through the UI where the ID is unknown |
+| `getRootId(page)` | Reads the app's root folder ID from `chrome.storage.local`; checks `lastError` |
 
 #### `newtab.spec.ts` — New Tab Page
+
+Each `describe` group uses `test.beforeEach` to wait for the app to initialise before running assertions. Groups that create bookmarks use `test.afterEach` to remove them, preventing state from leaking between tests within the same worker run.
 
 | Test Group | What it covers |
 |---|---|
@@ -216,6 +256,5 @@ E2E tests load the built extension into a real Chromium browser using Playwright
 | **Toolbar** | Add-bookmark button, settings button, and filter input are all visible |
 | **Add-bookmark dialog** | Opens when the add button is clicked; closes when Cancel is clicked |
 | **Settings dialog** | Opens when the settings button is clicked; closes when Close is clicked; dark mode switch and accordion layout switch are present |
-| **Bookmark creation via UI** | Creates a new folder and bookmark through the form UI; verifies the folder appears in the accordion headers after saving |
-| **Bookmarks display** | Injects a folder and bookmark directly via the Chrome bookmarks API; reloads the page and verifies the folder title is rendered in the accordion |
-
+| **Bookmark creation via UI** | Creates a new folder and bookmark through the form UI; verifies the folder appears in the accordion headers after saving; cleans up the created folder after the test |
+| **Bookmarks display** | Injects a folder and bookmark directly via the Chrome bookmarks API; reloads the page and verifies the folder title is rendered in the accordion; removes the injected folder after the test |
