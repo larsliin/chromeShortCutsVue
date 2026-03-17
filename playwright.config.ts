@@ -22,8 +22,8 @@ export default defineConfig({
         // On Linux CI use: xvfb-run npx playwright test
         headless: false,
         trace: 'on-first-retry',
-        screenshot: 'only-on-failure',
-        video: 'retain-on-failure',
+        screenshot: 'off',
+        video: 'off',
     },
     // Build the extension before any E2E test runs
     globalSetup: path.join(__dirname, 'e2e', 'global-setup.ts'),

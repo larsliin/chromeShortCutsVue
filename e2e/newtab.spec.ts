@@ -6,6 +6,11 @@ import {
     getRootId,
     removeBookmarkNode,
     cleanupBookmarksByTitle,
+    enableSliderMode,
+    restoreAccordionMode,
+    storeBookmarkIcon,
+    seedSliderIndex,
+    clearSliderIndex,
 } from './fixtures';
 
 // ---------------------------------------------------------------------------
@@ -217,5 +222,180 @@ test.describe('Bookmarks display', () => {
             'API Test Folder',
             { timeout: 5_000 },
         );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// currentFolder getter — catches the off-by-one bug in _getters.ts
+// Bug: bookmarks[sliderIndex - 1] instead of bookmarks[sliderIndex]
+// ---------------------------------------------------------------------------
+
+test.describe('Current folder title (slider mode)', () => {
+    const folderIds: string[] = [];
+
+    test.beforeEach(async ({ extensionPage }) => {
+        await waitForAppReady(extensionPage);
+    });
+
+    test.afterEach(async ({ extensionPage }) => {
+        for (const id of folderIds) {
+            await removeBookmarkNode(extensionPage, id);
+        }
+        folderIds.length = 0;
+        await clearSliderIndex(extensionPage);
+        await restoreAccordionMode(extensionPage);
+    });
+
+    test('navigation title shows a folder name when sliderIndex is 0', async ({ extensionPage }) => {
+        let rootId: string | null = null;
+        await expect.poll(async () => {
+            rootId = await getRootId(extensionPage);
+            return rootId;
+        }, { timeout: 8_000 }).not.toBeNull();
+
+        // Create 2 folders so NavigationDots renders (requires bookmarks.length > 1)
+        const folderA = await createBookmarkFolder(extensionPage, rootId!, 'Getter Test A');
+        folderIds.push(folderA.id);
+        await createBookmark(extensionPage, folderA.id, 'placeholder', 'https://example.com');
+
+        const folderB = await createBookmarkFolder(extensionPage, rootId!, 'Getter Test B');
+        folderIds.push(folderB.id);
+        await createBookmark(extensionPage, folderB.id, 'placeholder', 'https://example.com');
+
+        // Seed sliderIndex=0 so init() sets it directly; reload in slider mode.
+        await seedSliderIndex(extensionPage, 0);
+        await enableSliderMode(extensionPage);
+        await extensionPage.reload();
+        await waitForAppReady(extensionPage);
+
+        // With the getter bug: currentFolder = bookmarks[-1] = undefined → null.
+        // Accessing null.title in the template throws → Vue catches it → input has no value.
+        // Without the bug: currentFolder = bookmarks[0] = a real folder → input shows its title.
+        await extensionPage.waitForFunction(
+            () => {
+                const input = document.querySelector(
+                    '[aria-label="Bookmark Folder Title"]',
+                ) as HTMLInputElement | null;
+                return !!(input?.value);
+            },
+            undefined,
+            { timeout: 5_000 },
+        );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// setSliderIndex clamping — catches the missing upper-bound clamp in utils.ts
+// Bug: Math.min(index, bookmarks.length - 1) call removed
+// ---------------------------------------------------------------------------
+
+test.describe('Slider index clamping (slider mode)', () => {
+    const folderIds: string[] = [];
+
+    test.beforeEach(async ({ extensionPage }) => {
+        await waitForAppReady(extensionPage);
+    });
+
+    test.afterEach(async ({ extensionPage }) => {
+        for (const id of folderIds) {
+            await removeBookmarkNode(extensionPage, id);
+        }
+        folderIds.length = 0;
+        await clearSliderIndex(extensionPage);
+        await restoreAccordionMode(extensionPage);
+    });
+
+    test('navigating left from an out-of-bounds index clamps to a valid folder', async ({ extensionPage }) => {
+        let rootId: string | null = null;
+        await expect.poll(async () => {
+            rootId = await getRootId(extensionPage);
+            return rootId;
+        }, { timeout: 8_000 }).not.toBeNull();
+
+        const folderA = await createBookmarkFolder(extensionPage, rootId!, 'Clamp Test A');
+        folderIds.push(folderA.id);
+        await createBookmark(extensionPage, folderA.id, 'placeholder', 'https://example.com');
+
+        const folderB = await createBookmarkFolder(extensionPage, rootId!, 'Clamp Test B');
+        folderIds.push(folderB.id);
+        await createBookmark(extensionPage, folderB.id, 'placeholder', 'https://example.com');
+
+        // Seed sliderIndex=99 so init() assigns it directly (bypassing setSliderIndex).
+        // This puts the slider in an out-of-bounds state at load time.
+        await seedSliderIndex(extensionPage, 99);
+        await enableSliderMode(extensionPage);
+        await extensionPage.reload();
+        await waitForAppReady(extensionPage);
+
+        // The left arrow is enabled when sliderIndex > 0 (99 > 0 = true).
+        // Clicking it calls setSliderIndex(98, true).
+        // With clamping:    Math.min(98, lastIndex) → valid index → currentFolder is real → title shown.
+        // Without clamping: sliderIndex stays 98 → currentFolder = null → title still broken.
+        await extensionPage.locator('button.navigation-arrow.left').click();
+
+        await extensionPage.waitForFunction(
+            () => {
+                const input = document.querySelector(
+                    '[aria-label="Bookmark Folder Title"]',
+                ) as HTMLInputElement | null;
+                return !!(input?.value);
+            },
+            undefined,
+            { timeout: 5_000 },
+        );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// get_localStorage return value — catches the wrong return in _actions.ts
+// Bug: resolve(event) instead of resolve(event[id]) → full storage object returned
+// ---------------------------------------------------------------------------
+
+test.describe('Bookmark icon persistence (slider mode)', () => {
+    const folderIds: string[] = [];
+
+    // A minimal 1 × 1 transparent PNG, valid enough to set as background-image.
+    const TEST_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+    test.beforeEach(async ({ extensionPage }) => {
+        await waitForAppReady(extensionPage);
+    });
+
+    test.afterEach(async ({ extensionPage }) => {
+        for (const id of folderIds) {
+            await removeBookmarkNode(extensionPage, id);
+        }
+        folderIds.length = 0;
+        await restoreAccordionMode(extensionPage);
+    });
+
+    test('custom bookmark icon is displayed after reload', async ({ extensionPage }) => {
+        let rootId: string | null = null;
+        await expect.poll(async () => {
+            rootId = await getRootId(extensionPage);
+            return rootId;
+        }, { timeout: 8_000 }).not.toBeNull();
+
+        const folder = await createBookmarkFolder(extensionPage, rootId!, 'Icon Test Folder');
+        folderIds.push(folder.id);
+        const bookmark = await createBookmark(
+            extensionPage,
+            folder.id,
+            'Icon Test Bookmark',
+            'https://example.com',
+        );
+
+        // Store the icon before reload so BookmarkLink.vue reads it on mount.
+        await storeBookmarkIcon(extensionPage, bookmark.id, folder.id, TEST_IMAGE);
+
+        await enableSliderMode(extensionPage);
+        await extensionPage.reload();
+        await waitForAppReady(extensionPage);
+
+        // BookmarkLink.vue calls get_localStorage(bookmarkId) on mount.
+        // Without the bug: returns { image: TEST_IMAGE } → image ref set → .bookmark-image rendered.
+        // With the bug: returns { [bookmarkId]: { image: TEST_IMAGE } } → .image is undefined
+        //               → image ref stays falsy → .bookmark-image element is never rendered.
+        await expect(extensionPage.locator('.bookmark-image').first()).toBeVisible({ timeout: 5_000 });
     });
 });
