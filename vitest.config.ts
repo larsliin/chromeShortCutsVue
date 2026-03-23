@@ -44,7 +44,7 @@ export default defineConfig({
         },
         coverage: {
             provider: 'v8',
-            reporter: ['text', 'html'],
+            reporter: ['text'],
             include: [
                 'src/shared/stores/bookmarks/_actions.ts',
                 'src/shared/stores/bookmarks/_getters.ts',

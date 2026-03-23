@@ -27,5 +27,5 @@ export default defineConfig({
     },
     // Build the extension before any E2E test runs
     globalSetup: path.join(__dirname, 'e2e', 'global-setup.ts'),
-    reporter: [['./e2e/table-reporter.ts'], ['html', { open: 'never' }]],
+    reporter: [['./e2e/table-reporter.ts']],
 });
