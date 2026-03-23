@@ -17,15 +17,15 @@
 
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { mdiHelpCircleOutline } from '@mdi/js';
 
-    defineProps({
-        tooltip: {
-            type: String,
-            required: true,
-        },
-    });
+    interface Props {
+        tooltip: string;
+    }
+
+    defineProps<Props>();
+
 </script>
 
 <style scoped lang="scss">

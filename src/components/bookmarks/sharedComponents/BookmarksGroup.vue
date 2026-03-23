@@ -62,10 +62,11 @@
     </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import {
         nextTick, computed, ref,
     } from 'vue';
+    import type { BookmarkNode, DragEventInfo } from '@/types/bookmark';
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
     import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
@@ -79,20 +80,13 @@
 
     const { emit } = useEventsBus();
 
-    const props = defineProps({
-        slideindex: {
-            type: Number,
-            required: true,
-        },
-        folder: {
-            type: Object,
-            required: true,
-        },
-        bookmarks: {
-            type: Array,
-            default: () => [],
-        },
-    });
+    interface Props {
+        slideindex: number;
+        folder: BookmarkNode;
+        bookmarks?: BookmarkNode[];
+    }
+
+    const props = withDefaults(defineProps<Props>(), { bookmarks: () => [] });
 
     const emits = defineEmits([
         EMITS.DELETE,
@@ -116,14 +110,14 @@
         showConfirmDelete.value = true;
     }
 
-    function getTabIndex() {
+    function getTabIndex(): string {
         if (bookmarksStore.accordionNavigation) {
             return '';
         }
         return props.slideindex === bookmarksStore.sliderIndex ? '1' : '-1';
     }
 
-    async function onDeleteConfirm() {
+    async function onDeleteConfirm(_event?: unknown): Promise<void> {
         emits(EMITS.BEFORE_DELETE);
 
         await nextTick();
@@ -133,26 +127,27 @@
 
         // get updated bookmark folder index
         const bookmarkResponse = await bookmarksStore.get_bookmarkById(props.folder.id);
-        const bookmark = bookmarkResponse;
 
-        utils.deleteBookmarkFolder(bookmarkResponse);
+        await utils.deleteBookmarkFolder(bookmarkResponse as BookmarkNode);
 
-        emits(EMITS.DELETE, { id: props.folder.id, index: bookmark.index });
+        emits(EMITS.DELETE, { id: props.folder.id, index: bookmarkResponse.index });
     }
 
     // when bookmark is moved to a different folder/parentId
-    async function onDragAdd(event) {
-        const bookmark = props.bookmarks[event.newIndex];
+    async function onDragAdd(event: DragEventInfo): Promise<void> {
+        const bookmark = props.bookmarks?.[event.newIndex];
 
-        bookmarksStore.move_bookmark(bookmark.id, {
-            parentId: props.folder.id,
-            index: event.newIndex,
-        });
+        if (bookmark) {
+            bookmarksStore.move_bookmark(bookmark.id, {
+                parentId: props.folder.id,
+                index: event.newIndex,
+            });
+        }
     }
 
     // when bookmark is moved within the same folder/parentId
-    async function onDragUpdate(event) {
-        const bookmark = props.bookmarks[event.newIndex];
+    async function onDragUpdate(event: DragEventInfo): Promise<void> {
+        const bookmark = (props.bookmarks ?? [])[event.newIndex];
 
         if (!bookmark) {
             return;

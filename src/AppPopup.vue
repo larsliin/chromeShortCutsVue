@@ -6,13 +6,14 @@
         @save="onBookmarkSave()" />
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { ref, onMounted } from 'vue';
     import BookmarkCreateForm from '@/components/forms/BookmarkCreateForm.vue';
     import { FOLDER } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useTheme } from 'vuetify';
     import { useUtils } from '@/shared/composables/utils';
+    import type { BookmarkNode } from '@/types/bookmark';
 
     const theme = useTheme();
 
@@ -28,7 +29,7 @@
         window.close();
     }
 
-    function onGetTab(tabs) {
+    function onGetTab(tabs: chrome.tabs.Tab[]): void {
         const currentTab = tabs[0];
 
         editBookmarkData.value = {
@@ -37,15 +38,20 @@
         };
     }
 
-    async function getBookmarks() {
+    async function getBookmarks(): Promise<void> {
         const rootFolderResponse = await bookmarksStore
-            .get_folderByTitle(bookmarksStore.bookmarksBarId, FOLDER.ROOT.label);
+            .get_folderByTitle(bookmarksStore.bookmarksBarId as string, FOLDER.ROOT.label);
+
+        if (!rootFolderResponse.length) {
+            return;
+        }
 
         bookmarksStore.rootId = rootFolderResponse[0].id;
 
-        const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+        const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId as string);
 
-        bookmarksStore.bookmarks = bookmarks ? bookmarks[0].children : [];
+        const bmChildren = bookmarks?.[0]?.children ?? [];
+        bookmarksStore.bookmarks = bmChildren as BookmarkNode[];
     }
 
     onMounted(async () => {
@@ -63,8 +69,10 @@
         ]);
 
         // Locate and set up the bookmarks bar
-        const bookmarksBar = tree[0].children
-            .find((node) => node.folderType === FOLDER.ROOT.parentFolderType);
+        const bookmarksBar = (tree[0].children ?? []).find((node) => {
+            const n = node as chrome.bookmarks.BookmarkTreeNode & { folderType?: string };
+            return n.folderType === FOLDER.ROOT.parentFolderType;
+        });
 
         if (!bookmarksBar) {
             return;

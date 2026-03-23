@@ -9,13 +9,14 @@
             variant="solo"
             :append-inner-icon="mdiMagnify"
             :disabled="!isEnabled"
-            @click:clear="onClear($event)"
+            @click:clear="onClear()"
             @update:modelValue="onUpdate($event)" />
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { cloneDeep } from 'lodash';
+    import type { BookmarkNode } from '@/types/bookmark';
     import { EMITS } from '@/constants';
     import { mdiMagnify } from '@mdi/js';
     import {
@@ -31,18 +32,18 @@
 
     const bookmarksStore = useBookmarksStore();
 
-    let clonedBookmarks;
+    let clonedBookmarks: BookmarkNode[] = [];
 
-    async function onClear() {
+    async function onClear(): Promise<void> {
         bookmarksStore.bookmarks = cloneDeep(clonedBookmarks);
     }
 
-    let throttleTimer = null;
-    let transitionTimer = null;
+    let throttleTimer: ReturnType<typeof setTimeout> | null = null;
+    let transitionTimer: ReturnType<typeof setTimeout> | null = null;
 
-    async function runFilter(event = '') {
-        const bookmarks = cloneDeep(clonedBookmarks);
-        let currentFolder = bookmarksStore.bookmarks[bookmarksStore.sliderIndex];
+    async function runFilter(event = ''): Promise<void> {
+        const bookmarks: BookmarkNode[] = cloneDeep(clonedBookmarks);
+        let currentFolder = bookmarksStore.bookmarks?.[bookmarksStore.sliderIndex ?? 0];
 
         if (!currentFolder) {
             [currentFolder] = bookmarks;
@@ -63,17 +64,16 @@
                     return item.children.length > 0 ? item : null;
                 }
                 return null;
-            }).filter(Boolean);
+            }).filter((x): x is BookmarkNode => x !== null);
 
             bookmarksStore.bookmarks = filteredData;
 
-            sliderIndex = Math.max(bookmarksStore.bookmarks
+            sliderIndex = Math.max((bookmarksStore.bookmarks ?? [])
                 .findIndex((e) => e.id === currentFolderId), 0);
         } else {
-            // if filter string is empty then reset bookmarks
             bookmarksStore.bookmarks = bookmarks;
 
-            sliderIndex = Math.max(bookmarksStore.bookmarks
+            sliderIndex = Math.max((bookmarksStore.bookmarks ?? [])
                 .findIndex((e) => e.id === currentFolderId), 0);
         }
 
@@ -92,7 +92,7 @@
     }
 
     // Filter the data
-    function onUpdate(event = '') {
+    function onUpdate(event = ''): void {
         bookmarksStore.transitionDisabled = true;
 
         if (throttleTimer) {
@@ -109,7 +109,7 @@
     async function getBookmarks() {
         try {
             const bookmarksResponse = await bookmarksStore
-                .get_colorizedBookmarks(bookmarksStore.rootId);
+                .get_colorizedBookmarks(bookmarksStore.rootId as string);
 
             clonedBookmarks = bookmarksResponse[0]?.children
                 ? bookmarksResponse[0].children : [];

@@ -2,7 +2,7 @@
     <div class="background" :class="{ dark: bookmarksStore.enableDarkMode }"></div>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const bookmarksStore = useBookmarksStore();

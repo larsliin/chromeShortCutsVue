@@ -11,7 +11,7 @@
     </button>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { mdiChevronRight, mdiChevronLeft } from '@mdi/js';
     import { ref, onMounted, watch } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
@@ -19,35 +19,35 @@
 
     const utils = useUtils();
 
-    const props = defineProps({
-        direction: {
-            type: String,
-            required: true,
-        },
-    });
+    interface Props {
+        direction: string;
+    }
+
+    const props = defineProps<Props>();
 
     const disabled = ref(false);
 
     const bookmarksStore = useBookmarksStore();
 
-    function onClick() {
-        if (props.direction === 'left'
-            && bookmarksStore.sliderIndex > 0) {
-            utils.setSliderIndex(bookmarksStore.sliderIndex - 1, true);
+    function onClick(): void {
+        const idx = bookmarksStore.sliderIndex ?? 0;
+        const len = bookmarksStore.bookmarks?.length ?? 0;
+        if (props.direction === 'left' && idx > 0) {
+            utils.setSliderIndex(idx - 1, true);
         }
-        if (props.direction === 'right'
-            && bookmarksStore.sliderIndex < bookmarksStore.bookmarks.length - 1) {
-            utils.setSliderIndex(bookmarksStore.sliderIndex + 1, true);
+        if (props.direction === 'right' && idx < len - 1) {
+            utils.setSliderIndex(idx + 1, true);
         }
     }
 
-    function toggleEnabled() {
+    function toggleEnabled(): void {
+        const idx = bookmarksStore.sliderIndex ?? 0;
+        const len = bookmarksStore.bookmarks?.length ?? 0;
         if (props.direction === 'right') {
-            disabled.value = bookmarksStore.sliderIndex === bookmarksStore.bookmarks.length - 1;
+            disabled.value = idx === len - 1;
         }
-
         if (props.direction === 'left') {
-            disabled.value = bookmarksStore.sliderIndex === 0;
+            disabled.value = idx === 0;
         }
     }
 

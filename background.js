@@ -23,21 +23,29 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
     if (reason === 'install') {
         const tree = await chrome.bookmarks.getTree();
-        const bookmarksBar = tree[0].children.find((node) => node.folderType  === FOLDER.ROOT.parentFolderType );
-        const bookmarksBarId = bookmarksBar.id;
-        
-        if(!bookmarksBar) {
+        const bookmarksBar = tree[0].children.find((node) => node.folderType === FOLDER.ROOT.parentFolderType);
+
+        if (!bookmarksBar) {
             return;
         }
 
+        const bookmarksBarId = bookmarksBar.id;
+
         chrome.bookmarks.getSubTree(bookmarksBarId, (result) => {
+            if (chrome.runtime.lastError) {
+                console.error('getSubTree error:', chrome.runtime.lastError);
+                return;
+            }
+
             const bookmarkTreeNodes = result[0].children;
             const folder = searchFolder(bookmarkTreeNodes, title);
 
             if (!folder) {
-                chrome.bookmarks.create(
-                    { parentId: bookmarksBarId, title },
-                );
+                chrome.bookmarks.create({ parentId: bookmarksBarId, title }, () => {
+                    if (chrome.runtime.lastError) {
+                        console.error('create bookmark error:', chrome.runtime.lastError);
+                    }
+                });
             }
         });
     }
@@ -56,12 +64,15 @@ function disableActionButton(tabId, url) {
 
 chrome.tabs.onActivated.addListener((activeInfo) => {
     chrome.tabs.get(activeInfo.tabId, (tab) => {
+        if (chrome.runtime.lastError) {
+            return;
+        }
         disableActionButton(activeInfo.tabId, tab.url);
     });
+});
 
-    chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-        if (activeInfo.tabId === tabId && changeInfo.url) {
-            disableActionButton(tabId, changeInfo.url);
-        }
-    });
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+    if (changeInfo.url) {
+        disableActionButton(tabId, changeInfo.url);
+    }
 });

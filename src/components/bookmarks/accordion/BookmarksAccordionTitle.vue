@@ -19,7 +19,7 @@
             :style="{ '--dynamic-background-color': inputBackgroundColor }"
             @click.stop="onInputClick($event)"
             @focus.stop="onInputFocus()"
-            @blur.stop="onBlur($event)"
+            @blur.stop="onBlur()"
             @keydown.stop="keyDown($event)"
             @keyup.stop="keyUp($event)"
             v-model="model" />
@@ -57,10 +57,11 @@
     </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import {
         ref, onMounted, nextTick, watch,
     } from 'vue';
+    import type { BookmarkNode } from '@/types/bookmark';
     import {
         mdiRename, mdiDragHorizontal, mdiDeleteOutline, mdiStar, mdiPalette,
     } from '@mdi/js';
@@ -87,12 +88,11 @@
         EMITS.BEFORE_DELETE,
     ]);
 
-    const props = defineProps({
-        bookmark: {
-            type: Object,
-            required: true,
-        },
-    });
+    interface Props {
+        bookmark: BookmarkNode;
+    }
+
+    const props = defineProps<Props>();
 
     // https://pictogrammers.com/library/mdi
     const list = ref([
@@ -157,7 +157,7 @@
         }
     }
 
-    async function onColorConfirm(event) {
+    async function onColorConfirm(event: string | null): Promise<void> {
         selectedColor.value = event;
 
         showColorEdit.value = false;
@@ -165,15 +165,15 @@
         const getColorsResponse = await bookmarksStore.get_syncStorage('folderColors');
         const colorsObj = getColorsResponse || {};
 
-        const folder = bookmarksStore.bookmarks.find((e) => e.id === props.bookmark.id);
+        const folder = bookmarksStore.bookmarks?.find((e) => e.id === props.bookmark.id);
 
         if (event) {
             colorsObj[props.bookmark.id] = selectedColor.value;
-            folder.color = selectedColor.value;
+            if (folder) folder.color = selectedColor.value;
             color.value = selectedColor.value;
         } else if (colorsObj[props.bookmark.id]) {
             delete colorsObj[props.bookmark.id];
-            folder.color = '';
+            if (folder) folder.color = '';
             color.value = null;
         }
 
@@ -198,7 +198,7 @@
         showConfirmDelete.value = true;
     }
 
-    async function onDeleteConfirm() {
+    async function onDeleteConfirm(_event?: unknown): Promise<void> {
         emits(EMITS.BEFORE_DELETE);
 
         await nextTick();
@@ -215,7 +215,7 @@
         emits(EMITS.DELETE, { id: props.bookmark.id, index: bookmark.index });
     }
 
-    function onInputClick(event) {
+    function onInputClick(event: MouseEvent): void {
         event.preventDefault();
     }
 
@@ -230,13 +230,13 @@
         inputBackgroundColor.value = '';
     }
 
-    async function keyDown(event) {
+    async function keyDown(event: KeyboardEvent): Promise<void> {
         if (event.keyCode === 13) {
             input.value.blur();
         }
     }
 
-    function keyUp(event) {
+    function keyUp(event: KeyboardEvent): void {
         event.preventDefault();
     }
 

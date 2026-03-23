@@ -40,12 +40,13 @@
     </v-menu>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { mdiDotsVertical } from '@mdi/js';
     import { ref, watch } from 'vue';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
+    import type { FoldoutListItem } from '@/types/bookmark';
 
     const { bus } = useEventsBus();
 
@@ -60,21 +61,17 @@
         EMITS.BOOKMARK_ADD,
     ]);
 
-    defineProps({
-        list: {
-            type: Array,
-            required: true,
-        },
-        size: {
-            type: String,
-            default: 'small',
-        },
-        darkModeBorder: Boolean,
-    });
+    interface Props {
+        list: FoldoutListItem[];
+        size?: string;
+        darkModeBorder?: boolean;
+    }
+
+    withDefaults(defineProps<Props>(), { size: 'small' });
 
     const toggle = ref();
 
-    function onListItemClick(event) {
+    function onListItemClick(event: string): void {
         switch (event) {
         case EMITS.RENAME:
             emits(EMITS.RENAME);

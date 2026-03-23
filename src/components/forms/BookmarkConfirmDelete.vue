@@ -33,24 +33,20 @@
     </v-card>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { onMounted, onUnmounted } from 'vue';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const bookmarksStore = useBookmarksStore();
 
-    const props = defineProps({
-        title: {
-            type: String,
-            default: '',
-        },
-        id: {
-            type: String,
-            required: true,
-        },
-        typeFolder: Boolean,
-    });
+    interface Props {
+        title?: string;
+        id: string;
+        typeFolder?: boolean;
+    }
+
+    const props = withDefaults(defineProps<Props>(), { title: '' });
 
     const emits = defineEmits([
         EMITS.CANCEL, EMITS.CONFIRM,

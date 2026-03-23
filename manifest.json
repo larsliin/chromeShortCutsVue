@@ -1,25 +1,28 @@
 {
-	"manifest_version": 3,
-	"name": "My Shortcuts Tab",
-	"version": "1.0",
-	"description": "Customize your new tab: organize bookmarks, access favorites instantly, and rearrange with drag-and-drop ease.",
-	"permissions": [
-		"bookmarks",
-		"storage",
-		"unlimitedStorage",
-		"tabs"
-	],
-	"chrome_url_overrides": {
-		"newtab": "index.html"
-	},
-	"background": {
-		"service_worker": "background.js",
-		"type": "module"
-	},
-	"action": {
-		"default_popup": "popup.html"
-	},
-	"icons": {
-		"128": "icons/128-bw.png"
-	}
+    "manifest_version": 3,
+    "name": "My Shortcuts Tab",
+    "version": "1.0",
+    "description": "Customize your new tab: organize bookmarks, access favorites instantly, and rearrange with drag-and-drop ease.",
+    "permissions": [
+        "bookmarks",
+        "storage",
+        "unlimitedStorage",
+        "tabs"
+    ],
+    "chrome_url_overrides": {
+        "newtab": "index.html"
+    },
+    "background": {
+        "service_worker": "background.js",
+        "type": "module"
+    },
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "128": "icons/128-bw.png"
+        }
+    },
+    "icons": {
+        "128": "icons/128-bw.png"
+    }
 }

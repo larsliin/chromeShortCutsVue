@@ -106,7 +106,7 @@
     </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
     import { mdiStar, mdiWrench, mdiAlertCircleOutline } from '@mdi/js';
     import {
         ref, watch, onMounted,
@@ -114,7 +114,7 @@
     import BookmarkCreateForm from '@/components/forms/BookmarkCreateForm.vue';
     import BookmarkSettingsForm from '@/components/forms/BookmarkSettingsForm.vue';
     import useEventsBus from '@cmp/eventBus';
-    import { EMITS } from '@/constants';
+    import { EMITS, TIMEOUTS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useUtils } from '@/shared/composables/utils';
     import BookmarkConfirmDelete
@@ -130,7 +130,7 @@
     const showClearbitError = ref(false);
     const showClearbitDomain = ref();
 
-    function onClearbitError(event) {
+    function onClearbitError(event: string): void {
         showClearbitDomain.value = event;
         showClearbitError.value = true;
     }
@@ -139,7 +139,7 @@
     const deleteConfirmTitle = ref('');
     const showConfirmDelete = ref(false);
 
-    function onDelete(event) {
+    function onDelete(event: { title: string; id: string }): void {
         deleteConfirmTitle.value = event.title;
         deleteConfirmId.value = event.id;
         showConfirmDelete.value = true;
@@ -148,9 +148,9 @@
     const bookmarksStore = useBookmarksStore();
     const dialogAddOpen = ref(false);
 
-    async function onDeleteConfirm(id) {
-        deleteConfirmTitle.value = null;
-        deleteConfirmId.value = null;
+    async function onDeleteConfirm(id: string): Promise<void> {
+        deleteConfirmTitle.value = '';
+        deleteConfirmId.value = '';
         showConfirmDelete.value = false;
         dialogAddOpen.value = false;
 
@@ -208,7 +208,7 @@
             setTimeout(() => {
                 editBookmarkData.value = null;
                 folderPreSelected.value = null;
-            }, 1000);
+            }, TIMEOUTS.DIALOG_CLOSE_MS);
         }
     });
 
