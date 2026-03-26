@@ -13,6 +13,7 @@ export enum EMITS {
     BOOKMARKS_IMPORT = 'bookmarksImport',
     BOOKMARKS_UPDATED = 'bookmarksUpdated',
     OPEN_COLOR_EDITOR = 'openColorEditor',
+    CLEAR_COLOR = 'clearColor',
     CANCEL = 'cancel',
     CHANGED = 'changed',
     CLEARBIT_ERROR = 'clearbitError',

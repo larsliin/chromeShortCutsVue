@@ -78,7 +78,8 @@
                                 :color="bookmarkColor"
                                 @update="onIconUpdate($event)"
                                 @clearbitError="onClearbitError($event)"
-                                @openColorEditor="showColorEdit = true" />
+                                @openColorEditor="showColorEdit = true"
+                                @clearColor="onClearColor()" />
                         </v-col>
                     </v-row>
                 </v-container>
@@ -282,6 +283,10 @@
 
     function onClearbitError(event: string): void {
         emits(EMITS.CLEARBIT_ERROR, event);
+    }
+
+    function onClearColor(): void {
+        bookmarkColor.value = null;
     }
 
     function onColorConfirm(event: string | null): void {

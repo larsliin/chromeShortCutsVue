@@ -40,7 +40,7 @@
                 <v-btn
                     color="blue-darken-1 mb-3"
                     variant="tonal"
-                    :disabled="!base64Image"
+                    :disabled="!base64Image && !color"
                     @click="onClearImage()">
                     Clear
                 </v-btn>
@@ -82,6 +82,7 @@
         EMITS.CLEARBIT_ERROR,
         EMITS.UPDATE,
         EMITS.OPEN_COLOR_EDITOR,
+        EMITS.CLEAR_COLOR,
     ]);
 
     const showClearbitError = ref(false);
@@ -146,8 +147,8 @@
 
     function onClearImage() {
         base64Image.value = null;
-
         emits(EMITS.UPDATE, '');
+        emits(EMITS.CLEAR_COLOR);
     }
 
     watch(() => props.iconUrl, (newVal) => {
