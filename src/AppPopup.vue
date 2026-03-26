@@ -1,9 +1,10 @@
 <template>
-    <BookmarkCreateForm
-        style="width: 750px;"
-        v-if="editBookmarkData"
-        :data="editBookmarkData"
-        @save="onBookmarkSave()" />
+    <div class="popup-wrapper">
+        <BookmarkCreateForm
+            v-if="editBookmarkData"
+            :data="editBookmarkData"
+            @save="onBookmarkSave()" />
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -112,4 +113,8 @@
 
 <style>
     @import "./scss/typography.scss";
+
+    .popup-wrapper {
+        min-width: 650px;
+    }
 </style>
