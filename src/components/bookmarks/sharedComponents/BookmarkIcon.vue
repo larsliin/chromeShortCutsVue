@@ -134,7 +134,7 @@
         font-size: 50px;
         justify-content: center;
         overflow: hidden;
-        padding: 10px;
+        padding: 8px;
         position: relative;
         transform-origin: center right;
         transition: all 0.05s;
