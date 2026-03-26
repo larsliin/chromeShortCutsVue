@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { mountWithPlugins } from '../test-utils';
 import ToolTip from '@/components/fields/ToolTip.vue';
+import { mountWithPlugins } from '../test-utils';
 
 // ---------------------------------------------------------------------------
 // Factory

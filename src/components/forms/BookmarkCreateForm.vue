@@ -75,8 +75,10 @@
                                 :data="data"
                                 :url="urlTxt"
                                 :iconUrl="base64Image"
+                                :color="bookmarkColor"
                                 @update="onIconUpdate($event)"
-                                @clearbitError="onClearbitError($event)" />
+                                @clearbitError="onClearbitError($event)"
+                                @openColorEditor="showColorEdit = true" />
                         </v-col>
                     </v-row>
                 </v-container>
@@ -106,12 +108,29 @@
             </v-card-actions>
         </v-form>
     </v-card>
+    <Teleport to="body"
+        v-if="showColorEdit">
+        <template>
+            <v-row justify="center">
+                <v-dialog
+                    v-model="showColorEdit"
+                    persistent
+                    width="450">
+                    <BookmarkColorEdit
+                        :value="bookmarkColor ?? undefined"
+                        @confirm="onColorConfirm($event)"
+                        @cancel="showColorEdit = false" />
+                </v-dialog>
+            </v-row>
+        </template>
+    </Teleport>
 </template>
 
 <script setup lang="ts">
     import { ref, watch, onMounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkCreateIcon from '@/components/forms/BookmarkCreateIcon.vue';
+    import BookmarkColorEdit from '@/components/forms/BookmarkColorEdit.vue';
     import { EMITS } from '@/constants';
     import { useUtils } from '@/shared/composables/utils';
     import useEventsBus from '@cmp/eventBus';
@@ -156,6 +175,8 @@
     const folderTxt = ref('');
     const titleTxt = ref('');
     const urlTxt = ref('');
+    const bookmarkColor = ref<string | null>(null);
+    const showColorEdit = ref(false);
 
     async function moveToFolder(folderStr: string, newFolderId?: string): Promise<void> {
         if (newFolderId) {
@@ -244,6 +265,14 @@
             });
         }
 
+        // Save bookmark color
+        const bookmarkId = id.value || createBookmarkResponse?.id;
+        if (bookmarkId) {
+            await saveBookmarkColor(bookmarkId);
+        }
+
+        emit(EMITS.BOOKMARKS_UPDATED, { type: 'color', id: bookmarkId });
+
         emits(EMITS.SAVE);
     }
 
@@ -253,6 +282,34 @@
 
     function onClearbitError(event: string): void {
         emits(EMITS.CLEARBIT_ERROR, event);
+    }
+
+    function onColorConfirm(event: string | null): void {
+        bookmarkColor.value = event;
+        showColorEdit.value = false;
+    }
+
+    async function saveBookmarkColor(bookmarkId: string): Promise<void> {
+        const colorsObj = await bookmarksStore.get_syncStorage('bookmarkColors') || {};
+
+        if (bookmarkColor.value) {
+            colorsObj[bookmarkId] = bookmarkColor.value;
+        } else if (colorsObj[bookmarkId]) {
+            delete colorsObj[bookmarkId];
+        } else {
+            return;
+        }
+
+        if (!Object.keys(colorsObj).length) {
+            await bookmarksStore.delete_syncStorageItem('bookmarkColors');
+        } else {
+            await bookmarksStore.set_syncStorage({ bookmarkColors: colorsObj });
+        }
+
+        const bookmark = utils.getStoredBookmarkById(bookmarkId);
+        if (bookmark) {
+            bookmark.color = bookmarkColor.value || '';
+        }
     }
 
     watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async () => {
@@ -292,10 +349,18 @@
             if (props.data.image) {
                 base64Image.value = JSON.parse(JSON.stringify(props.data.image));
             }
+
+            // Load existing bookmark color
+            if (props.data.id) {
+                const colorsObj = await bookmarksStore.get_syncStorage('bookmarkColors');
+                if (colorsObj && colorsObj[props.data.id]) {
+                    bookmarkColor.value = colorsObj[props.data.id];
+                }
+            }
         }
 
         if (!slctDisabled && props.data?.parentId) {
-            const parentIndex = folderChildren.findIndex((e) => e.id === props.data!.parentId);
+            const parentIndex = folderChildren.findIndex((e) => e.id === props.data?.parentId);
             folderSlct.value = bookmarksStore.bookmarks?.[parentIndex]?.title ?? null;
         }
 

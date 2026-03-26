@@ -5,6 +5,7 @@
                 cols="12">
                 <BookmarkIcon
                     :loading="isIconLoading"
+                    :color="color ?? undefined"
                     :image="base64Image" />
             </v-col>
         </v-row>
@@ -18,19 +19,24 @@
                     accept=".jpg, .jpeg, .gif, .png, .svg"
                     @change="onImageInpChange($event)" />
                 <v-btn
-                    color="blue-darken-1 mr-3 mb-3"
+                    class="mr-3 mb-3"
+                    color="blue-darken-1"
                     variant="tonal"
-                    @click="onClickFindImage()">
-                    Browse
-                </v-btn>
+                    :icon="mdiFolderOpen"
+                    @click="onClickFindImage()" />
                 <v-btn
                     class="mr-3 mb-3"
                     color="blue-darken-1"
                     variant="tonal"
+                    :icon="mdiCloudDownload"
                     :disabled="!url"
-                    @click="getClearbitImage()">
-                    Generate
-                </v-btn>
+                    @click="getClearbitImage()" />
+                <v-btn
+                    class="mr-3 mb-3"
+                    color="blue-darken-1"
+                    variant="tonal"
+                    :icon="mdiFormatColorFill"
+                    @click="emits(EMITS.OPEN_COLOR_EDITOR)" />
                 <v-btn
                     color="blue-darken-1 mb-3"
                     variant="tonal"
@@ -53,6 +59,7 @@
 
 <script setup lang="ts">
     import { ref, watch } from 'vue';
+    import { mdiFormatColorFill, mdiFolderOpen, mdiCloudDownload } from '@mdi/js';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import { useUtils } from '@/shared/composables/utils';
     import { useBookmarksStore } from '@stores/bookmarks';
@@ -66,13 +73,15 @@
         data?: { url?: string };
         url?: string | null;
         iconUrl?: string;
+        color?: string | null;
     }
 
-    const props = withDefaults(defineProps<Props>(), { url: null, iconUrl: '' });
+    const props = withDefaults(defineProps<Props>(), { url: null, iconUrl: '', color: null });
 
     const emits = defineEmits([
         EMITS.CLEARBIT_ERROR,
         EMITS.UPDATE,
+        EMITS.OPEN_COLOR_EDITOR,
     ]);
 
     const showClearbitError = ref(false);

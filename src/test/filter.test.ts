@@ -28,9 +28,8 @@ function applyFilter(allBookmarks: BookmarkNode[], term: string): BookmarkNode[]
         .map((item) => {
             if (item.children) {
                 item.children = item.children.filter(
-                    (child) =>
-                        child.title.toLowerCase().includes(term.toLowerCase()) &&
-                        !child.children,
+                    (child) => child.title.toLowerCase().includes(term.toLowerCase())
+                        && !child.children,
                 );
                 return item.children.length > 0 ? item : null;
             }

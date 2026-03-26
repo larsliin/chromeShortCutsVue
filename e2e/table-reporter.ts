@@ -84,7 +84,9 @@ interface RowData {
 
 class TableReporter implements Reporter {
     private rows: RowData[] = [];
+
     private counter = 0;
+
     private startedAt = Date.now();
 
     onBegin() {
@@ -100,9 +102,9 @@ class TableReporter implements Reporter {
         const icon = STATUS_ICON[rawStatus] ?? yellow('?');
         const statusLabel = rawStatus === 'passed' ? green('passed')
             : rawStatus === 'failed' ? red('failed')
-            : rawStatus === 'timedOut' ? red('timed out')
-            : rawStatus === 'skipped' ? yellow('skipped')
-            : yellow(rawStatus);
+                : rawStatus === 'timedOut' ? red('timed out')
+                    : rawStatus === 'skipped' ? yellow('skipped')
+                        : yellow(rawStatus);
 
         this.rows.push({
             n: this.counter,

@@ -63,7 +63,7 @@
     } from 'vue';
     import type { BookmarkNode } from '@/types/bookmark';
     import {
-        mdiRename, mdiDragHorizontal, mdiDeleteOutline, mdiStar, mdiPalette,
+        mdiRename, mdiDragHorizontal, mdiDeleteOutline, mdiStar, mdiFormatColorFill,
     } from '@mdi/js';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkConfirmDelete
@@ -108,7 +108,7 @@
         },
         {
             title: 'Folder Color',
-            icon: mdiPalette,
+            icon: mdiFormatColorFill,
             event: EMITS.OPEN_COLOR_EDITOR,
         },
         {

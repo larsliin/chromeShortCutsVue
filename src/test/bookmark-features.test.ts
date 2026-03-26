@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useBookmarksStore } from '@stores/bookmarks';
-import { chromeMock, fireCallback, fireThreeArgCallback } from './mocks/chrome';
 import type { BookmarkNode } from '@/types/bookmark';
+import { chromeMock, fireCallback, fireThreeArgCallback } from './mocks/chrome';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -125,7 +125,9 @@ describe('Delete bookmark', () => {
     it('in-memory state: removes a single bookmark from its parent folder', () => {
         store.bookmarks = [
             {
-                id: 'f1', title: 'Work', children: [
+                id: 'f1',
+                title: 'Work',
+                children: [
                     { id: 'b1', title: 'GitHub', url: 'https://github.com' },
                     { id: 'b2', title: 'Jira', url: 'https://jira.com' },
                 ],
@@ -230,7 +232,9 @@ describe('Export bookmarks', () => {
     it('merges icon images from local storage into the matching bookmark', async () => {
         store.bookmarks = [
             {
-                id: 'f1', title: 'Work', children: [
+                id: 'f1',
+                title: 'Work',
+                children: [
                     { id: 'b1', title: 'GitHub', url: 'https://github.com' },
                 ],
             },
@@ -327,9 +331,7 @@ describe('Import bookmarks', () => {
             .mockImplementationOnce((_: unknown, cb: (n: typeof b2) => void) => cb(b2));
 
         const results = await Promise.all(
-            flatBookmarks.map((bm) =>
-                store.create_bookmark(foldersMap[bm.parentId], bm.title, bm.url),
-            ),
+            flatBookmarks.map((bm) => store.create_bookmark(foldersMap[bm.parentId], bm.title, bm.url)),
         );
 
         expect(chromeMock.bookmarks.create).toHaveBeenNthCalledWith(
@@ -362,7 +364,9 @@ describe('Import bookmarks', () => {
         const raw = JSON.stringify({
             bookmarks: [
                 {
-                    id: 'f1', title: 'Work', children: [
+                    id: 'f1',
+                    title: 'Work',
+                    children: [
                         { id: 'b1', title: 'GitHub', url: 'https://github.com' },
                     ],
                 },

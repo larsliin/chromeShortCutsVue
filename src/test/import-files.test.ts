@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useBookmarksStore } from '@stores/bookmarks';
-import { chromeMock, fireCallback } from './mocks/chrome';
 import type { BookmarkNode } from '@/types/bookmark';
+import { chromeMock, fireCallback } from './mocks/chrome';
 
 // ---------------------------------------------------------------------------
 // Fixtures — representative slices that match the shape of the real exported
@@ -164,9 +164,7 @@ describe('Import bookmarks file', () => {
             .mockImplementationOnce((_: unknown, cb: (n: typeof newEmpty) => void) => cb(newEmpty));
 
         const results = await Promise.all(
-            BOOKMARKS_FIXTURE.bookmarks.map((folder) =>
-                store.create_bookmark('root', folder.title),
-            ),
+            BOOKMARKS_FIXTURE.bookmarks.map((folder) => store.create_bookmark('root', folder.title)),
         );
 
         expect(chromeMock.bookmarks.create).toHaveBeenCalledTimes(3);
@@ -186,9 +184,7 @@ describe('Import bookmarks file', () => {
             .mockImplementationOnce((_: unknown, cb: (n: typeof newEmpty) => void) => cb(newEmpty));
 
         const createdFolders = await Promise.all(
-            BOOKMARKS_FIXTURE.bookmarks.map((folder) =>
-                store.create_bookmark('root', folder.title),
-            ),
+            BOOKMARKS_FIXTURE.bookmarks.map((folder) => store.create_bookmark('root', folder.title)),
         );
 
         const foldersMap: Record<string, string> = {};
@@ -203,8 +199,8 @@ describe('Import bookmarks file', () => {
 
     it('creates child bookmarks under the correct new folder IDs using the folder map', async () => {
         const foldersMap: Record<string, string> = {
-            '556': 'new-556',
-            '557': 'new-557',
+            556: 'new-556',
+            557: 'new-557',
         };
 
         const flatBookmarks = BOOKMARKS_FIXTURE.bookmarks.flatMap((f) => f.children);
@@ -219,9 +215,7 @@ describe('Import bookmarks file', () => {
             .mockImplementationOnce((_: unknown, cb: (n: typeof newWorkBook) => void) => cb(newWorkBook));
 
         const results = await Promise.all(
-            flatBookmarks.map((bm) =>
-                store.create_bookmark(foldersMap[bm.parentId!], bm.title, bm.url),
-            ),
+            flatBookmarks.map((bm) => store.create_bookmark(foldersMap[bm.parentId!], bm.title, bm.url)),
         );
 
         expect(chromeMock.bookmarks.create).toHaveBeenCalledTimes(3);
@@ -269,9 +263,7 @@ describe('Import bookmarks file', () => {
 
         // Step 1: create folders
         const createdFolders = await Promise.all(
-            BOOKMARKS_FIXTURE.bookmarks.map((folder) =>
-                store.create_bookmark('root', folder.title),
-            ),
+            BOOKMARKS_FIXTURE.bookmarks.map((folder) => store.create_bookmark('root', folder.title)),
         );
 
         const foldersMap: Record<string, string> = {};
@@ -282,9 +274,7 @@ describe('Import bookmarks file', () => {
         // Step 2: create bookmarks under the new folder IDs
         const flatBookmarks = BOOKMARKS_FIXTURE.bookmarks.flatMap((f) => f.children);
         const createdBookmarks = await Promise.all(
-            flatBookmarks.map((bm) =>
-                store.create_bookmark(foldersMap[bm.parentId!], bm.title, bm.url),
-            ),
+            flatBookmarks.map((bm) => store.create_bookmark(foldersMap[bm.parentId!], bm.title, bm.url)),
         );
 
         // 3 folders + 3 bookmarks = 6 total create calls
@@ -359,17 +349,15 @@ describe('Import icons file', () => {
             .filter((item) => item.image)
             .flatMap((item) => {
                 const matches = flatLiveBookmarks.filter((bm) => bm.url === item.url);
-                return matches.map((bm) =>
-                    store.set_localStorage({
-                        [bm.id]: {
-                            id: bm.id,
-                            parentId: item.parentId,
-                            image: item.image,
-                            url: item.url,
-                            title: item.title,
-                        },
-                    }),
-                );
+                return matches.map((bm) => store.set_localStorage({
+                    [bm.id]: {
+                        id: bm.id,
+                        parentId: item.parentId,
+                        image: item.image,
+                        url: item.url,
+                        title: item.title,
+                    },
+                }));
             });
 
         await Promise.all(storageCallsPromises);
@@ -467,11 +455,9 @@ describe('Import icons file', () => {
             .filter((item) => item.image)
             .flatMap((item) => {
                 const matches = flatLiveBookmarks.filter((bm) => bm.url === item.url);
-                return matches.map((bm) =>
-                    store.set_localStorage({
-                        [bm.id]: { id: bm.id, image: item.image },
-                    }),
-                );
+                return matches.map((bm) => store.set_localStorage({
+                    [bm.id]: { id: bm.id, image: item.image },
+                }));
             });
 
         await Promise.all(storageCallsPromises);

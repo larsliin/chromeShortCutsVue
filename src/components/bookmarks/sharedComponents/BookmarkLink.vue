@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-    import { mdiRename, mdiDeleteOutline, mdiPalette } from '@mdi/js';
+    import { mdiRename, mdiDeleteOutline, mdiFormatColorFill } from '@mdi/js';
     import {
         ref, onMounted, watch, toRef, type Ref,
     } from 'vue';
@@ -274,7 +274,7 @@
         if (props.bookmark.url) {
             const colorItem = {
                 title: 'Color',
-                icon: mdiPalette,
+                icon: mdiFormatColorFill,
                 event: EMITS.OPEN_COLOR_EDITOR,
             };
 
