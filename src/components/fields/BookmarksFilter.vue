@@ -98,6 +98,13 @@
         if (throttleTimer) {
             clearTimeout(throttleTimer);
         }
+
+        // Restore immediately when cleared to prevent BookmarkAddLarge flash
+        if (!event) {
+            runFilter('');
+            return;
+        }
+
         throttleTimer = setTimeout(() => {
             throttleTimer = null;
             runFilter(event);

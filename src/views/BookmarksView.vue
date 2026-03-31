@@ -4,6 +4,7 @@
         :class="bookmarksStore.accordionNavigation ? 'accordion' : 'slider'">
         <BookmarksBackground />
         <BookmarkAddLarge />
+        <BookmarksSearchEmpty />
         <template v-if="bookmarksStore.accordionNavigation">
             <BookmarksAccordion />
         </template>
@@ -28,6 +29,8 @@
     import { useTheme } from 'vuetify';
     import { useUtils } from '@/shared/composables/utils';
     import BookmarkAddLarge from '@/components/bookmarks/sharedComponents/BookmarkAddLarge.vue';
+    import BookmarksSearchEmpty
+        from '@/components/bookmarks/sharedComponents/BookmarksSearchEmpty.vue';
     import BookmarksAccordion from '@/components/bookmarks/accordion/BookmarksAccordion.vue';
     import BookmarksBackground
         from '@/components/bookmarks/sharedComponents/BookmarksBackground.vue';

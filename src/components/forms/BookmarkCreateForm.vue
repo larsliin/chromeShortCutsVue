@@ -47,7 +47,7 @@
                                         v-model="folderTxt" />
                                 </v-col>
                             </v-row>
-                            <template v-if="!data || (data && data.url)">
+                            <template v-if="!data || !data.id || data.url">
                                 <v-row>
                                     <v-col
                                         cols="12">

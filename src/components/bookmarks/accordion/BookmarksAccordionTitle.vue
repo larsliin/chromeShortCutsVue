@@ -23,6 +23,11 @@
             @keydown.stop="keyDown($event)"
             @keyup.stop="keyUp($event)"
             v-model="model" />
+        <span
+            v-if="bookmarkCount > 0"
+            class="count-badge">
+            {{ bookmarkCount }}
+        </span>
         <v-icon
             size="large"
             class="icon-drag"
@@ -59,7 +64,7 @@
 
 <script setup lang="ts">
     import {
-        ref, onMounted, nextTick, watch,
+        computed, ref, onMounted, nextTick, watch,
     } from 'vue';
     import type { BookmarkNode } from '@/types/bookmark';
     import {
@@ -93,6 +98,8 @@
     }
 
     const props = defineProps<Props>();
+
+    const bookmarkCount = computed(() => props.bookmark.children?.length ?? 0);
 
     // https://pictogrammers.com/library/mdi
     const list = ref([
@@ -356,5 +363,19 @@
         top: 50%;
         transform: translate(-50%, -50%);
         z-index: 0;
+    }
+
+    .count-badge {
+        background-color: rgba(var(--v-theme-on-surface), 0.25);
+        border-radius: 10px;
+        color: inherit;
+        flex-shrink: 0;
+        font-size: 11px;
+        font-weight: 500;
+        margin-left: 6px;
+        padding: 3px 6px;
+        pointer-events: none;
+        position: relative;
+        z-index: 10;
     }
 </style>
