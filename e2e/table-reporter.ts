@@ -69,6 +69,14 @@ function row(cells: string[], widths: number[]): string {
     return `│${cols}│`;
 }
 
+function getStatusLabel(rawStatus: string): string {
+    if (rawStatus === 'passed') return green('passed');
+    if (rawStatus === 'failed') return red('failed');
+    if (rawStatus === 'timedOut') return red('timed out');
+    if (rawStatus === 'skipped') return yellow('skipped');
+    return yellow(rawStatus);
+}
+
 // ---------------------------------------------------------------------------
 // Reporter
 // ---------------------------------------------------------------------------
@@ -100,11 +108,7 @@ class TableReporter implements Reporter {
         const title = parts[parts.length - 1] ?? '';
         const rawStatus = result.status;
         const icon = STATUS_ICON[rawStatus] ?? yellow('?');
-        const statusLabel = rawStatus === 'passed' ? green('passed')
-            : rawStatus === 'failed' ? red('failed')
-                : rawStatus === 'timedOut' ? red('timed out')
-                    : rawStatus === 'skipped' ? yellow('skipped')
-                        : yellow(rawStatus);
+        const statusLabel = getStatusLabel(rawStatus);
 
         this.rows.push({
             n: this.counter,
@@ -133,7 +137,7 @@ class TableReporter implements Reporter {
 
         // Compute column widths (header vs data)
         const widths = headers.map((h, i) => {
-            const maxData = Math.max(...colData.map((row) => row[i].length));
+            const maxData = Math.max(...colData.map((col) => col[i].length));
             return Math.max(h.length, maxData);
         });
 

@@ -87,6 +87,24 @@ module.exports = {
                 'no-underscore-dangle': 'off',
             },
         },
+        {
+            files: ['src/test/**/*', 'e2e/**/*'],
+            rules: {
+                'import/no-extraneous-dependencies': 'off',
+            },
+        },
+        {
+            files: ['e2e/**/*'],
+            rules: {
+                'no-underscore-dangle': 'off',
+            },
+        },
+        {
+            files: ['src/test/**/*'],
+            rules: {
+                'class-methods-use-this': 'off',
+            },
+        },
     ],
     settings: {
         'import/resolver': {

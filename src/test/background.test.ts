@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { chromeMock, fireCallback, fireNoArgCallback } from './mocks/chrome';
+import { describe, it, expect, vi } from 'vitest';
+import { chromeMock, fireCallback } from './mocks/chrome';
 
 // ---------------------------------------------------------------------------
 // background.js imports the `chrome` global and registers listeners at
@@ -11,7 +11,7 @@ import { chromeMock, fireCallback, fireNoArgCallback } from './mocks/chrome';
 
 async function loadBackground() {
     vi.resetModules();
-    await import('../../background.js');
+    await import('../../background');
 }
 
 // ---------------------------------------------------------------------------

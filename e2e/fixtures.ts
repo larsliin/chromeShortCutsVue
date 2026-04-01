@@ -36,7 +36,7 @@ interface TestFixtures {
 
 export const test = base.extend<TestFixtures, WorkerFixtures>({
     // Worker-scoped: one Chrome instance for the whole test suite.
-    extensionContext: [async ({}, use) => {
+    extensionContext: [async (_fixtures, use) => {
         const ctx = await chromium.launchPersistentContext('', {
             headless: false,
             args: [

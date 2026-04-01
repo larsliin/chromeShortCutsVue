@@ -238,9 +238,7 @@ test.describe('Current folder title (slider mode)', () => {
     });
 
     test.afterEach(async ({ extensionPage }) => {
-        for (const id of folderIds) {
-            await removeBookmarkNode(extensionPage, id);
-        }
+        await Promise.all(folderIds.map((id) => removeBookmarkNode(extensionPage, id)));
         folderIds.length = 0;
         await clearSliderIndex(extensionPage);
         await restoreAccordionMode(extensionPage);
@@ -297,9 +295,7 @@ test.describe('Slider index clamping (slider mode)', () => {
     });
 
     test.afterEach(async ({ extensionPage }) => {
-        for (const id of folderIds) {
-            await removeBookmarkNode(extensionPage, id);
-        }
+        await Promise.all(folderIds.map((id) => removeBookmarkNode(extensionPage, id)));
         folderIds.length = 0;
         await clearSliderIndex(extensionPage);
         await restoreAccordionMode(extensionPage);
@@ -362,9 +358,7 @@ test.describe('Bookmark icon persistence (slider mode)', () => {
     });
 
     test.afterEach(async ({ extensionPage }) => {
-        for (const id of folderIds) {
-            await removeBookmarkNode(extensionPage, id);
-        }
+        await Promise.all(folderIds.map((id) => removeBookmarkNode(extensionPage, id)));
         folderIds.length = 0;
         await restoreAccordionMode(extensionPage);
     });
