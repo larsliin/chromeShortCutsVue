@@ -402,7 +402,7 @@
     .tooltip {
         background: rgb(var(--v-theme-surface-variant));
         border-radius: 4px;
-        bottom: 0;
+        top: 100%;
         color: rgb(var(--v-theme-on-surface-variant));
         font-size: 14px;
         left: 50%;
@@ -413,7 +413,7 @@
         pointer-events: none;
         position: absolute;
         text-overflow: ellipsis;
-        transform: translate(-50%, 6px);
+        transform: translate(-50%, 4px);
         white-space: nowrap;
 
         @media (min-width: 768px) {
