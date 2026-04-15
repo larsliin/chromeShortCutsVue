@@ -1,6 +1,18 @@
 <template>
-    <v-card>
-        <v-form ref="form" fast-fail @submit.prevent>
+    <v-card class="bookmark-create-card">
+        <!-- In popup mode, overlay color picker on top of the form to preserve dimensions -->
+        <div v-if="showColorEdit && bookmarksStore.popup"
+            class="color-picker-overlay">
+            <BookmarkColorEdit
+                :value="bookmarkColor ?? undefined"
+                @confirm="onColorConfirm($event)"
+                @cancel="showColorEdit = false" />
+        </div>
+
+        <v-form
+            ref="form"
+            fast-fail
+            @submit.prevent>
             <v-card-text>
                 <v-container>
                     <v-row>
@@ -109,8 +121,10 @@
             </v-card-actions>
         </v-form>
     </v-card>
+
+    <!-- In full app mode, use a dialog overlay for the color picker -->
     <Teleport to="body"
-        v-if="showColorEdit">
+        v-if="showColorEdit && !bookmarksStore.popup">
         <template>
             <v-row justify="center">
                 <v-dialog
@@ -386,6 +400,37 @@
 
 </script>
 <style scoped lang="scss">
+    .bookmark-create-card {
+        position: relative;
+    }
+
+    .color-picker-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgb(var(--v-theme-on-surface));
+            opacity: var(--v-overlay-opacity, 0.32);
+            border-radius: inherit;
+        }
+    }
+
+    .color-picker-overlay :deep(.v-card) {
+        position: relative;
+        min-width: 450px;
+        box-shadow: 0 11px 15px -7px rgba(0, 0, 0, 0.2),
+                    0 24px 38px 3px rgba(0, 0, 0, 0.14),
+                    0 9px 46px 8px rgba(0, 0, 0, 0.12);
+        border-radius: 4px;
+    }
+
     .clearbit-note {
         font-size: 12px;
     }
