@@ -4,12 +4,14 @@
             v-if="editBookmarkData"
             :data="editBookmarkData"
             @save="onBookmarkSave()" />
+        <ErrorAlert />
     </div>
 </template>
 
 <script setup lang="ts">
     import { ref, onMounted } from 'vue';
     import BookmarkCreateForm from '@/components/forms/BookmarkCreateForm.vue';
+    import ErrorAlert from '@/components/shared/ErrorAlert.vue';
     import { FOLDER } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useTheme } from 'vuetify';

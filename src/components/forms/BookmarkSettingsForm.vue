@@ -657,7 +657,6 @@
                     errorDialog.value = true;
                 }
             } catch (error) {
-                console.error('Error parsing JSON file', error);
                 isValid.value = false;
                 errorDialog.value = true;
             }

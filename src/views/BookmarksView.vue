@@ -163,6 +163,15 @@
             utils.setSliderIndex(index, true);
         }
 
+        // Apply bookmark color from sync storage
+        const colorsObj = await bookmarksStore.get_syncStorage('bookmarkColors');
+        if (colorsObj && colorsObj[event]) {
+            const bookmark = utils.getStoredBookmarkById(event);
+            if (bookmark) {
+                bookmark.color = colorsObj[event];
+            }
+        }
+
         emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.CREATED, id: event });
     }
 
@@ -197,7 +206,7 @@
 
                 emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
             } catch (error) {
-                console.error(error);
+                bookmarksStore.errorMessage = 'Failed to remove bookmarks. Please try again.';
             }
         } else {
             if (bookmark) { // if is type bookmark
@@ -280,7 +289,16 @@
                 }
             }
         } catch (error) {
-            console.error(error);
+            bookmarksStore.errorMessage = 'Failed to update bookmark. Please try again.';
+        }
+
+        // Apply bookmark color from sync storage
+        const colorsObj = await bookmarksStore.get_syncStorage('bookmarkColors');
+        if (colorsObj && colorsObj[event]) {
+            const bm = utils.getStoredBookmarkById(event);
+            if (bm) {
+                bm.color = colorsObj[event];
+            }
         }
 
         emit(EMITS.BOOKMARKS_UPDATED, { type: 'update', id: event });

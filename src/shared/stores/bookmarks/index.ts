@@ -11,6 +11,7 @@ export interface BookmarksState {
     dialogOpen: boolean;
     dragStart: boolean;
     editBase64Image: string | null;
+    errorMessage: string | null;
     enableDarkMode: boolean;
     enablePreferDarkMode: boolean;
     enableSystemDarkMode: boolean;
@@ -38,6 +39,7 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         dialogOpen: false,
         dragStart: false,
         editBase64Image: null,
+        errorMessage: null,
         enableDarkMode: false,
         enablePreferDarkMode: false,
         enableSystemDarkMode: false,
