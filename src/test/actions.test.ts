@@ -14,6 +14,7 @@ function makeNode(overrides: Partial<chrome.bookmarks.BookmarkTreeNode> = {}): c
         parentId: '0',
         index: 0,
         url: 'https://example.com',
+        syncing: false,
         dateAdded: Date.now(),
         children: [],
         ...overrides,
@@ -266,8 +267,8 @@ describe('get_colorizedBookmarks', () => {
 
         const result = await store.get_colorizedBookmarks('root');
 
-        expect((result[0].children![0] as { color?: string }).color).toBe('#ff0000');
-        expect((result[0].children![0].children![0] as { color?: string }).color).toBe('#0000ff');
+        expect((result[0].children?.[0] as { color?: string }).color).toBe('#ff0000');
+        expect((result[0].children?.[0].children?.[0] as { color?: string }).color).toBe('#0000ff');
     });
 
     it('returns unmodified tree when no colors are stored', async () => {
@@ -279,7 +280,7 @@ describe('get_colorizedBookmarks', () => {
 
         const result = await store.get_colorizedBookmarks('root');
 
-        expect(result[0].children![0]).not.toHaveProperty('color');
+        expect(result[0].children?.[0]).not.toHaveProperty('color');
     });
 
     it('propagates rejection when get_bookmarks fails', async () => {

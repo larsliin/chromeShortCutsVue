@@ -122,7 +122,7 @@
                 ? bookmarksResponse[0].children : [];
 
             isEnabled.value = !!clonedBookmarks.length;
-        } catch (error) {
+        } catch (_error) {
             clonedBookmarks = [];
         }
     }

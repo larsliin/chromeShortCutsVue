@@ -152,18 +152,25 @@ class TableReporter implements Reporter {
 
         const styledHeaders = headers.map((h) => bold(cyan(h)));
 
+        // eslint-disable-next-line no-console
         console.log('');
+        // eslint-disable-next-line no-console
         console.log(topBorder(widths));
+        // eslint-disable-next-line no-console
         console.log(row(styledHeaders, widths));
+        // eslint-disable-next-line no-console
         console.log(midBorder(widths));
 
         styledData.forEach((cells, idx) => {
+            // eslint-disable-next-line no-console
             console.log(row(cells, widths));
             if (idx < styledData.length - 1) {
+                // eslint-disable-next-line no-console
                 console.log(`├${widths.map((w) => dim('─'.repeat(w + 2))).join('┼')}┤`);
             }
         });
 
+        // eslint-disable-next-line no-console
         console.log(botBorder(widths));
 
         // Summary line
@@ -180,9 +187,12 @@ class TableReporter implements Reporter {
             dim(`${(totalMs / 1000).toFixed(1)} s`),
         ].filter(Boolean);
 
+        // eslint-disable-next-line no-console
         console.log('');
         const overallIcon = result.status === 'passed' ? green('✓') : red('✘');
+        // eslint-disable-next-line no-console
         console.log(`  ${overallIcon}  ${parts.join('  ·  ')}`);
+        // eslint-disable-next-line no-console
         console.log('');
     }
 }

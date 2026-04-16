@@ -205,7 +205,7 @@ test.describe('Bookmarks display', () => {
         // Inject a test folder with a bookmark inside it via the Chrome bookmarks API.
         // The bookmark must be inside the folder so the folder is not empty (empty
         // folders are not rendered by the app).
-        const folder = await createBookmarkFolder(extensionPage, rootId!, 'API Test Folder');
+        const folder = await createBookmarkFolder(extensionPage, rootId as string, 'API Test Folder');
         createdFolderId = folder.id;
         await createBookmark(extensionPage, folder.id, 'placeholder', 'https://placeholder.com');
 
@@ -252,11 +252,11 @@ test.describe('Current folder title (slider mode)', () => {
         }, { timeout: 8_000 }).not.toBeNull();
 
         // Create 2 folders so NavigationDots renders (requires bookmarks.length > 1)
-        const folderA = await createBookmarkFolder(extensionPage, rootId!, 'Getter Test A');
+        const folderA = await createBookmarkFolder(extensionPage, rootId as string, 'Getter Test A');
         folderIds.push(folderA.id);
         await createBookmark(extensionPage, folderA.id, 'placeholder', 'https://example.com');
 
-        const folderB = await createBookmarkFolder(extensionPage, rootId!, 'Getter Test B');
+        const folderB = await createBookmarkFolder(extensionPage, rootId as string, 'Getter Test B');
         folderIds.push(folderB.id);
         await createBookmark(extensionPage, folderB.id, 'placeholder', 'https://example.com');
 
@@ -308,11 +308,11 @@ test.describe('Slider index clamping (slider mode)', () => {
             return rootId;
         }, { timeout: 8_000 }).not.toBeNull();
 
-        const folderA = await createBookmarkFolder(extensionPage, rootId!, 'Clamp Test A');
+        const folderA = await createBookmarkFolder(extensionPage, rootId as string, 'Clamp Test A');
         folderIds.push(folderA.id);
         await createBookmark(extensionPage, folderA.id, 'placeholder', 'https://example.com');
 
-        const folderB = await createBookmarkFolder(extensionPage, rootId!, 'Clamp Test B');
+        const folderB = await createBookmarkFolder(extensionPage, rootId as string, 'Clamp Test B');
         folderIds.push(folderB.id);
         await createBookmark(extensionPage, folderB.id, 'placeholder', 'https://example.com');
 
@@ -370,7 +370,7 @@ test.describe('Bookmark icon persistence (slider mode)', () => {
             return rootId;
         }, { timeout: 8_000 }).not.toBeNull();
 
-        const folder = await createBookmarkFolder(extensionPage, rootId!, 'Icon Test Folder');
+        const folder = await createBookmarkFolder(extensionPage, rootId as string, 'Icon Test Folder');
         folderIds.push(folder.id);
         const bookmark = await createBookmark(
             extensionPage,

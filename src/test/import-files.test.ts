@@ -104,7 +104,7 @@ function makeCreatedFolder(
     title: string,
     parentId = 'root',
 ): chrome.bookmarks.BookmarkTreeNode {
-    return { id, title, parentId, index: 0, dateAdded: Date.now(), children: [] };
+    return { id, title, parentId, index: 0, dateAdded: Date.now(), children: [], syncing: false };
 }
 
 function makeCreatedBookmark(
@@ -113,7 +113,7 @@ function makeCreatedBookmark(
     url: string,
     parentId: string,
 ): chrome.bookmarks.BookmarkTreeNode {
-    return { id, title, url, parentId, index: 0, dateAdded: Date.now() };
+    return { id, title, url, parentId, index: 0, dateAdded: Date.now(), syncing: false };
 }
 
 let store: ReturnType<typeof useBookmarksStore>;
@@ -215,7 +215,7 @@ describe('Import bookmarks file', () => {
             .mockImplementationOnce((_: unknown, cb: (n: typeof newWorkBook) => void) => cb(newWorkBook));
 
         const results = await Promise.all(
-            flatBookmarks.map((bm) => store.create_bookmark(foldersMap[bm.parentId!], bm.title, bm.url)),
+            flatBookmarks.map((bm) => store.create_bookmark(foldersMap[bm.parentId ?? ''], bm.title, bm.url)),
         );
 
         expect(chromeMock.bookmarks.create).toHaveBeenCalledTimes(3);
@@ -234,7 +234,7 @@ describe('Import bookmarks file', () => {
     });
 
     it('skips bookmark creation for empty folders (no Chrome API calls for their children)', async () => {
-        const emptyFolder = BOOKMARKS_FIXTURE.bookmarks.find((f) => f.title === 'Empty Folder')!;
+        const emptyFolder = BOOKMARKS_FIXTURE.bookmarks.find((f) => f.title === 'Empty Folder') as typeof BOOKMARKS_FIXTURE.bookmarks[0];
         const newEmpty = makeCreatedFolder('new-558', 'Empty Folder');
         fireCallback(chromeMock.bookmarks.create, [newEmpty]);
 
@@ -274,7 +274,7 @@ describe('Import bookmarks file', () => {
         // Step 2: create bookmarks under the new folder IDs
         const flatBookmarks = BOOKMARKS_FIXTURE.bookmarks.flatMap((f) => f.children);
         const createdBookmarks = await Promise.all(
-            flatBookmarks.map((bm) => store.create_bookmark(foldersMap[bm.parentId!], bm.title, bm.url)),
+            flatBookmarks.map((bm) => store.create_bookmark(foldersMap[bm.parentId ?? ''], bm.title, bm.url)),
         );
 
         // 3 folders + 3 bookmarks = 6 total create calls
@@ -336,7 +336,7 @@ describe('Import icons file', () => {
                 id: 'new-557',
                 title: 'Catalyst',
                 children: [
-                    { id: 'new-593', title: 'WorkBook', url: 'https://wunderman.workbook.dk/' },
+                    { id: 'new-593', title: 'WorkBook', url: 'https://wunderman.workbook.dk/', syncing: false },
                 ],
             },
         ] as BookmarkNode[];
@@ -391,11 +391,11 @@ describe('Import icons file', () => {
 
         const colorArr: Record<string, string> = {};
 
-        ICONS_WITH_COLORS.bookmarks.forEach((item) => {
+        ICONS_WITH_COLORS.bookmarks.forEach((item: Record<string, unknown>) => {
             const matches = flatLiveBookmarks.filter((bm) => bm.url === item.url);
             matches.forEach((bm) => {
                 if (item.color) {
-                    colorArr[bm.id] = item.color;
+                    colorArr[bm.id] = item.color as string;
                 }
             });
         });
@@ -406,8 +406,8 @@ describe('Import icons file', () => {
 
     it('builds the folderColors map by matching folder titles to live store folders', () => {
         store.bookmarks = [
-            { id: 'new-556', title: 'Home', children: [] },
-            { id: 'new-557', title: 'Catalyst', children: [] },
+            { id: 'new-556', title: 'Home', children: [], syncing: false },
+            { id: 'new-557', title: 'Catalyst', syncing: false, children: [] },
         ] as BookmarkNode[];
 
         const folderColorArr: Record<string, string> = {};
@@ -441,8 +441,9 @@ describe('Import icons file', () => {
             {
                 id: 'new-557',
                 title: 'Catalyst',
+                syncing: false,
                 children: [
-                    { id: 'new-593', title: 'WorkBook', url: 'https://wunderman.workbook.dk/' },
+                    { id: 'new-593', title: 'WorkBook', url: 'https://wunderman.workbook.dk/', syncing: false },
                 ],
             },
         ] as BookmarkNode[];
@@ -468,7 +469,7 @@ describe('Import icons file', () => {
 
     it('does not create a folder color entry when no live folder title matches', () => {
         store.bookmarks = [
-            { id: 'new-999', title: 'Unknown Folder', children: [] },
+            { id: 'new-999', title: 'Unknown Folder', children: [], syncing: false },
         ] as BookmarkNode[];
 
         const folderColorArr: Record<string, string> = {};

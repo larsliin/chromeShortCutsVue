@@ -56,25 +56,28 @@ const BOOKMARKS: BookmarkNode[] = [
     {
         id: 'f1',
         title: 'Work',
+        syncing: false,
         children: [
-            { id: 'b1', title: 'GitHub', url: 'https://github.com' },
-            { id: 'b2', title: 'GitLab', url: 'https://gitlab.com' },
-            { id: 'b3', title: 'Jira', url: 'https://jira.com' },
+            { id: 'b1', title: 'GitHub', url: 'https://github.com', syncing: false },
+            { id: 'b2', title: 'GitLab', url: 'https://gitlab.com', syncing: false },
+            { id: 'b3', title: 'Jira', url: 'https://jira.com', syncing: false },
         ],
     },
     {
         id: 'f2',
         title: 'News',
+        syncing: false,
         children: [
-            { id: 'b4', title: 'Hacker News', url: 'https://news.ycombinator.com' },
-            { id: 'b5', title: 'Reddit', url: 'https://reddit.com' },
+            { id: 'b4', title: 'Hacker News', url: 'https://news.ycombinator.com', syncing: false },
+            { id: 'b5', title: 'Reddit', url: 'https://reddit.com', syncing: false },
         ],
     },
     {
         id: 'f3',
         title: 'Social',
+        syncing: false,
         children: [
-            { id: 'b6', title: 'Twitter', url: 'https://twitter.com' },
+            { id: 'b6', title: 'Twitter', url: 'https://twitter.com', syncing: false },
         ],
     },
 ];
@@ -96,25 +99,25 @@ describe('Filter — basic matching', () => {
     it('returns only bookmarks whose title contains the search term', () => {
         const result = applyFilter(BOOKMARKS, 'git');
 
-        const workFolder = result.find((f) => f.id === 'f1')!;
+        const workFolder = result.find((f) => f.id === 'f1') as BookmarkNode;
         expect(workFolder.children).toHaveLength(2);
-        expect(workFolder.children!.map((c) => c.title)).toEqual(['GitHub', 'GitLab']);
+        expect((workFolder.children ?? []).map((c) => c.title)).toEqual(['GitHub', 'GitLab']);
     });
 
     it('is case-insensitive — "GITHUB" matches "GitHub"', () => {
         const result = applyFilter(BOOKMARKS, 'GITHUB');
 
-        const workFolder = result.find((f) => f.id === 'f1')!;
+        const workFolder = result.find((f) => f.id === 'f1') as BookmarkNode;
         expect(workFolder.children).toHaveLength(1);
-        expect(workFolder.children![0].title).toBe('GitHub');
+        expect(workFolder.children?.[0].title).toBe('GitHub');
     });
 
     it('matches a partial term in the middle of a title', () => {
         const result = applyFilter(BOOKMARKS, 'acker');
 
-        const newsFolder = result.find((f) => f.id === 'f2')!;
+        const newsFolder = result.find((f) => f.id === 'f2') as BookmarkNode;
         expect(newsFolder.children).toHaveLength(1);
-        expect(newsFolder.children![0].title).toBe('Hacker News');
+        expect(newsFolder.children?.[0].title).toBe('Hacker News');
     });
 
     it('matches across multiple folders at once', () => {
@@ -155,7 +158,7 @@ describe('Filter — folder pruning', () => {
         expect(result).toHaveLength(1);
         expect(result[0].id).toBe('f2');
         expect(result[0].children).toHaveLength(1);
-        expect(result[0].children![0].title).toBe('Reddit');
+        expect(result[0].children?.[0].title).toBe('Reddit');
     });
 
     it('preserves unmatched siblings within the same folder', () => {
@@ -164,7 +167,7 @@ describe('Filter — folder pruning', () => {
 
         const workFolder = result[0];
         expect(workFolder.children).toHaveLength(1);
-        expect(workFolder.children![0].id).toBe('b3');
+        expect(workFolder.children?.[0].id).toBe('b3');
     });
 });
 
@@ -179,10 +182,11 @@ describe('Filter — sub-folder exclusion', () => {
             {
                 id: 'f1',
                 title: 'Work',
+                syncing: false,
                 children: [
-                    { id: 'b1', title: 'GitHub', url: 'https://github.com' },
+                    { id: 'b1', title: 'GitHub', url: 'https://github.com', syncing: false },
                     // sub-folder — should never appear in filter results
-                    { id: 'sf1', title: 'GitHub Tools', children: [] },
+                    { id: 'sf1', title: 'GitHub Tools', children: [], syncing: false },
                 ],
             },
         ];
@@ -192,8 +196,8 @@ describe('Filter — sub-folder exclusion', () => {
         const result = applyFilter(withSubFolder, 'github');
 
         expect(result[0].children).toHaveLength(1);
-        expect(result[0].children![0].id).toBe('b1');
-        expect(result[0].children![0].url).toBe('https://github.com');
+        expect(result[0].children?.[0].id).toBe('b1');
+        expect(result[0].children?.[0].url).toBe('https://github.com');
     });
 });
 
@@ -216,7 +220,7 @@ describe('Filter — empty search term', () => {
         const original = cloneDeep(BOOKMARKS);
         applyFilter(BOOKMARKS, 'git');
 
-        expect(BOOKMARKS[0].children).toHaveLength(original[0].children!.length);
+        expect(BOOKMARKS[0].children).toHaveLength(original[0].children?.length ?? 0);
     });
 
     it('clearing after a filter restores the full tree', () => {
@@ -264,7 +268,7 @@ describe('Filter — sliderIndex re-anchoring', () => {
         store.sliderIndex = resolveSliderIndex(store.bookmarks ?? [], 'f1');
 
         expect(store.sliderIndex).toBe(0);
-        expect(store.bookmarks[0].children![0].title).toBe('Jira');
+        expect(store.bookmarks[0].children?.[0].title).toBe('Jira');
     });
 });
 
@@ -280,7 +284,7 @@ describe('Filter — store integration', () => {
 
         expect(store.bookmarks).toHaveLength(1);
         expect(store.bookmarks[0].id).toBe('f3');
-        expect(store.bookmarks[0].children![0].title).toBe('Twitter');
+        expect(store.bookmarks[0].children?.[0].title).toBe('Twitter');
     });
 
     it('store.bookmarks is restored to the full tree when term is cleared', () => {

@@ -103,7 +103,7 @@
                 emits(EMITS.UPDATE, base64Image.value);
             }
             isIconLoading.value = false;
-        } catch (error) {
+        } catch (_error) {
             isIconLoading.value = false;
         }
     }

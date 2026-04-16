@@ -10,15 +10,15 @@ import { chromeMock, fireCallback } from './mocks/chrome';
 // ---------------------------------------------------------------------------
 
 function makeBookmark(id: string, parentId: string, url = 'https://test.com'): BookmarkNode {
-    return { id, title: `Bookmark ${id}`, parentId, url };
+    return { id, title: `Bookmark ${id}`, parentId, url, syncing: false };
 }
 
 function makeFolder(id: string, children: BookmarkNode[] = []): BookmarkNode {
-    return { id, title: `Folder ${id}`, parentId: 'root', children };
+    return { id, title: `Folder ${id}`, parentId: 'root', children, syncing: false };
 }
 
 function makeTree(folders: BookmarkNode[]): chrome.bookmarks.BookmarkTreeNode[] {
-    return [{ id: 'root', title: 'root', children: folders }];
+    return [{ id: 'root', title: 'root', children: folders as chrome.bookmarks.BookmarkTreeNode[], syncing: false }];
 }
 
 // ---------------------------------------------------------------------------
@@ -137,7 +137,7 @@ describe('getBookmarksAsFlatArr', () => {
         const result = await utils.getBookmarksAsFlatArr();
 
         expect(result).toHaveLength(2);
-        expect(result!.map((b) => b.id)).toEqual(['bm1', 'bm2']);
+        expect((result ?? []).map((b) => b.id)).toEqual(['bm1', 'bm2']);
     });
 });
 

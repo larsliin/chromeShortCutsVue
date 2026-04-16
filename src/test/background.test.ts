@@ -24,12 +24,13 @@ function makeBookmarksBarNode(children: chrome.bookmarks.BookmarkTreeNode[] = []
         title: 'Bookmarks bar',
         // Chrome exposes folderType on the bookmarks bar node
         folderType: 'bookmarks-bar',
+        syncing: false,
         children,
     };
 }
 
 function makeRootTree(barChildren: chrome.bookmarks.BookmarkTreeNode[] = []) {
-    return [{ id: '0', title: 'root', children: [makeBookmarksBarNode(barChildren)] }];
+    return [{ id: '0', title: 'root', syncing: false, children: [makeBookmarksBarNode(barChildren)] }];
 }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +93,7 @@ describe('background.js — onInstalled handler', () => {
     });
 
     it('does not create folder when it already exists in bookmarks bar', async () => {
-        const existingFolder = { id: 'rf1', title: 'My Shortcuts Tab', children: [] };
+        const existingFolder = { id: 'rf1', title: 'My Shortcuts Tab', children: [], syncing: false };
         const tree = makeRootTree([existingFolder]);
         chromeMock.bookmarks.getTree.mockResolvedValue(tree);
 

@@ -263,7 +263,7 @@
             const mapped = Object.entries(folderColorsResponse as Record<string, string>)
                 .map((e) => {
                     if (!e || !e[0]) return null;
-                    const folder = bookmarksStore.bookmarks!.find((a) => a.id === e[0]);
+                    const folder = (bookmarksStore.bookmarks ?? []).find((a) => a.id === e[0]);
                     if (!folder || !folder.title) return null;
                     return { id: e[0], color: e[1], title: folder.title } satisfies FolderColorItem;
                 })
@@ -342,7 +342,7 @@
         bookmarksStore.bookmarks = rawBmChildren as BookmarkNode[];
 
         Object.entries(colorsFoldersMap).forEach((item) => {
-            const bookmarkFolder = bookmarksStore.bookmarks!.find((e) => e.id === item[0]);
+            const bookmarkFolder = (bookmarksStore.bookmarks ?? []).find((e) => e.id === item[0]);
             if (bookmarkFolder) {
                 const [, bookmarkFolderColor] = item;
                 bookmarkFolder.color = bookmarkFolderColor;
@@ -463,7 +463,7 @@
 
         const bookmarksRootResponse = await bookmarksStore.get_bookmarkById(bookmarksStore.rootId as string);
 
-        const importObj = JSON.parse(event.target!.result as string) as ImportFileData;
+        const importObj = JSON.parse(event.target?.result as string) as ImportFileData;
         const foldersPromiseArr: Promise<chrome.bookmarks.BookmarkTreeNode>[] = [];
 
         (importObj.bookmarks ?? []).forEach((folder) => {
@@ -487,7 +487,7 @@
         bookmarksStore.delete_syncStorageItem('bookmarkColors');
         bookmarksStore.delete_syncStorageItem('folderColors');
 
-        const importIcons = JSON.parse(event.target!.result as string) as ImportFileData;
+        const importIcons = JSON.parse(event.target?.result as string) as ImportFileData;
         const bookmarksFlatResponse = await utils.getBookmarksAsFlatArr();
 
         const promiseAllArr: Promise<void>[] = [];
@@ -656,7 +656,7 @@
                 if (!isValid.value) {
                     errorDialog.value = true;
                 }
-            } catch (error) {
+            } catch (_error) {
                 isValid.value = false;
                 errorDialog.value = true;
             }

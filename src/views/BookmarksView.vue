@@ -107,7 +107,7 @@
             bookmarksStore.bookmarks = children as BookmarkNode[];
 
             await runCleanup();
-        } catch (error) {
+        } catch (_error) {
             bookmarksStore.bookmarks = [];
         }
 
@@ -205,7 +205,7 @@
                 bookmarksStore.delete_syncStorageItem('accordion');
 
                 emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
-            } catch (error) {
+            } catch (_error) {
                 bookmarksStore.errorMessage = 'Failed to remove bookmarks. Please try again.';
             }
         } else {
@@ -288,7 +288,7 @@
                     }
                 }
             }
-        } catch (error) {
+        } catch (_error) {
             bookmarksStore.errorMessage = 'Failed to update bookmark. Please try again.';
         }
 

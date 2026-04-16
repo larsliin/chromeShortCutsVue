@@ -107,7 +107,7 @@
     }
 
     async function onDragEnd(event: DragEventInfo): Promise<void> {
-        const bookmark = bookmarksStore.bookmarks![event.newIndex];
+        const bookmark = (bookmarksStore.bookmarks ?? [])[event.newIndex];
 
         const index = event.newIndex > event.oldIndex ? event.newIndex + 1 : event.newIndex;
 

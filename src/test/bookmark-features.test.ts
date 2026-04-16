@@ -18,6 +18,7 @@ function makeNode(
         index: 0,
         url: 'https://example.com',
         dateAdded: Date.now(),
+        syncing: false,
         children: [],
         ...overrides,
     };
@@ -141,13 +142,13 @@ describe('Delete bookmark', () => {
         }));
 
         expect(store.bookmarks[0].children).toHaveLength(1);
-        expect(store.bookmarks[0].children![0].id).toBe('b2');
+        expect(store.bookmarks[0].children?.[0].id).toBe('b2');
     });
 
     it('in-memory state: removes an entire folder from the bookmarks list', () => {
         store.bookmarks = [
-            { id: 'f1', title: 'Work', children: [] },
-            { id: 'f2', title: 'Personal', children: [] },
+            { id: 'f1', title: 'Work', children: [], syncing: false },
+            { id: 'f2', title: 'Personal', children: [], syncing: false },
         ] as BookmarkNode[];
 
         // Mirror the filter the onRemoved handler applies when a folder is removed
@@ -226,7 +227,7 @@ describe('Export bookmarks', () => {
         expect(exportData.type).toBe('bookmarks');
         expect(exportData.bookmarks).toHaveLength(1);
         expect(exportData.bookmarks[0].title).toBe('Work');
-        expect(exportData.bookmarks[0].children![0].url).toBe('https://github.com');
+        expect(exportData.bookmarks[0].children?.[0].url).toBe('https://github.com');
     });
 
     it('merges icon images from local storage into the matching bookmark', async () => {
@@ -256,13 +257,13 @@ describe('Export bookmarks', () => {
                 if (bm) bm.image = item.image as string;
             });
 
-        const exported = exportBookmarks[0].children![0] as StoreBookmark;
+        const exported = exportBookmarks[0].children?.[0] as StoreBookmark;
         expect(exported.image).toBe('data:image/png;base64,iVBORw0KGgo=');
     });
 
     it('produces a valid JSON string from the export data', () => {
         store.bookmarks = [
-            { id: 'f1', title: 'Work', children: [] },
+            { id: 'f1', title: 'Work', children: [], syncing: false },
         ] as BookmarkNode[];
 
         const exportData = { bookmarks: Array.from(store.bookmarks ?? []), type: 'bookmarks' };

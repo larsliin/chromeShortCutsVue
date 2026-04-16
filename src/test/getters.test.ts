@@ -4,7 +4,7 @@ import { useBookmarksStore } from '@stores/bookmarks';
 import type { BookmarkNode } from '@/types/bookmark';
 
 function makeFolder(id: string, title: string): BookmarkNode {
-    return { id, title, parentId: 'root' };
+    return { id, title, parentId: 'root', syncing: false };
 }
 
 let store: ReturnType<typeof useBookmarksStore>;

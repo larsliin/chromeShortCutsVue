@@ -58,6 +58,7 @@ module.exports = {
             argsIgnorePattern: '^_',
             varsIgnorePattern: '^_',
             destructuredArrayIgnorePattern: '^_',
+            caughtErrorsIgnorePattern: '^_',
         }],
         'no-unused-vars': 'off',
         '@typescript-eslint/explicit-function-return-type': 'off',
