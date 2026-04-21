@@ -15,7 +15,7 @@ html.v-overlay-scroll-blocked {
 // Ensure the overlay scrim covers the full viewport including scrollbar-gutter space
 .v-overlay__scrim {
     width: 100vw !important;
-    backdrop-filter: blur(5px) !important;
-    background-color: color-mix(in srgb, transparent 75%, rgb(var(--v-theme-on-surface))) !important;
+    backdrop-filter: blur(6px) !important;
+    background-color: color-mix(in srgb, transparent 85%, rgb(var(--v-theme-on-surface))) !important;
     opacity: 1 !important;
 }

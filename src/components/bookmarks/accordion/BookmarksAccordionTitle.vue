@@ -9,6 +9,11 @@
             @rename="onRename()"
             @openColorEditor="showColorEdit = true"
             @bookmarkAdd="onBookmarkAdd()" />
+        <span
+            v-if="bookmarkCount > 0"
+            class="count-badge">
+            {{ bookmarkCount }}
+        </span>
         <input
             aria-label="Bookmark title"
             class="input"
@@ -23,11 +28,6 @@
             @keydown.stop="keyDown($event)"
             @keyup.stop="keyUp($event)"
             v-model="model" />
-        <span
-            v-if="bookmarkCount > 0"
-            class="count-badge">
-            {{ bookmarkCount }}
-        </span>
         <v-icon
             size="large"
             class="icon-drag"
@@ -372,10 +372,12 @@
         flex-shrink: 0;
         font-size: 11px;
         font-weight: 500;
-        margin-left: 6px;
+        margin-right: 6px;
         padding: 3px 6px;
         pointer-events: none;
         position: relative;
         z-index: 10;
     }
 </style>
+
+
