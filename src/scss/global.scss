@@ -1,0 +1,21 @@
+html,
+body {
+    background: transparent;
+    scrollbar-gutter: stable both-edges;
+}
+
+// Prevent Vuetify's scroll-lock from displacing the html element.
+// Without this, opening a dialog while scrolled applies position:fixed + top:-scrollYpx
+// to <html>, shifting all non-fixed elements and causing a white box artifact.
+html.v-overlay-scroll-blocked {
+    position: static !important;
+    overflow-y: hidden !important;
+}
+
+// Ensure the overlay scrim covers the full viewport including scrollbar-gutter space
+.v-overlay__scrim {
+    width: 100vw !important;
+    backdrop-filter: blur(5px) !important;
+    background-color: color-mix(in srgb, transparent 75%, rgb(var(--v-theme-on-surface))) !important;
+    opacity: 1 !important;
+}

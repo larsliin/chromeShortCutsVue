@@ -306,3 +306,4 @@ This rule applies to both unit tests (`src/test/`) and E2E tests (`e2e/`). A tes
 | `Promise.then().catch()` mixed with `await` | Inconsistent async style |
 | Hardcoded event name strings | Use `EMITS.*` constants |
 | Hardcoded timeouts (e.g. `setTimeout(..., 1000)`) | Use named constants |
+| `@import` in SCSS files | Deprecated in Dart Sass 3 — use `@use` or `@forward` instead |

@@ -18,32 +18,72 @@
                     id="inp_image"
                     accept=".jpg, .jpeg, .gif, .png, .svg"
                     @change="onImageInpChange($event)" />
-                <v-btn
-                    class="mr-3 mb-3"
-                    color="blue-darken-1"
-                    variant="tonal"
-                    :icon="mdiFolderOpen"
-                    @click="onClickFindImage()" />
-                <v-btn
-                    class="mr-3 mb-3"
-                    color="blue-darken-1"
-                    variant="tonal"
-                    :icon="mdiCloudDownload"
-                    :disabled="!url"
-                    @click="getClearbitImage()" />
-                <v-btn
-                    class="mr-3 mb-3"
-                    color="blue-darken-1"
-                    variant="tonal"
-                    :icon="mdiFormatColorFill"
-                    @click="emits(EMITS.OPEN_COLOR_EDITOR)" />
-                <v-btn
-                    color="blue-darken-1 mb-3"
-                    variant="tonal"
-                    :disabled="!base64Image && !color"
-                    @click="onClearImage()">
-                    Clear
-                </v-btn>
+                <v-tooltip
+                    location="top center"
+                    origin="auto"
+                    open-delay="600"
+                    transition="none"
+                    text="Upload image">
+                    <template v-slot:activator="{ props: tooltipProps }">
+                        <v-btn
+                            class="mr-3 mb-3"
+                            color="blue-darken-1"
+                            variant="tonal"
+                            :icon="mdiFolderOpen"
+                            v-bind="tooltipProps"
+                            @click="onClickFindImage()" />
+                    </template>
+                </v-tooltip>
+                <v-tooltip
+                    location="top center"
+                    origin="auto"
+                    open-delay="600"
+                    transition="none"
+                    text="Auto-generate icon based on URL">
+                    <template v-slot:activator="{ props: tooltipProps }">
+                        <v-btn
+                            class="mr-3 mb-3"
+                            color="blue-darken-1"
+                            variant="tonal"
+                            :icon="mdiCloudDownload"
+                            :disabled="!url"
+                            v-bind="tooltipProps"
+                            @click="getClearbitImage()" />
+                    </template>
+                </v-tooltip>
+                <v-tooltip
+                    location="top center"
+                    origin="auto"
+                    open-delay="600"
+                    transition="none"
+                    text="Pick background color">
+                    <template v-slot:activator="{ props: tooltipProps }">
+                        <v-btn
+                            class="mr-3 mb-3"
+                            color="blue-darken-1"
+                            variant="tonal"
+                            :icon="mdiFormatColorFill"
+                            v-bind="tooltipProps"
+                            @click="emits(EMITS.OPEN_COLOR_EDITOR)" />
+                    </template>
+                </v-tooltip>
+                <v-tooltip
+                    location="top center"
+                    origin="auto"
+                    open-delay="600"
+                    transition="none"
+                    text="Clear icon and background color">
+                    <template v-slot:activator="{ props: tooltipProps }">
+                        <v-btn
+                            class="mb-3"
+                            color="red"
+                            variant="tonal"
+                            :icon="mdiClose"
+                            :disabled="!base64Image && !color"
+                            v-bind="tooltipProps"
+                            @click="onClearImage()" />
+                    </template>
+                </v-tooltip>
             </v-col>
             <v-col cols="12">
                 <template v-if="showClearbitError && bookmarksStore.popup">
@@ -59,7 +99,7 @@
 
 <script setup lang="ts">
     import { ref, watch } from 'vue';
-    import { mdiFormatColorFill, mdiFolderOpen, mdiCloudDownload } from '@mdi/js';
+    import { mdiFormatColorFill, mdiFolderOpen, mdiCloudDownload, mdiClose } from '@mdi/js';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import { useUtils } from '@/shared/composables/utils';
     import { useBookmarksStore } from '@stores/bookmarks';

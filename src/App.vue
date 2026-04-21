@@ -13,8 +13,7 @@
     const bookmarksStore = useBookmarksStore();
 </script>
 
-<style>
-    @import "./scss/colors.scss";
-    @import "./scss/typography.scss";
+<style lang="scss">
+    @use "./scss/index.scss";
 
 </style>
