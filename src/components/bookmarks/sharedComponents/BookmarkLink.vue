@@ -132,13 +132,13 @@
     const effectiveSize = computed(() => props.size || (`icon-${bookmarksStore.iconSize}`));
 
     async function updateImage() {
-        ready.value = true;
-
         const getImageResponse = await bookmarksStore.get_localStorage(props.bookmark.id);
 
         if (getImageResponse) {
             image.value = getImageResponse.image;
         }
+
+        ready.value = true;
 
         emits(EMITS.UPDATE);
     }
