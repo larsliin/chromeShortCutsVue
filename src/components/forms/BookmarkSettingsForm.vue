@@ -122,6 +122,9 @@
                                         </div>
                                     </v-col>
                                 </v-row>
+                            </div>
+                        </v-col>
+                    </v-row>
                 </v-container>
             </v-card-text>
             <v-card-actions>
@@ -170,7 +173,6 @@
         </v-card>
     </v-dialog>
 </template>
-
 <script setup lang="ts">
     import { mdiDownload, mdiUpload } from '@mdi/js';
     import {
