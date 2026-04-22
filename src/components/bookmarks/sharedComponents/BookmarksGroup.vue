@@ -20,7 +20,7 @@
                 <template #item="{ element }">
                     <li>
                         <BookmarkLink
-                            :size="size"
+                            size="small"
                             :bookmark="element"
                             :key="element.id" />
                     </li>
@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
     import {
-        nextTick, computed, ref,
+        nextTick, ref,
     } from 'vue';
     import type { BookmarkNode, DragEventInfo } from '@/types/bookmark';
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
@@ -90,13 +90,6 @@
     const dragging = ref(false);
 
     const bookmarksStore = useBookmarksStore();
-
-    const size = computed(() => {
-        if (props.bookmarks.length > 14) {
-            return 'small';
-        }
-        return 'normal';
-    });
 
     const showConfirmDelete = ref(false);
 
