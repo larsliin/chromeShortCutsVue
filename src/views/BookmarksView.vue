@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-    import { FOLDER, EMITS, ARGS } from '@/constants';
+    import { FOLDER, EMITS, ARGS, ICON_SIZE } from '@/constants';
     import { onMounted, onUnmounted, watch } from 'vue';
     import type { BookmarkNode } from '@/types/bookmark';
     import { useBookmarksStore } from '@stores/bookmarks';
@@ -318,13 +318,15 @@
             ),
             bookmarksStore.get_syncStorage('darkMode'),
             bookmarksStore.get_syncStorage('systemDarkMode'),
+            bookmarksStore.get_syncStorage('iconSize'),
             utils.buildRootFolder(),
         ];
-
         const [
-            _rootFolder, darkMode, systemDarkMode, _buildRoot,
+            _rootFolder, darkMode, systemDarkMode, iconSize, _buildRoot,
         ] = await Promise.all(promiseArr);
         getBookmarks();
+
+        bookmarksStore.iconSize = (iconSize as string) || ICON_SIZE.MEDIUM;
 
         // prefer dark mode
         bookmarksStore.enablePreferDarkMode = !!darkMode;

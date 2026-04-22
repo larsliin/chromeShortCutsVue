@@ -8,7 +8,7 @@
                 :draggable="draggable"
                 title=""
                 :aria-label="bookmark.title"
-                :class="[bookmark.url ? '' : 'folder', size, hideEdit ? 'hide-edit' : '']"
+                :class="[bookmark.url ? '' : 'folder', effectiveSize, hideEdit ? 'hide-edit' : '']"
                 :href="bookmark.url"
                 :id="bookmark.id"
                 :tabindex="tabIndex"
@@ -76,7 +76,7 @@
 <script setup lang="ts">
     import { mdiRename, mdiDeleteOutline, mdiFormatColorFill } from '@mdi/js';
     import {
-        ref, onMounted, watch, toRef, type Ref,
+        ref, onMounted, watch, toRef, computed, type Ref,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
@@ -129,14 +129,16 @@
 
     const bookmarksStore = useBookmarksStore();
 
+    const effectiveSize = computed(() => props.size || (`icon-${bookmarksStore.iconSize}`));
+
     async function updateImage() {
+        ready.value = true;
+
         const getImageResponse = await bookmarksStore.get_localStorage(props.bookmark.id);
 
         if (getImageResponse) {
             image.value = getImageResponse.image;
         }
-
-        ready.value = true;
 
         emits(EMITS.UPDATE);
     }
@@ -323,7 +325,26 @@
             }
         }
 
-        &.small {
+        &.icon-small {
+            width: 56px;
+
+            .bookmark-image-container {
+                width: 100%;
+                padding: 4px;
+                border-radius: 7px;
+                font-size: 34px;
+            }
+
+            :deep(.bookmark-image) {
+                border-radius: 5px;
+            }
+
+            .bookmark-title-container {
+                font-size: 10px;
+            }
+        }
+
+        &.icon-medium {
             width: 82px;
 
             .bookmark-image-container {
@@ -333,6 +354,25 @@
 
             .bookmark-title-container {
                 font-size: 11px;
+            }
+        }
+
+        &.icon-large {
+            width: 108px;
+
+            .bookmark-image-container {
+                width: 100%;
+                padding: 8px;
+                border-radius: 14px;
+                font-size: 66px;
+            }
+
+            :deep(.bookmark-image) {
+                border-radius: 10px;
+            }
+
+            .bookmark-title-container {
+                font-size: 12px;
             }
         }
 

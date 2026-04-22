@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import type { BookmarkNode, BookmarkStat } from '@/types/bookmark';
+import { ICON_SIZE } from '@/constants';
 import actions from './_actions';
 import getters from './_getters';
 
@@ -25,6 +26,7 @@ export interface BookmarksState {
     transition: boolean;
     transitionDisabled: boolean;
     bookmarksBarId: string | null;
+    iconSize: string;
 }
 
 // eslint-disable-next-line
@@ -51,6 +53,7 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         transition: true,
         transitionDisabled: false,
         bookmarksBarId: null,
+        iconSize: ICON_SIZE.MEDIUM,
     }),
     actions,
     getters,

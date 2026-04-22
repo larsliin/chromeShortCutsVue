@@ -137,7 +137,7 @@
         padding: 8px;
         position: relative;
         transform-origin: center right;
-        transition: all 0.05s;
+        transition: transform 0.05s;
         width: 90px;
 
         &.dark {

@@ -20,7 +20,6 @@
                 <template #item="{ element }">
                     <li>
                         <BookmarkLink
-                            size="small"
                             :bookmark="element"
                             :key="element.id" />
                     </li>

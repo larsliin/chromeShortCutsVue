@@ -259,7 +259,7 @@ test.describe('Bookmark icon persistence', () => {
 
         // Expand the accordion panel — panels start collapsed; the folder panel uses
         // the Chrome bookmark ID as its DOM element ID.
-        await extensionPage.locator('[id="' + folder.id + '"] .v-expansion-panel-title').click();
+        await extensionPage.locator(`[id="${folder.id}"] .v-expansion-panel-title`).click();
 
         // BookmarkLink.vue calls get_localStorage(bookmarkId) on mount.
         // Without the bug: returns { image: TEST_IMAGE } → image ref set → .bookmark-image rendered.

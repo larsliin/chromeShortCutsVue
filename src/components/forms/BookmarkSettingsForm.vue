@@ -122,6 +122,28 @@
                                         </div>
                                     </v-col>
                                 </v-row>
+                                <v-row>
+                                    <v-col
+                                        cols="12">
+                                        <p class="mb-3">Icon size</p>
+                                        <v-btn-toggle
+                                            v-model="$v.formData.iconSize.$model"
+                                            mandatory
+                                            color="primary"
+                                            variant="outlined"
+                                            density="compact">
+                                            <v-btn :value="ICON_SIZE.SMALL">
+                                                Small
+                                            </v-btn>
+                                            <v-btn :value="ICON_SIZE.MEDIUM">
+                                                Medium
+                                            </v-btn>
+                                            <v-btn :value="ICON_SIZE.LARGE">
+                                                Large
+                                            </v-btn>
+                                        </v-btn-toggle>
+                                    </v-col>
+                                </v-row>
                             </div>
                         </v-col>
                     </v-row>
@@ -180,7 +202,7 @@
     } from 'vue';
     // eslint-disable-next-line
     import useVuelidate from '@vuelidate/core';
-    import { EMITS, FILE_NAMES } from '@/constants';
+    import { EMITS, FILE_NAMES, ICON_SIZE } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import useEventsBus from '@cmp/eventBus';
     import { useUtils } from '@/shared/composables/utils';
@@ -206,6 +228,7 @@
         enablePreferDarkMode: bookmarksStore.enablePreferDarkMode,
         bookmarksFileImport: null as File | null,
         iconsFileImport: null as File | null,
+        iconSize: bookmarksStore.iconSize,
     });
 
     const rules = {
@@ -214,6 +237,7 @@
             enablePreferDarkMode: {},
             bookmarksFileImport: { },
             iconsFileImport: { },
+            iconSize: {},
         },
     };
 
@@ -571,6 +595,10 @@
             }
         }
         theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
+
+        // iconSize
+        bookmarksStore.iconSize = formData.iconSize;
+        bookmarksStore.set_syncStorage({ iconSize: formData.iconSize });
 
         emits(EMITS.SAVE);
     }

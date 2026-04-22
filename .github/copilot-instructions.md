@@ -277,6 +277,13 @@ This rule applies to both unit tests (`src/test/`) and E2E tests (`e2e/`). A tes
 
 ---
 
+## Workflow Rules
+
+- **Never commit changes without asking the user first.** Always present a summary of what will be committed and wait for explicit approval before running any `git commit` command.
+
+
+---
+
 ## Known Patterns to Follow
 
 | Pattern | How to do it |

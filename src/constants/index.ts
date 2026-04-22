@@ -50,3 +50,9 @@ export const LOGO_GENERATOR = Object.freeze({
 export const TIMEOUTS = Object.freeze({
     DIALOG_CLOSE_MS: 1000,
 });
+
+export enum ICON_SIZE {
+    SMALL = 'small',
+    MEDIUM = 'medium',
+    LARGE = 'large',
+}
