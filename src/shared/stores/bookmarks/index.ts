@@ -5,55 +5,69 @@ import actions from './_actions';
 import getters from './_getters';
 
 export interface BookmarksState {
-    accordionModel: number[] | null;
+    // --- Bookmark data ---
     bookmarks: BookmarkNode[] | null;
+    rootId: string | null;
+    bookmarksBarId: string | null;
+    statistics: BookmarkStat[] | null;
+    icons: Record<string, string> | null;
+
+    // --- UI state ---
+    accordionModel: number[] | null;
     bookmarkSearch: string | null;
     dialogOpen: boolean;
     dragStart: boolean;
     editBase64Image: string | null;
     errorMessage: string | null;
+    isImporting: boolean;
+    titleInputActive: boolean;
+    popup: boolean;
+    rootElem: HTMLElement | null;
+
+    // --- Appearance ---
+    transition: boolean;
+    transitionDisabled: boolean;
+    folderColors: boolean;
+    iconSize: string;
+
+    // --- Dark mode settings ---
     enableDarkMode: boolean;
     enablePreferDarkMode: boolean;
     enableSystemDarkMode: boolean;
-    folderColors: boolean;
-    icons: Record<string, string> | null;
-    isImporting: boolean;
-    popup: boolean;
-    rootElem: HTMLElement | null;
-    rootId: string | null;
-    statistics: BookmarkStat[] | null;
-    titleInputActive: boolean;
-    transition: boolean;
-    transitionDisabled: boolean;
-    bookmarksBarId: string | null;
-    iconSize: string;
 }
 
 // eslint-disable-next-line
 export const useBookmarksStore = defineStore('bookmarksStore', {
     state: (): BookmarksState => ({
-        accordionModel: null,
+        // --- Bookmark data ---
         bookmarks: null,
+        rootId: null,
+        bookmarksBarId: null,
+        statistics: null,
+        icons: null,
+
+        // --- UI state ---
+        accordionModel: null,
         bookmarkSearch: null,
         dialogOpen: false,
         dragStart: false,
         editBase64Image: null,
         errorMessage: null,
+        isImporting: false,
+        titleInputActive: false,
+        popup: false,
+        rootElem: null,
+
+        // --- Appearance ---
+        transition: true,
+        transitionDisabled: false,
+        folderColors: false,
+        iconSize: ICON_SIZE.MEDIUM,
+
+        // --- Dark mode settings ---
         enableDarkMode: false,
         enablePreferDarkMode: false,
         enableSystemDarkMode: false,
-        folderColors: false,
-        icons: null,
-        isImporting: false,
-        popup: false,
-        rootElem: null,
-        rootId: null,
-        statistics: null,
-        titleInputActive: false,
-        transition: true,
-        transitionDisabled: false,
-        bookmarksBarId: null,
-        iconSize: ICON_SIZE.MEDIUM,
     }),
     actions,
     getters,

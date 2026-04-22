@@ -16,8 +16,7 @@
     const bookmarksStore = useBookmarksStore();
 
     const isVisible = computed(
-        () => !!bookmarksStore.bookmarkSearch
-            && (bookmarksStore.bookmarks?.length ?? 0) === 0,
+        () => !!bookmarksStore.bookmarkSearch && !bookmarksStore.hasBookmarks,
     );
 </script>
 

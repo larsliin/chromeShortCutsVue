@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useBookmarksStore } from '@stores/bookmarks';
-import { useUtils } from '@/shared/composables/utils';
+import { useBookmarkOps } from '@cmp/useBookmarkOps';
+import { useAccordionSync } from '@cmp/useAccordionSync';
+import { isValidURL } from '@utils/urlUtils';
 import type { BookmarkNode } from '@/types/bookmark';
 import { chromeMock, fireCallback } from './mocks/chrome';
 
@@ -26,12 +28,14 @@ function makeTree(folders: BookmarkNode[]): chrome.bookmarks.BookmarkTreeNode[] 
 // ---------------------------------------------------------------------------
 
 let store: ReturnType<typeof useBookmarksStore>;
-let utils: ReturnType<typeof useUtils>;
+let bookmarkOps: ReturnType<typeof useBookmarkOps>;
+let accordionSync: ReturnType<typeof useAccordionSync>;
 
 beforeEach(() => {
     setActivePinia(createPinia());
     store = useBookmarksStore();
-    utils = useUtils();
+    bookmarkOps = useBookmarkOps();
+    accordionSync = useAccordionSync();
 });
 
 // ---------------------------------------------------------------------------
@@ -46,19 +50,19 @@ describe('getStoredBookmarkById', () => {
             makeFolder('f2', [makeBookmark('bm3', 'f2')]),
         ];
 
-        expect(utils.getStoredBookmarkById('bm2')).toEqual(target);
+        expect(bookmarkOps.getStoredBookmarkById('bm2')).toEqual(target);
     });
 
     it('returns null when the id is not found', () => {
         store.bookmarks = [makeFolder('f1', [makeBookmark('bm1', 'f1')])];
 
-        expect(utils.getStoredBookmarkById('nonexistent')).toBeNull();
+        expect(bookmarkOps.getStoredBookmarkById('nonexistent')).toBeNull();
     });
 
     it('returns null when bookmarks state is null', () => {
         store.bookmarks = null;
 
-        expect(utils.getStoredBookmarkById('any')).toBeNull();
+        expect(bookmarkOps.getStoredBookmarkById('any')).toBeNull();
     });
 });
 
@@ -70,7 +74,7 @@ describe('getBookmarksAsFlatArr', () => {
     it('returns null when rootId is not set', async () => {
         store.rootId = null;
 
-        const result = await utils.getBookmarksAsFlatArr();
+        const result = await bookmarkOps.getBookmarksAsFlatArr();
 
         expect(result).toBeNull();
     });
@@ -86,7 +90,7 @@ describe('getBookmarksAsFlatArr', () => {
         store.bookmarksBarId = 'bar';
         fireCallback(chromeMock.bookmarks.getSubTree, [tree]);
 
-        const result = await utils.getBookmarksAsFlatArr();
+        const result = await bookmarkOps.getBookmarksAsFlatArr();
 
         expect(result).toHaveLength(2);
         expect((result ?? []).map((b) => b.id)).toEqual(['bm1', 'bm2']);
@@ -100,18 +104,18 @@ describe('getBookmarksAsFlatArr', () => {
 describe('updateAccordionModel', () => {
     it('does nothing when accordionModel is null', async () => {
         store.accordionModel = null;
-        vi.spyOn(store, 'set_syncStorage').mockResolvedValue(undefined);
+        vi.spyOn(store, 'setSyncStorage').mockResolvedValue(undefined);
 
-        await utils.updateAccordionModel(0);
+        await accordionSync.updateAccordionModel(0);
 
         expect(store.accordionModel).toBeNull();
     });
 
     it('removes the index from the model and shifts higher indices', async () => {
         store.accordionModel = [0, 1, 2];
-        vi.spyOn(store, 'set_syncStorage').mockResolvedValue(undefined);
+        vi.spyOn(store, 'setSyncStorage').mockResolvedValue(undefined);
 
-        await utils.updateAccordionModel(1);
+        await accordionSync.updateAccordionModel(1);
 
         // index 1 removed; index 2 → 1
         expect(store.accordionModel).toEqual([0, 1]);
@@ -119,9 +123,9 @@ describe('updateAccordionModel', () => {
 
     it('shifts indices down when a lower index is removed', async () => {
         store.accordionModel = [0, 2, 4];
-        vi.spyOn(store, 'set_syncStorage').mockResolvedValue(undefined);
+        vi.spyOn(store, 'setSyncStorage').mockResolvedValue(undefined);
 
-        await utils.updateAccordionModel(0);
+        await accordionSync.updateAccordionModel(0);
 
         // index 0 removed; 2→1, 4→3
         expect(store.accordionModel).toEqual([1, 3]);
@@ -135,8 +139,8 @@ describe('updateAccordionModel', () => {
 describe('buildRootFolder', () => {
     beforeEach(() => {
         store.bookmarksBarId = 'bar';
-        vi.spyOn(store, 'set_localStorage').mockResolvedValue(undefined);
-        vi.spyOn(store, 'set_syncStorage').mockResolvedValue(undefined);
+        vi.spyOn(store, 'setLocalStorage').mockResolvedValue(undefined);
+        vi.spyOn(store, 'setSyncStorage').mockResolvedValue(undefined);
     });
 
     it('sets rootId from existing folder when it already exists', async () => {
@@ -144,10 +148,10 @@ describe('buildRootFolder', () => {
         const tree = [{ id: 'bar', title: 'Bookmarks bar', children: [rootFolder] }];
         fireCallback(chromeMock.bookmarks.getSubTree, [tree]);
 
-        await utils.buildRootFolder();
+        await accordionSync.buildRootFolder();
 
         expect(store.rootId).toBe('rf1');
-        expect(store.set_localStorage).toHaveBeenCalledWith({ root: 'rf1' });
+        expect(store.setLocalStorage).toHaveBeenCalledWith({ root: 'rf1' });
     });
 
     it('creates root folder and sets rootId when folder is missing', async () => {
@@ -159,7 +163,7 @@ describe('buildRootFolder', () => {
 
         chromeMock.storage.sync.get.mockResolvedValue({});
 
-        await utils.buildRootFolder();
+        await accordionSync.buildRootFolder();
 
         expect(store.rootId).toBe('newRf');
         expect(chromeMock.bookmarks.create).toHaveBeenCalledWith(
@@ -175,18 +179,18 @@ describe('buildRootFolder', () => {
 
 describe('isValidURL', () => {
     it('returns true for a valid https URL', () => {
-        expect(utils.isValidURL('https://example.com')).toBe(true);
+        expect(isValidURL('https://example.com')).toBe(true);
     });
 
     it('returns true for a valid http URL', () => {
-        expect(utils.isValidURL('http://example.com/path?q=1')).toBe(true);
+        expect(isValidURL('http://example.com/path?q=1')).toBe(true);
     });
 
     it('returns false for a plain string', () => {
-        expect(utils.isValidURL('not a url')).toBe(false);
+        expect(isValidURL('not a url')).toBe(false);
     });
 
     it('returns false for an empty string', () => {
-        expect(utils.isValidURL('')).toBe(false);
+        expect(isValidURL('')).toBe(false);
     });
 });

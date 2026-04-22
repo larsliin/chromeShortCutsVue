@@ -64,7 +64,7 @@
 
 <script setup lang="ts">
     import {
-        computed, ref, onMounted, nextTick, watch,
+        computed, ref, onMounted, onUnmounted, nextTick, watch,
     } from 'vue';
     import type { BookmarkNode } from '@/types/bookmark';
     import {
@@ -77,15 +77,13 @@
         from '@/components/forms/BookmarkColorEdit.vue';
 
     import { EMITS } from '@/constants';
-    import useEventsBus from '@cmp/eventBus';
+    import emitter from '@cmp/eventBus';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
-    import { useUtils } from '@/shared/composables/utils';
+    import { useBookmarkOps } from '@cmp/useBookmarkOps';
 
-    const utils = useUtils();
+    const utils = useBookmarkOps();
 
     const bookmarksStore = useBookmarksStore();
-
-    const { emit, bus } = useEventsBus();
 
     const emits = defineEmits([
         EMITS.DELETE,
@@ -129,7 +127,7 @@
     const expansionPanelTitle = ref();
 
     function onBookmarkAdd() {
-        emit(EMITS.BOOKMARK_ADD, props.bookmark.id);
+        emitter.emit(EMITS.BOOKMARK_ADD, props.bookmark.id);
     }
 
     const showColorEdit = ref(false);
@@ -169,8 +167,8 @@
 
         showColorEdit.value = false;
 
-        const getColorsResponse = await bookmarksStore.get_syncStorage('folderColors');
-        const colorsObj = getColorsResponse || {};
+        const getColorsResponse = await bookmarksStore.getSyncStorage('folderColors');
+        const colorsObj = (getColorsResponse || {}) as Record<string, string>;
 
         const folder = bookmarksStore.bookmarks?.find((e) => e.id === props.bookmark.id);
 
@@ -185,9 +183,9 @@
         }
 
         if (!Object.keys(colorsObj).length) {
-            bookmarksStore.delete_syncStorageItem('folderColors');
+            bookmarksStore.deleteSyncStorageItem('folderColors');
         } else {
-            bookmarksStore.set_syncStorage({ folderColors: colorsObj });
+            bookmarksStore.setSyncStorage({ folderColors: colorsObj });
         }
 
         // Update input background color after color change
@@ -214,7 +212,7 @@
         showConfirmDelete.value = false;
 
         // get updated bookmark folder index
-        const bookmarkResponse = await bookmarksStore.get_bookmarkById(props.bookmark.id);
+        const bookmarkResponse = await bookmarksStore.getBookmarkById(props.bookmark.id);
         const bookmark = bookmarkResponse;
 
         utils.deleteBookmarkFolder(bookmarkResponse);
@@ -233,7 +231,7 @@
     const model = ref(props.bookmark.title);
 
     function onBlur() {
-        bookmarksStore.update_bookmark(props.bookmark.id, { title: model.value });
+        bookmarksStore.updateBookmark(props.bookmark.id, { title: model.value });
         inputBackgroundColor.value = '';
     }
 
@@ -248,10 +246,10 @@
     }
 
     async function updateColor() {
-        const getColorResponse = await bookmarksStore.get_syncStorage('folderColors');
+        const getColorResponse = await bookmarksStore.getSyncStorage('folderColors');
 
         if (getColorResponse) {
-            color.value = getColorResponse[props.bookmark.id];
+            color.value = (getColorResponse as Record<string, string>)[props.bookmark.id];
         }
 
         // Update input background color after color update
@@ -259,9 +257,9 @@
         updateInputBackgroundColor();
     }
 
-    watch(() => bus.value.get(EMITS.IMAGES_IMPORT), () => {
+    function onImagesImportHandler(): void {
         updateColor();
-    });
+    }
 
     // Watch for color changes to update input background
     watch(color, async () => {
@@ -275,7 +273,13 @@
         updateInputBackgroundColor();
     });
 
+    onUnmounted(() => {
+        emitter.off(EMITS.IMAGES_IMPORT, onImagesImportHandler);
+    });
+
     onMounted(async () => {
+        emitter.on(EMITS.IMAGES_IMPORT, onImagesImportHandler);
+
         color.value = props.bookmark.color;
 
         // Initialize input background color

@@ -42,13 +42,11 @@
 
 <script setup lang="ts">
     import { mdiDotsVertical } from '@mdi/js';
-    import { ref, watch } from 'vue';
+    import { ref, watch, onMounted, onUnmounted } from 'vue';
     import { EMITS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import useEventsBus from '@cmp/eventBus';
+    import emitter from '@cmp/eventBus';
     import type { FoldoutListItem } from '@/types/bookmark';
-
-    const { bus } = useEventsBus();
 
     const bookmarksStore = useBookmarksStore();
 
@@ -96,10 +94,18 @@
         emits(EMITS.TOGGLE, newVal);
     });
 
-    watch(() => bus.value.get(EMITS.DRAG_START), async () => {
+    function onDragStartHandler(): void {
         if (toggle.value) {
             toggle.value = false;
         }
+    }
+
+    onUnmounted(() => {
+        emitter.off(EMITS.DRAG_START, onDragStartHandler);
+    });
+
+    onMounted(() => {
+        emitter.on(EMITS.DRAG_START, onDragStartHandler);
     });
 </script>
 

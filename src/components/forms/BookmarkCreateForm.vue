@@ -34,7 +34,7 @@
                                         grow>
                                         <v-tab
                                             :disabled="!bookmarksStore.bookmarks
-                                                || bookmarksStore.bookmarks.length === 0"
+                                                || !bookmarksStore.hasBookmarks"
                                             :value="1">
                                             Folder
                                         </v-tab>
@@ -50,7 +50,7 @@
                                         single-line
                                         :rules="[rules.required]"
                                         :disabled="!bookmarksStore.bookmarks
-                                            || bookmarksStore.bookmarks.length === 0"
+                                            || !bookmarksStore.hasBookmarks"
                                         v-model="folderSlct" />
                                     <v-text-field
                                         v-else
@@ -142,18 +142,19 @@
 </template>
 
 <script setup lang="ts">
-    import { ref, watch, onMounted } from 'vue';
+    import { ref, onMounted, onUnmounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkCreateIcon from '@/components/forms/BookmarkCreateIcon.vue';
     import BookmarkColorEdit from '@/components/forms/BookmarkColorEdit.vue';
     import { EMITS } from '@/constants';
-    import { useUtils } from '@/shared/composables/utils';
-    import useEventsBus from '@cmp/eventBus';
+    import { isValidURL } from '@utils/urlUtils';
+    import { useBookmarkOps } from '@cmp/useBookmarkOps';
+    import { useAccordionSync } from '@cmp/useAccordionSync';
+    import emitter from '@cmp/eventBus';
     import type { BookmarkFormData } from '@/types/bookmark';
 
-    const { bus, emit } = useEventsBus();
-
-    const utils = useUtils();
+    const { getStoredBookmarkById } = useBookmarkOps();
+    const { buildRootFolder } = useAccordionSync();
 
     const tabs = ref();
 
@@ -173,7 +174,7 @@
 
     const rules = {
         required: (value: unknown) => !!value || 'Field is required',
-        urlvalid: (value: unknown) => utils.isValidURL(String(value ?? '')) || 'Field requires a valid URL',
+        urlvalid: (value: unknown) => isValidURL(String(value ?? '')) || 'Field requires a valid URL',
     };
 
     const bookmarksStore = useBookmarksStore();
@@ -195,7 +196,7 @@
 
     async function moveToFolder(folderStr: string, newFolderId?: string): Promise<void> {
         if (newFolderId) {
-            await bookmarksStore.move_bookmark(id.value as string, { parentId: newFolderId });
+            await bookmarksStore.moveBookmark(id.value as string, { parentId: newFolderId });
         } else {
             const folders: Record<string, string>[] = foldersIdArr.value ?? [];
             const isSameFolder = !!folders.find((item) => item[folderStr] === parentId.value);
@@ -203,7 +204,7 @@
             if (!isSameFolder) {
                 const target = folders.find((item) => Object.prototype.hasOwnProperty.call(item, folderStr));
                 if (target) {
-                    await bookmarksStore.move_bookmark(id.value as string, { parentId: target[folderStr] });
+                    await bookmarksStore.moveBookmark(id.value as string, { parentId: target[folderStr] });
                 }
             }
         }
@@ -215,7 +216,7 @@
 
     // force event trigger if bookmark data is not updated but image has changed
     function emitImageUpdate() {
-        emit(EMITS.CHANGED, id.value);
+        emitter.emit(EMITS.CHANGED, id.value);
     }
 
     async function onClickSave() {
@@ -229,12 +230,12 @@
         const folderStr = tabs.value === 1 ? folderSlct.value : folderTxt.value;
 
         if (!bookmarksStore.rootId) {
-            await utils.buildRootFolder();
+            await buildRootFolder();
         }
 
         // check if there is any existing folders with that folder name in our root folder
         const findFolderResponse = await bookmarksStore
-            .get_folderByTitle(bookmarksStore.rootId as string, folderStr);
+            .getFolderByTitle(bookmarksStore.rootId as string, folderStr);
         let createBookmarkResponse;
 
         bookmarksStore.editBase64Image = base64Image.value;
@@ -243,25 +244,25 @@
             // if we have a folder with the provided folder name already
             if (id.value) {
                 createBookmarkResponse = await bookmarksStore
-                    .update_bookmark(id.value, { title: titleTxt.value, url: urlTxt.value });
+                    .updateBookmark(id.value, { title: titleTxt.value, url: urlTxt.value });
 
                 await moveToFolder(folderStr);
             } else {
                 createBookmarkResponse = await bookmarksStore
-                    .create_bookmark(findFolderResponse[0].id, titleTxt.value, urlTxt.value);
+                    .createBookmark(findFolderResponse[0].id, titleTxt.value, urlTxt.value);
             }
         } else {
             const createFolderResponse = await bookmarksStore
-                .create_bookmark(bookmarksStore.rootId as string, folderStr);
+                .createBookmark(bookmarksStore.rootId as string, folderStr);
 
             if (id.value) {
                 createBookmarkResponse = await bookmarksStore
-                    .update_bookmark(id.value, { title: titleTxt.value, url: urlTxt.value });
+                    .updateBookmark(id.value, { title: titleTxt.value, url: urlTxt.value });
 
                 await moveToFolder(folderStr, createFolderResponse.id);
             } else {
                 createBookmarkResponse = await bookmarksStore
-                    .create_bookmark(createFolderResponse.id, titleTxt.value, urlTxt.value);
+                    .createBookmark(createFolderResponse.id, titleTxt.value, urlTxt.value);
             }
         }
 
@@ -269,7 +270,7 @@
             emitImageUpdate();
         } else {
             // create local storage item
-            await bookmarksStore.set_localStorage({
+            await bookmarksStore.setLocalStorage({
                 [createBookmarkResponse.id]: {
                     id: createBookmarkResponse.id,
                     parentId: createBookmarkResponse.parentId,
@@ -286,7 +287,7 @@
             await saveBookmarkColor(bookmarkId);
         }
 
-        emit(EMITS.BOOKMARKS_UPDATED, { type: 'color', id: bookmarkId });
+        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'color', id: bookmarkId });
 
         emits(EMITS.SAVE);
     }
@@ -309,7 +310,7 @@
     }
 
     async function saveBookmarkColor(bookmarkId: string): Promise<void> {
-        const colorsObj = await bookmarksStore.get_syncStorage('bookmarkColors') || {};
+        const colorsObj = (await bookmarksStore.getSyncStorage('bookmarkColors') || {}) as Record<string, string>;
 
         if (bookmarkColor.value) {
             colorsObj[bookmarkId] = bookmarkColor.value;
@@ -320,29 +321,29 @@
         }
 
         if (!Object.keys(colorsObj).length) {
-            await bookmarksStore.delete_syncStorageItem('bookmarkColors');
+            await bookmarksStore.deleteSyncStorageItem('bookmarkColors');
         } else {
-            await bookmarksStore.set_syncStorage({ bookmarkColors: colorsObj });
+            await bookmarksStore.setSyncStorage({ bookmarkColors: colorsObj });
         }
 
-        const bookmark = utils.getStoredBookmarkById(bookmarkId);
+        const bookmark = getStoredBookmarkById(bookmarkId);
         if (bookmark) {
             bookmark.color = bookmarkColor.value || '';
         }
     }
 
-    watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async () => {
+    async function onBookmarksUpdatedHandler(): Promise<void> {
         if (bookmarksStore.rootId) {
-            const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId);
+            const bookmarks = await bookmarksStore.getBookmarks(bookmarksStore.rootId);
             const children = bookmarks[0].children ?? [];
             foldersArr.value = children.map((e) => e.title);
             foldersIdArr.value = children.map((e) => ({ [e.title]: e.id }));
         }
 
-        if (!bookmarksStore.bookmarks?.length) {
+        if (!bookmarksStore.hasBookmarks) {
             tabs.value = 2;
         }
-    });
+    }
 
     async function init() {
         bookmarksStore.dialogOpen = true;
@@ -351,13 +352,12 @@
             return;
         }
 
-        const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId as string);
+        const bookmarks = await bookmarksStore.getBookmarks(bookmarksStore.rootId as string);
         const folderChildren = bookmarks[0].children ?? [];
         foldersArr.value = folderChildren.map((e) => e.title);
         foldersIdArr.value = folderChildren.map((e) => ({ [e.title]: e.id }));
 
-        const slctDisabled = !bookmarksStore.bookmarks
-            || bookmarksStore.bookmarks.length === 0;
+        const slctDisabled = !bookmarksStore.hasBookmarks;
 
         if (props.data) {
             id.value = props.data.id ?? null;
@@ -371,9 +371,9 @@
 
             // Load existing bookmark color
             if (props.data.id) {
-                const colorsObj = await bookmarksStore.get_syncStorage('bookmarkColors');
-                if (colorsObj && colorsObj[props.data.id]) {
-                    bookmarkColor.value = colorsObj[props.data.id];
+                const colorsObj = await bookmarksStore.getSyncStorage('bookmarkColors');
+                if (colorsObj && (colorsObj as Record<string, string>)[props.data.id]) {
+                    bookmarkColor.value = (colorsObj as Record<string, string>)[props.data.id];
                 }
             }
         }
@@ -394,7 +394,13 @@
         }
     }
 
+    onUnmounted(() => {
+        emitter.off(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdatedHandler);
+    });
+
     onMounted(() => {
+        emitter.on(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdatedHandler);
+
         init();
     });
 

@@ -42,8 +42,8 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 // ADD BOOKMARK
 // Covers the two Chrome API calls the "New Bookmark" form makes:
-//   1. create folder   → create_bookmark(rootId, folderTitle)
-//   2. create bookmark → create_bookmark(folderId, title, url)
+//   1. create folder   → createBookmark(rootId, folderTitle)
+//   2. create bookmark → createBookmark(folderId, title, url)
 // ---------------------------------------------------------------------------
 
 describe('Add bookmark', () => {
@@ -51,7 +51,7 @@ describe('Add bookmark', () => {
         const folder = makeFolder({ id: 'f1', title: 'Work' });
         fireCallback(chromeMock.bookmarks.create, [folder]);
 
-        const result = await store.create_bookmark('root', 'Work');
+        const result = await store.createBookmark('root', 'Work');
 
         expect(chromeMock.bookmarks.create).toHaveBeenCalledWith(
             { parentId: 'root', title: 'Work', url: undefined },
@@ -65,7 +65,7 @@ describe('Add bookmark', () => {
         const bookmark = makeNode({ id: 'b1', title: 'GitHub', url: 'https://github.com', parentId: 'f1' });
         fireCallback(chromeMock.bookmarks.create, [bookmark]);
 
-        const result = await store.create_bookmark('f1', 'GitHub', 'https://github.com');
+        const result = await store.createBookmark('f1', 'GitHub', 'https://github.com');
 
         expect(chromeMock.bookmarks.create).toHaveBeenCalledWith(
             { parentId: 'f1', title: 'GitHub', url: 'https://github.com' },
@@ -83,8 +83,8 @@ describe('Add bookmark', () => {
             .mockImplementationOnce((_: unknown, cb: (n: typeof folder) => void) => cb(folder))
             .mockImplementationOnce((_: unknown, cb: (n: typeof bookmark) => void) => cb(bookmark));
 
-        const createdFolder = await store.create_bookmark('root', 'Personal');
-        const createdBookmark = await store.create_bookmark(createdFolder.id, 'Reddit', 'https://reddit.com');
+        const createdFolder = await store.createBookmark('root', 'Personal');
+        const createdBookmark = await store.createBookmark(createdFolder.id, 'Reddit', 'https://reddit.com');
 
         expect(chromeMock.bookmarks.create).toHaveBeenCalledTimes(2);
         expect(createdFolder.id).toBe('f1');
@@ -94,7 +94,7 @@ describe('Add bookmark', () => {
     it('rejects when the Chrome API reports an error', async () => {
         fireCallback(chromeMock.bookmarks.create, [makeNode()], 'Cannot create bookmark here.');
 
-        await expect(store.create_bookmark('root', 'Fail')).rejects.toThrow('Cannot create bookmark here.');
+        await expect(store.createBookmark('root', 'Fail')).rejects.toThrow('Cannot create bookmark here.');
     });
 });
 
@@ -108,7 +108,7 @@ describe('Delete bookmark', () => {
     it('calls chrome.bookmarks.remove and returns the removed id', async () => {
         fireCallback(chromeMock.bookmarks.remove, []);
 
-        const result = await store.remove_bookmark('b1');
+        const result = await store.removeBookmark('b1');
 
         expect(chromeMock.bookmarks.remove).toHaveBeenCalledWith('b1', expect.any(Function));
         expect(result).toBe('b1');
@@ -117,7 +117,7 @@ describe('Delete bookmark', () => {
     it('calls chrome.bookmarks.removeTree to delete a folder and all its children', async () => {
         fireCallback(chromeMock.bookmarks.removeTree, []);
 
-        const result = await store.remove_bookmarkFolder('f1');
+        const result = await store.removeBookmarkFolder('f1');
 
         expect(chromeMock.bookmarks.removeTree).toHaveBeenCalledWith('f1', expect.any(Function));
         expect(result).toBe('f1');
@@ -161,19 +161,19 @@ describe('Delete bookmark', () => {
     it('rejects when the Chrome API reports an error while removing a bookmark', async () => {
         fireCallback(chromeMock.bookmarks.remove, [], 'Cannot remove.');
 
-        await expect(store.remove_bookmark('b1')).rejects.toThrow('Cannot remove.');
+        await expect(store.removeBookmark('b1')).rejects.toThrow('Cannot remove.');
     });
 
     it('rejects when the Chrome API reports an error while removing a folder', async () => {
         fireCallback(chromeMock.bookmarks.removeTree, [], 'Cannot remove tree.');
 
-        await expect(store.remove_bookmarkFolder('f1')).rejects.toThrow('Cannot remove tree.');
+        await expect(store.removeBookmarkFolder('f1')).rejects.toThrow('Cannot remove tree.');
     });
 });
 
 // ---------------------------------------------------------------------------
 // REORDER BOOKMARK
-// reorder_bookmark(id, index) calls chrome.bookmarks.move with { index } only,
+// reorderBookmark(id, index) calls chrome.bookmarks.move with { index } only,
 // meaning it moves a bookmark within its current folder.
 // ---------------------------------------------------------------------------
 
@@ -181,7 +181,7 @@ describe('Reorder bookmark', () => {
     it('calls chrome.bookmarks.move with only an index (same-folder reorder)', async () => {
         fireThreeArgCallback(chromeMock.bookmarks.move, []);
 
-        await store.reorder_bookmark('b1', 2);
+        await store.reorderBookmark('b1', 2);
 
         expect(chromeMock.bookmarks.move).toHaveBeenCalledWith('b1', { index: 2 }, expect.any(Function));
     });
@@ -189,13 +189,13 @@ describe('Reorder bookmark', () => {
     it('resolves to undefined on success', async () => {
         fireThreeArgCallback(chromeMock.bookmarks.move, []);
 
-        await expect(store.reorder_bookmark('b1', 0)).resolves.toBeUndefined();
+        await expect(store.reorderBookmark('b1', 0)).resolves.toBeUndefined();
     });
 
     it('rejects when the Chrome API reports an error', async () => {
         fireThreeArgCallback(chromeMock.bookmarks.move, [], 'Move failed.');
 
-        await expect(store.reorder_bookmark('b1', 1)).rejects.toThrow('Move failed.');
+        await expect(store.reorderBookmark('b1', 1)).rejects.toThrow('Move failed.');
     });
 });
 
@@ -206,11 +206,11 @@ describe('Reorder bookmark', () => {
 // ---------------------------------------------------------------------------
 
 describe('Export bookmarks', () => {
-    it('get_localStorageAll resolves with all stored items', async () => {
+    it('getLocalStorageAll resolves with all stored items', async () => {
         const allItems = { b1: { id: 'b1', image: 'data:image/png;base64,abc' }, config: 'value' };
         chromeMock.storage.local.get.mockResolvedValueOnce(allItems);
 
-        const result = await store.get_localStorageAll();
+        const result = await store.getLocalStorageAll();
 
         expect(chromeMock.storage.local.get).toHaveBeenCalledWith(null);
         expect(result).toEqual(allItems);
@@ -245,7 +245,7 @@ describe('Export bookmarks', () => {
             b1: { id: 'b1', image: 'data:image/png;base64,iVBORw0KGgo=' },
         });
 
-        const localItems = await store.get_localStorageAll() as Record<string, Record<string, unknown>>;
+        const localItems = await store.getLocalStorageAll() as Record<string, Record<string, unknown>>;
         const exportBookmarks = Array.from(store.bookmarks ?? []) as StoreBookmark[];
 
         Object.values(localItems)
@@ -274,10 +274,10 @@ describe('Export bookmarks', () => {
         expect(parsed.bookmarks[0].title).toBe('Work');
     });
 
-    it('get_localStorageAll rejects when storage throws', async () => {
+    it('getLocalStorageAll rejects when storage throws', async () => {
         chromeMock.storage.local.get.mockRejectedValueOnce(new Error('Storage unavailable.'));
 
-        await expect(store.get_localStorageAll()).rejects.toThrow('Storage unavailable.');
+        await expect(store.getLocalStorageAll()).rejects.toThrow('Storage unavailable.');
     });
 });
 
@@ -285,9 +285,9 @@ describe('Export bookmarks', () => {
 // IMPORT BOOKMARKS
 // The import flow:
 //   1. Parse uploaded JSON → { bookmarks: Folder[], type }
-//   2. create_bookmark(rootId, folder.title) for each folder
+//   2. createBookmark(rootId, folder.title) for each folder
 //   3. Build old-id → new-id map for folders
-//   4. create_bookmark(newFolderId, bm.title, bm.url) for each child bookmark
+//   4. createBookmark(newFolderId, bm.title, bm.url) for each child bookmark
 // ---------------------------------------------------------------------------
 
 describe('Import bookmarks', () => {
@@ -307,7 +307,7 @@ describe('Import bookmarks', () => {
             .mockImplementationOnce((_: unknown, cb: (n: typeof f2) => void) => cb(f2));
 
         const results = await Promise.all(
-            importData.bookmarks.map((folder) => store.create_bookmark('root', folder.title)),
+            importData.bookmarks.map((folder) => store.createBookmark('root', folder.title)),
         );
 
         expect(chromeMock.bookmarks.create).toHaveBeenCalledTimes(2);
@@ -332,7 +332,7 @@ describe('Import bookmarks', () => {
             .mockImplementationOnce((_: unknown, cb: (n: typeof b2) => void) => cb(b2));
 
         const results = await Promise.all(
-            flatBookmarks.map((bm) => store.create_bookmark(foldersMap[bm.parentId], bm.title, bm.url)),
+            flatBookmarks.map((bm) => store.createBookmark(foldersMap[bm.parentId], bm.title, bm.url)),
         );
 
         expect(chromeMock.bookmarks.create).toHaveBeenNthCalledWith(
@@ -352,7 +352,7 @@ describe('Import bookmarks', () => {
         const folder = makeFolder({ id: 'new-f1', title: 'Empty' });
         fireCallback(chromeMock.bookmarks.create, [folder]);
 
-        const result = await store.create_bookmark('root', 'Empty');
+        const result = await store.createBookmark('root', 'Empty');
 
         expect(result.title).toBe('Empty');
         expect(result.url).toBeUndefined();
@@ -385,14 +385,14 @@ describe('Import bookmarks', () => {
     it('rejects when the Chrome API fails during folder creation', async () => {
         fireCallback(chromeMock.bookmarks.create, [makeNode()], 'Chrome quota exceeded.');
 
-        await expect(store.create_bookmark('root', 'Work')).rejects.toThrow('Chrome quota exceeded.');
+        await expect(store.createBookmark('root', 'Work')).rejects.toThrow('Chrome quota exceeded.');
     });
 
     it('rejects when the Chrome API fails during bookmark creation inside folder', async () => {
         fireCallback(chromeMock.bookmarks.create, [makeNode()], 'Invalid parent.');
 
         await expect(
-            store.create_bookmark('new-f1', 'GitHub', 'https://github.com'),
+            store.createBookmark('new-f1', 'GitHub', 'https://github.com'),
         ).rejects.toThrow('Invalid parent.');
     });
 });

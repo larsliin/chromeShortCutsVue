@@ -101,13 +101,11 @@
     import { ref, watch } from 'vue';
     import { mdiFormatColorFill, mdiFolderOpen, mdiCloudDownload, mdiClose } from '@mdi/js';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
-    import { useUtils } from '@/shared/composables/utils';
+    import { getDomainFromUrl, isValidURL, getBase64ImageFromUrl } from '@utils/urlUtils';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS, LOGO_GENERATOR } from '@/constants';
 
     const bookmarksStore = useBookmarksStore();
-
-    const utils = useUtils();
 
     interface Props {
         data?: { url?: string };
@@ -134,7 +132,7 @@
     async function fetchClearBitImage(imageUrl: string): Promise<void> {
         isIconLoading.value = true;
         try {
-            const response = await utils.getBase64ImageFromUrl(imageUrl);
+            const response = await getBase64ImageFromUrl(imageUrl);
             if (response === 'error') {
                 showClearbitError.value = true;
                 emits(EMITS.CLEARBIT_ERROR, props.url);
@@ -153,8 +151,8 @@
             return;
         }
 
-        if (utils.isValidURL(props.url)) {
-            const domain = utils.getDomainFromUrl(props.url);
+        if (isValidURL(props.url)) {
+            const domain = getDomainFromUrl(props.url);
             const imageUrl = `${LOGO_GENERATOR.LOGO_GENERATOR_DOMAIN}/${domain}?token=${LOGO_GENERATOR.LOGO_GENERATOR_TOKEN}`;
 
             fetchClearBitImage(imageUrl);

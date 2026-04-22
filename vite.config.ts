@@ -35,6 +35,10 @@ export default defineConfig({
                 find: '@use',
                 replacement: fileURLToPath(new URL('./src/shared/use', import.meta.url)),
             },
+            {
+                find: '@utils',
+                replacement: fileURLToPath(new URL('./src/shared/utils', import.meta.url)),
+            },
         ],
     },
     css: {

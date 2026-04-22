@@ -37,15 +37,15 @@ beforeEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// get_bookmarks
+// getBookmarks
 // ---------------------------------------------------------------------------
 
-describe('get_bookmarks', () => {
+describe('getBookmarks', () => {
     it('resolves with the bookmark tree for a given id', async () => {
         const tree = makeTree([makeNode({ id: '2', title: 'Child' })]);
         fireCallback(chromeMock.bookmarks.getSubTree, [tree]);
 
-        const result = await store.get_bookmarks('root');
+        const result = await store.getBookmarks('root');
 
         expect(chromeMock.bookmarks.getSubTree).toHaveBeenCalledWith('root', expect.any(Function));
         expect(result).toEqual(tree);
@@ -54,20 +54,20 @@ describe('get_bookmarks', () => {
     it('rejects when chrome.runtime.lastError is set', async () => {
         fireCallback(chromeMock.bookmarks.getSubTree, [[]], 'Extension context invalidated.');
 
-        await expect(store.get_bookmarks('root')).rejects.toThrow('Extension context invalidated.');
+        await expect(store.getBookmarks('root')).rejects.toThrow('Extension context invalidated.');
     });
 });
 
 // ---------------------------------------------------------------------------
-// get_bookmarkById
+// getBookmarkById
 // ---------------------------------------------------------------------------
 
-describe('get_bookmarkById', () => {
+describe('getBookmarkById', () => {
     it('resolves with the first matching bookmark', async () => {
         const node = makeNode({ id: '42', title: 'My Bookmark' });
         fireCallback(chromeMock.bookmarks.get, [[node]]);
 
-        const result = await store.get_bookmarkById('42');
+        const result = await store.getBookmarkById('42');
 
         expect(result).toEqual(node);
     });
@@ -75,27 +75,27 @@ describe('get_bookmarkById', () => {
     it('rejects with "Bookmark not found" when the result array is empty', async () => {
         fireCallback(chromeMock.bookmarks.get, [[]]);
 
-        await expect(store.get_bookmarkById('99')).rejects.toThrow('Bookmark not found');
+        await expect(store.getBookmarkById('99')).rejects.toThrow('Bookmark not found');
     });
 
     it('rejects when chrome.runtime.lastError is set', async () => {
         fireCallback(chromeMock.bookmarks.get, [[]], 'Invalid bookmark ID.');
 
-        await expect(store.get_bookmarkById('bad')).rejects.toThrow('Invalid bookmark ID.');
+        await expect(store.getBookmarkById('bad')).rejects.toThrow('Invalid bookmark ID.');
     });
 });
 
 // ---------------------------------------------------------------------------
-// get_folderByTitle
+// getFolderByTitle
 // ---------------------------------------------------------------------------
 
-describe('get_folderByTitle', () => {
+describe('getFolderByTitle', () => {
     it('resolves with matching folder when title found', async () => {
         const folder = makeNode({ id: '5', title: 'My Shortcuts Tab', url: undefined });
         const tree = makeTree([folder]);
         fireCallback(chromeMock.bookmarks.getSubTree, [tree]);
 
-        const result = await store.get_folderByTitle('root', 'My Shortcuts Tab');
+        const result = await store.getFolderByTitle('root', 'My Shortcuts Tab');
 
         expect(result).toEqual([folder]);
     });
@@ -104,7 +104,7 @@ describe('get_folderByTitle', () => {
         const tree = makeTree([makeNode({ id: '5', title: 'Other Folder' })]);
         fireCallback(chromeMock.bookmarks.getSubTree, [tree]);
 
-        const result = await store.get_folderByTitle('root', 'Missing Folder');
+        const result = await store.getFolderByTitle('root', 'Missing Folder');
 
         expect(result).toEqual([]);
     });
@@ -112,20 +112,20 @@ describe('get_folderByTitle', () => {
     it('rejects when chrome.runtime.lastError is set', async () => {
         fireCallback(chromeMock.bookmarks.getSubTree, [[]], 'Subtree error.');
 
-        await expect(store.get_folderByTitle('root', 'Any')).rejects.toThrow('Subtree error.');
+        await expect(store.getFolderByTitle('root', 'Any')).rejects.toThrow('Subtree error.');
     });
 });
 
 // ---------------------------------------------------------------------------
-// create_bookmark
+// createBookmark
 // ---------------------------------------------------------------------------
 
-describe('create_bookmark', () => {
+describe('createBookmark', () => {
     it('resolves with the created bookmark', async () => {
         const created = makeNode({ id: '10', title: 'New Link', url: 'https://new.com' });
         fireCallback(chromeMock.bookmarks.create, [created]);
 
-        const result = await store.create_bookmark('5', 'New Link', 'https://new.com');
+        const result = await store.createBookmark('5', 'New Link', 'https://new.com');
 
         expect(chromeMock.bookmarks.create).toHaveBeenCalledWith(
             { parentId: '5', title: 'New Link', url: 'https://new.com' },
@@ -137,20 +137,20 @@ describe('create_bookmark', () => {
     it('rejects when chrome.runtime.lastError is set', async () => {
         fireCallback(chromeMock.bookmarks.create, [makeNode()], 'Cannot create bookmark here.');
 
-        await expect(store.create_bookmark('5', 'Fail')).rejects.toThrow('Cannot create bookmark here.');
+        await expect(store.createBookmark('5', 'Fail')).rejects.toThrow('Cannot create bookmark here.');
     });
 });
 
 // ---------------------------------------------------------------------------
-// update_bookmark
+// updateBookmark
 // ---------------------------------------------------------------------------
 
-describe('update_bookmark', () => {
+describe('updateBookmark', () => {
     it('resolves with the updated bookmark', async () => {
         const updated = makeNode({ id: '3', title: 'Renamed' });
         fireThreeArgCallback(chromeMock.bookmarks.update, [updated]);
 
-        const result = await store.update_bookmark('3', { title: 'Renamed' });
+        const result = await store.updateBookmark('3', { title: 'Renamed' });
 
         expect(chromeMock.bookmarks.update).toHaveBeenCalledWith(
             '3',
@@ -163,19 +163,19 @@ describe('update_bookmark', () => {
     it('rejects when chrome.runtime.lastError is set', async () => {
         fireThreeArgCallback(chromeMock.bookmarks.update, [makeNode()], 'Update failed.');
 
-        await expect(store.update_bookmark('3', { title: 'X' })).rejects.toThrow('Update failed.');
+        await expect(store.updateBookmark('3', { title: 'X' })).rejects.toThrow('Update failed.');
     });
 });
 
 // ---------------------------------------------------------------------------
-// remove_bookmark
+// removeBookmark
 // ---------------------------------------------------------------------------
 
-describe('remove_bookmark', () => {
+describe('removeBookmark', () => {
     it('resolves with the removed bookmark id', async () => {
         fireCallback(chromeMock.bookmarks.remove, []);
 
-        const result = await store.remove_bookmark('7');
+        const result = await store.removeBookmark('7');
 
         expect(chromeMock.bookmarks.remove).toHaveBeenCalledWith('7', expect.any(Function));
         expect(result).toBe('7');
@@ -184,19 +184,19 @@ describe('remove_bookmark', () => {
     it('rejects when chrome.runtime.lastError is set', async () => {
         fireCallback(chromeMock.bookmarks.remove, [], 'Cannot remove.');
 
-        await expect(store.remove_bookmark('7')).rejects.toThrow('Cannot remove.');
+        await expect(store.removeBookmark('7')).rejects.toThrow('Cannot remove.');
     });
 });
 
 // ---------------------------------------------------------------------------
-// remove_bookmarkFolder
+// removeBookmarkFolder
 // ---------------------------------------------------------------------------
 
-describe('remove_bookmarkFolder', () => {
+describe('removeBookmarkFolder', () => {
     it('resolves with the removed folder id', async () => {
         fireCallback(chromeMock.bookmarks.removeTree, []);
 
-        const result = await store.remove_bookmarkFolder('4');
+        const result = await store.removeBookmarkFolder('4');
 
         expect(chromeMock.bookmarks.removeTree).toHaveBeenCalledWith('4', expect.any(Function));
         expect(result).toBe('4');
@@ -205,39 +205,39 @@ describe('remove_bookmarkFolder', () => {
     it('rejects when chrome.runtime.lastError is set', async () => {
         fireCallback(chromeMock.bookmarks.removeTree, [], 'Cannot remove tree.');
 
-        await expect(store.remove_bookmarkFolder('4')).rejects.toThrow('Cannot remove tree.');
+        await expect(store.removeBookmarkFolder('4')).rejects.toThrow('Cannot remove tree.');
     });
 });
 
 // ---------------------------------------------------------------------------
-// move_bookmark
+// moveBookmark
 // ---------------------------------------------------------------------------
 
-describe('move_bookmark', () => {
+describe('moveBookmark', () => {
     it('resolves after moving a bookmark to a new parent', async () => {
         fireThreeArgCallback(chromeMock.bookmarks.move, []);
 
-        await expect(store.move_bookmark('3', { parentId: '10' })).resolves.toBeUndefined();
+        await expect(store.moveBookmark('3', { parentId: '10' })).resolves.toBeUndefined();
         expect(chromeMock.bookmarks.move).toHaveBeenCalledWith('3', { parentId: '10' }, expect.any(Function));
     });
 
     it('rejects when chrome.runtime.lastError is set', async () => {
         fireThreeArgCallback(chromeMock.bookmarks.move, [], 'Move failed.');
 
-        await expect(store.move_bookmark('3', { parentId: '10' })).rejects.toThrow('Move failed.');
+        await expect(store.moveBookmark('3', { parentId: '10' })).rejects.toThrow('Move failed.');
     });
 });
 
 // ---------------------------------------------------------------------------
-// get_tree
+// getTree
 // ---------------------------------------------------------------------------
 
-describe('get_tree', () => {
+describe('getTree', () => {
     it('resolves with the full bookmark tree', async () => {
         const tree = makeTree();
         fireNoArgCallback(chromeMock.bookmarks.getTree, [tree]);
 
-        const result = await store.get_tree();
+        const result = await store.getTree();
 
         expect(result).toEqual(tree);
     });
@@ -246,15 +246,15 @@ describe('get_tree', () => {
         chromeMock.runtime.lastError = { message: 'Tree unavailable.' };
         chromeMock.bookmarks.getTree.mockImplementation((cb: () => void) => cb());
 
-        await expect(store.get_tree()).rejects.toThrow('Tree unavailable.');
+        await expect(store.getTree()).rejects.toThrow('Tree unavailable.');
     });
 });
 
 // ---------------------------------------------------------------------------
-// get_colorizedBookmarks
+// getColorizedBookmarks
 // ---------------------------------------------------------------------------
 
-describe('get_colorizedBookmarks', () => {
+describe('getColorizedBookmarks', () => {
     it('returns bookmark tree with folder and bookmark colors merged', async () => {
         const bookmark = makeNode({ id: 'bm1', url: 'https://a.com', children: undefined });
         const folder = makeNode({ id: 'f1', title: 'Folder', url: undefined, children: [bookmark] });
@@ -265,7 +265,7 @@ describe('get_colorizedBookmarks', () => {
             .mockResolvedValueOnce({ folderColors: { f1: '#ff0000' } })
             .mockResolvedValueOnce({ bookmarkColors: { bm1: '#0000ff' } });
 
-        const result = await store.get_colorizedBookmarks('root');
+        const result = await store.getColorizedBookmarks('root');
 
         expect((result[0].children?.[0] as { color?: string }).color).toBe('#ff0000');
         expect((result[0].children?.[0].children?.[0] as { color?: string }).color).toBe('#0000ff');
@@ -278,15 +278,15 @@ describe('get_colorizedBookmarks', () => {
             .mockResolvedValueOnce({ folderColors: null })
             .mockResolvedValueOnce({ bookmarkColors: null });
 
-        const result = await store.get_colorizedBookmarks('root');
+        const result = await store.getColorizedBookmarks('root');
 
         expect(result[0].children?.[0]).not.toHaveProperty('color');
     });
 
-    it('propagates rejection when get_bookmarks fails', async () => {
+    it('propagates rejection when getBookmarks fails', async () => {
         fireCallback(chromeMock.bookmarks.getSubTree, [[]], 'Subtree error.');
 
-        await expect(store.get_colorizedBookmarks('root')).rejects.toThrow('Subtree error.');
+        await expect(store.getColorizedBookmarks('root')).rejects.toThrow('Subtree error.');
     });
 });
 
@@ -294,19 +294,19 @@ describe('get_colorizedBookmarks', () => {
 // localStorage / syncStorage wrappers
 // ---------------------------------------------------------------------------
 
-describe('set_localStorage', () => {
+describe('setLocalStorage', () => {
     it('calls chrome.storage.local.set with the provided object', async () => {
-        await store.set_localStorage({ myKey: 'myValue' });
+        await store.setLocalStorage({ myKey: 'myValue' });
 
         expect(chromeMock.storage.local.set).toHaveBeenCalledWith({ myKey: 'myValue' });
     });
 });
 
-describe('get_localStorage', () => {
+describe('getLocalStorage', () => {
     it('resolves with the value for the given key', async () => {
         chromeMock.storage.local.get.mockResolvedValue({ rootId: 'abc123' });
 
-        const result = await store.get_localStorage('rootId');
+        const result = await store.getLocalStorage('rootId');
 
         expect(result).toBe('abc123');
     });
@@ -314,30 +314,30 @@ describe('get_localStorage', () => {
     it('resolves with undefined when key is not present', async () => {
         chromeMock.storage.local.get.mockResolvedValue({});
 
-        const result = await store.get_localStorage('missing');
+        const result = await store.getLocalStorage('missing');
 
         expect(result).toBeUndefined();
     });
 });
 
-describe('get_syncStorage', () => {
+describe('getSyncStorage', () => {
     it('resolves with the value for the given key', async () => {
         chromeMock.storage.sync.get.mockResolvedValue({ darkMode: 3 });
 
-        const result = await store.get_syncStorage('darkMode');
+        const result = await store.getSyncStorage('darkMode');
 
         expect(result).toBe(3);
     });
 });
 
-describe('delete_localStorageItem', () => {
+describe('deleteLocalStorageItem', () => {
     it('resolves when item is removed without error', async () => {
         chromeMock.storage.local.remove.mockImplementation((_keys: string[], cb: () => void) => {
             chromeMock.runtime.lastError = undefined;
             cb();
         });
 
-        await expect(store.delete_localStorageItem('someKey')).resolves.toBeUndefined();
+        await expect(store.deleteLocalStorageItem('someKey')).resolves.toBeUndefined();
     });
 
     it('rejects when chrome.runtime.lastError is set', async () => {
@@ -346,6 +346,6 @@ describe('delete_localStorageItem', () => {
             cb();
         });
 
-        await expect(store.delete_localStorageItem('someKey')).rejects.toMatchObject({ message: 'Remove failed.' });
+        await expect(store.deleteLocalStorageItem('someKey')).rejects.toMatchObject({ message: 'Remove failed.' });
     });
 });

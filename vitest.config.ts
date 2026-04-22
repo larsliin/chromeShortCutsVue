@@ -26,6 +26,7 @@ export default defineConfig({
             { find: '@cmp', replacement: fileURLToPath(new URL('./src/shared/composables', import.meta.url)) },
             { find: '@stores', replacement: fileURLToPath(new URL('./src/shared/stores', import.meta.url)) },
             { find: '@use', replacement: fileURLToPath(new URL('./src/shared/use', import.meta.url)) },
+            { find: '@utils', replacement: fileURLToPath(new URL('./src/shared/utils', import.meta.url)) },
         ],
     },
     test: {
@@ -48,7 +49,9 @@ export default defineConfig({
             include: [
                 'src/shared/stores/bookmarks/_actions.ts',
                 'src/shared/stores/bookmarks/_getters.ts',
-                'src/shared/composables/utils.ts',
+                'src/shared/composables/useBookmarkOps.ts',
+                'src/shared/composables/useAccordionSync.ts',
+                'src/shared/utils/urlUtils.ts',
                 'background.js',
             ],
             thresholds: {

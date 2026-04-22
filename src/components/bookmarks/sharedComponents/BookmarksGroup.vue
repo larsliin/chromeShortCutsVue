@@ -64,15 +64,13 @@
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
     import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import useEventsBus from '@cmp/eventBus';
+    import emitter from '@cmp/eventBus';
     import { EMITS } from '@/constants';
-    import { useUtils } from '@/shared/composables/utils';
+    import { useBookmarkOps } from '@cmp/useBookmarkOps';
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';
 
-    const utils = useUtils();
-
-    const { emit } = useEventsBus();
+    const utils = useBookmarkOps();
 
     interface Props {
         folder: BookmarkNode;
@@ -105,7 +103,7 @@
         showConfirmDelete.value = false;
 
         // get updated bookmark folder index
-        const bookmarkResponse = await bookmarksStore.get_bookmarkById(props.folder.id);
+        const bookmarkResponse = await bookmarksStore.getBookmarkById(props.folder.id);
 
         await utils.deleteBookmarkFolder(bookmarkResponse as BookmarkNode);
 
@@ -117,7 +115,7 @@
         const bookmark = props.bookmarks?.[event.newIndex];
 
         if (bookmark) {
-            bookmarksStore.move_bookmark(bookmark.id, {
+            bookmarksStore.moveBookmark(bookmark.id, {
                 parentId: props.folder.id,
                 index: event.newIndex,
             });
@@ -136,7 +134,7 @@
 
         await nextTick();
 
-        bookmarksStore.reorder_bookmark(bookmark.id, index);
+        bookmarksStore.reorderBookmark(bookmark.id, index);
     }
 
     function onDragStart() {
@@ -146,7 +144,7 @@
 
         document.body.classList.add('cursor-pointer');
 
-        emit(EMITS.DRAG_START);
+        emitter.emit(EMITS.DRAG_START);
     }
 
     function onDragEnd() {

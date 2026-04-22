@@ -20,12 +20,10 @@
     import { EMITS } from '@/constants';
     import { mdiMagnify } from '@mdi/js';
     import {
-        ref, onMounted, watch, nextTick,
+        ref, onMounted, onUnmounted, nextTick,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import useEventsBus from '@cmp/eventBus';
-
-    const { bus, emit } = useEventsBus();
+    import emitter from '@cmp/eventBus';
 
     const bookmarksStore = useBookmarksStore();
 
@@ -58,7 +56,7 @@
             bookmarksStore.bookmarks = bookmarks;
         }
 
-        emit(EMITS.FILTER_UPDATED, event ? event.toLowerCase() : '');
+        emitter.emit(EMITS.FILTER_UPDATED, event ? event.toLowerCase() : '');
 
         if (transitionTimer) {
             clearTimeout(transitionTimer);
@@ -95,7 +93,7 @@
     async function getBookmarks() {
         try {
             const bookmarksResponse = await bookmarksStore
-                .get_colorizedBookmarks(bookmarksStore.rootId as string);
+                .getColorizedBookmarks(bookmarksStore.rootId as string);
 
             clonedBookmarks = bookmarksResponse[0]?.children
                 ? bookmarksResponse[0].children : [];
@@ -106,7 +104,7 @@
         }
     }
 
-    watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async () => {
+    async function onBookmarksUpdatedHandler(): Promise<void> {
         if (!bookmarksStore.rootId) {
             return;
         }
@@ -114,9 +112,15 @@
         await nextTick();
 
         getBookmarks();
+    }
+
+    onUnmounted(() => {
+        emitter.off(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdatedHandler);
     });
 
     onMounted(() => {
+        emitter.on(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdatedHandler);
+
         getBookmarks();
     });
 

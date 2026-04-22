@@ -127,9 +127,9 @@ beforeEach(() => {
 // IMPORT BOOKMARKS FILE
 // Tests the logic that drives onBookmarksImportReaderLoad:
 //   1. Parse exported JSON → { bookmarks: Folder[], type }
-//   2. create_bookmark(rootId, folder.title) for each folder
+//   2. createBookmark(rootId, folder.title) for each folder
 //   3. Build oldId → newId folder map from the creation results
-//   4. create_bookmark(newFolderId, bm.title, bm.url) for each child bookmark
+//   4. createBookmark(newFolderId, bm.title, bm.url) for each child bookmark
 // ---------------------------------------------------------------------------
 
 describe('Import bookmarks file', () => {
@@ -164,7 +164,7 @@ describe('Import bookmarks file', () => {
             .mockImplementationOnce((_: unknown, cb: (n: typeof newEmpty) => void) => cb(newEmpty));
 
         const results = await Promise.all(
-            BOOKMARKS_FIXTURE.bookmarks.map((folder) => store.create_bookmark('root', folder.title)),
+            BOOKMARKS_FIXTURE.bookmarks.map((folder) => store.createBookmark('root', folder.title)),
         );
 
         expect(chromeMock.bookmarks.create).toHaveBeenCalledTimes(3);
@@ -184,7 +184,7 @@ describe('Import bookmarks file', () => {
             .mockImplementationOnce((_: unknown, cb: (n: typeof newEmpty) => void) => cb(newEmpty));
 
         const createdFolders = await Promise.all(
-            BOOKMARKS_FIXTURE.bookmarks.map((folder) => store.create_bookmark('root', folder.title)),
+            BOOKMARKS_FIXTURE.bookmarks.map((folder) => store.createBookmark('root', folder.title)),
         );
 
         const foldersMap: Record<string, string> = {};
@@ -215,7 +215,7 @@ describe('Import bookmarks file', () => {
             .mockImplementationOnce((_: unknown, cb: (n: typeof newWorkBook) => void) => cb(newWorkBook));
 
         const results = await Promise.all(
-            flatBookmarks.map((bm) => store.create_bookmark(foldersMap[bm.parentId ?? ''], bm.title, bm.url)),
+            flatBookmarks.map((bm) => store.createBookmark(foldersMap[bm.parentId ?? ''], bm.title, bm.url)),
         );
 
         expect(chromeMock.bookmarks.create).toHaveBeenCalledTimes(3);
@@ -238,7 +238,7 @@ describe('Import bookmarks file', () => {
         const newEmpty = makeCreatedFolder('new-558', 'Empty Folder');
         fireCallback(chromeMock.bookmarks.create, [newEmpty]);
 
-        await store.create_bookmark('root', emptyFolder.title);
+        await store.createBookmark('root', emptyFolder.title);
 
         // Only one call for the folder itself — no children to create
         expect(chromeMock.bookmarks.create).toHaveBeenCalledTimes(1);
@@ -263,7 +263,7 @@ describe('Import bookmarks file', () => {
 
         // Step 1: create folders
         const createdFolders = await Promise.all(
-            BOOKMARKS_FIXTURE.bookmarks.map((folder) => store.create_bookmark('root', folder.title)),
+            BOOKMARKS_FIXTURE.bookmarks.map((folder) => store.createBookmark('root', folder.title)),
         );
 
         const foldersMap: Record<string, string> = {};
@@ -274,7 +274,7 @@ describe('Import bookmarks file', () => {
         // Step 2: create bookmarks under the new folder IDs
         const flatBookmarks = BOOKMARKS_FIXTURE.bookmarks.flatMap((f) => f.children);
         const createdBookmarks = await Promise.all(
-            flatBookmarks.map((bm) => store.create_bookmark(foldersMap[bm.parentId ?? ''], bm.title, bm.url)),
+            flatBookmarks.map((bm) => store.createBookmark(foldersMap[bm.parentId ?? ''], bm.title, bm.url)),
         );
 
         // 3 folders + 3 bookmarks = 6 total create calls
@@ -290,7 +290,7 @@ describe('Import bookmarks file', () => {
 // IMPORT ICONS FILE
 // Tests the logic that drives onIconsImportReaderLoad:
 //   1. Parse exported icons JSON → { folders, bookmarks, type }
-//   2. For each bookmark icon: match by URL to live bookmarks, set_localStorage with image
+//   2. For each bookmark icon: match by URL to live bookmarks, setLocalStorage with image
 //   3. For each folder icon: match by title to store.bookmarks, collect folderColors
 //   4. Persist bookmarkColors and folderColors to sync storage
 // ---------------------------------------------------------------------------
@@ -321,7 +321,7 @@ describe('Import icons file', () => {
         expect(gmail.image).toMatch(/^data:image\/png;base64,/);
     });
 
-    it('matches each bookmark icon to a live bookmark by URL and calls set_localStorage', async () => {
+    it('matches each bookmark icon to a live bookmark by URL and calls setLocalStorage', async () => {
         // Simulate bookmarks already present in the store (as if imported in a prior step)
         store.bookmarks = [
             {
@@ -349,7 +349,7 @@ describe('Import icons file', () => {
             .filter((item) => item.image)
             .flatMap((item) => {
                 const matches = flatLiveBookmarks.filter((bm) => bm.url === item.url);
-                return matches.map((bm) => store.set_localStorage({
+                return matches.map((bm) => store.setLocalStorage({
                     [bm.id]: {
                         id: bm.id,
                         parentId: item.parentId,
@@ -429,8 +429,8 @@ describe('Import icons file', () => {
         const bookmarkColors = { 'new-566': '#FF5733' };
         const folderColors = { 'new-556': '#2AB567', 'new-557': '#1C60AD' };
 
-        await store.set_syncStorage({ bookmarkColors });
-        await store.set_syncStorage({ folderColors });
+        await store.setSyncStorage({ bookmarkColors });
+        await store.setSyncStorage({ folderColors });
 
         expect(chromeMock.storage.sync.set).toHaveBeenCalledWith({ bookmarkColors });
         expect(chromeMock.storage.sync.set).toHaveBeenCalledWith({ folderColors });
@@ -456,7 +456,7 @@ describe('Import icons file', () => {
             .filter((item) => item.image)
             .flatMap((item) => {
                 const matches = flatLiveBookmarks.filter((bm) => bm.url === item.url);
-                return matches.map((bm) => store.set_localStorage({
+                return matches.map((bm) => store.setLocalStorage({
                     [bm.id]: { id: bm.id, image: item.image },
                 }));
             });

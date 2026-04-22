@@ -116,6 +116,7 @@ module.exports = {
                     ['@cmp', './src/shared/composables'],
                     ['@stores', './src/shared/stores'],
                     ['@use', './src/shared/use'],
+                    ['@utils', './src/shared/utils'],
                 ],
                 extensions: ['.js', '.jsx', '.json', '.vue', '.ts', '.tsx'],
             },

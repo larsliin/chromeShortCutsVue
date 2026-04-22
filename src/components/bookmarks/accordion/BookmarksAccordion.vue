@@ -8,15 +8,12 @@
                 <v-btn
                     class="expansion-panels-toggle-btn mb-2"
                     :icon="mdiUnfoldLessHorizontal"
-                    :disabled="(bookmarksStore.accordionModel?.length ?? 0) === 0
-                        || !(bookmarksStore.bookmarks?.length)"
+                    :disabled="bookmarksStore.isAccordionEmpty || !bookmarksStore.hasBookmarks"
                     @click="onUnfoldAllClick()" />
                 <v-btn
                     class="expansion-panels-toggle-btn"
                     :icon="mdiUnfoldMoreHorizontal"
-                    :disabled="(bookmarksStore.accordionModel?.length ?? 0)
-                        === (bookmarksStore.bookmarks?.length ?? 0)
-                        || !(bookmarksStore.bookmarks?.length)"
+                    :disabled="bookmarksStore.isAccordionFull || !bookmarksStore.hasBookmarks"
                     @click="onFoldAllClick()" />
             </div>
             <v-expansion-panels
@@ -62,20 +59,18 @@
     import { EMITS } from '@/constants';
     import { mdiUnfoldLessHorizontal, mdiUnfoldMoreHorizontal } from '@mdi/js';
     import {
-        onMounted, ref, nextTick, watch,
+        onMounted, onUnmounted, ref, nextTick,
     } from 'vue';
     import type { DragEventInfo } from '@/types/bookmark';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useUtils } from '@/shared/composables/utils';
+    import { useAccordionSync } from '@cmp/useAccordionSync';
     import BookmarksAccordionTitle
         from '@/components/bookmarks/accordion/BookmarksAccordionTitle.vue';
     import BookmarksGroup from '@/components/bookmarks/sharedComponents/BookmarksGroup.vue';
     import draggable from 'vuedraggable';
-    import useEventsBus from '@cmp/eventBus';
+    import emitter from '@cmp/eventBus';
 
-    const utils = useUtils();
-
-    const { bus, emit } = useEventsBus();
+    const utils = useAccordionSync();
 
     const bookmarksStore = useBookmarksStore();
 
@@ -98,11 +93,11 @@
             }
         });
 
-        bookmarksStore.set_syncStorage({ accordion: arr2 });
+        bookmarksStore.setSyncStorage({ accordion: arr2 });
     }
 
     function onDragStart(_event?: unknown): void {
-        emit(EMITS.DRAG_START);
+        emitter.emit(EMITS.DRAG_START);
     }
 
     async function onDragEnd(event: DragEventInfo): Promise<void> {
@@ -113,7 +108,7 @@
         await nextTick();
 
         // update bookmarks order
-        bookmarksStore.reorder_bookmark(bookmark.id, index);
+        bookmarksStore.reorderBookmark(bookmark.id, index);
 
         // update active panels array
         const panelsSelector = expansionPanels.value.$el.querySelectorAll('.v-expansion-panel');
@@ -126,7 +121,7 @@
                 arr.push(i);
             }
         });
-        bookmarksStore.set_syncStorage({ accordion: arr });
+        bookmarksStore.setSyncStorage({ accordion: arr });
 
         const panelsCollection = expansionPanels.value
             .$el.getElementsByClassName('v-expansion-panel');
@@ -151,7 +146,7 @@
     function onUnfoldAllClick() {
         bookmarksStore.accordionModel = [];
 
-        bookmarksStore.set_syncStorage({ accordion: [] });
+        bookmarksStore.setSyncStorage({ accordion: [] });
     }
 
     function onFoldAllClick() {
@@ -160,37 +155,45 @@
 
         bookmarksStore.accordionModel = Array.from(arr);
 
-        bookmarksStore.set_syncStorage({ accordion: [...bookmarksStore.accordionModel] });
+        bookmarksStore.setSyncStorage({ accordion: [...bookmarksStore.accordionModel] });
     }
 
     function onBeforeDelete() {
         bookmarksStore.transitionDisabled = true;
     }
 
-    watch(() => bus.value.get(EMITS.BOOKMARKS_IMPORT), () => {
+    function onBookmarksImportHandler(): void {
         utils.updateAccordionModel(0);
-    });
+    }
 
     let tmpPanelsModel: number[] | null = null;
 
-    watch(() => bus.value.get(EMITS.FILTER_UPDATED), (newVal, oldVal) => {
-        if ((oldVal && !oldVal[0]) || newVal[0] !== '') {
+    function onFilterUpdatedHandler(filterValue: string): void {
+        if (filterValue !== '') {
             if (!tmpPanelsModel) {
                 tmpPanelsModel = Array.from(bookmarksStore.accordionModel ?? []);
                 bookmarksStore.accordionModel = Array
-                    .from({ length: bookmarksStore.bookmarks?.length ?? 0 }, (_, index) => index);
+                    .from({ length: bookmarksStore.bookmarks?.length ?? 0 }, (_v, index) => index);
             }
         } else if (tmpPanelsModel) {
             bookmarksStore.accordionModel = Array.from(tmpPanelsModel);
             tmpPanelsModel = null;
         }
+    }
+
+    onUnmounted(() => {
+        emitter.off(EMITS.BOOKMARKS_IMPORT, onBookmarksImportHandler);
+        emitter.off(EMITS.FILTER_UPDATED, onFilterUpdatedHandler);
     });
 
     onMounted(async () => {
-        const accordionResponse = await bookmarksStore.get_syncStorage('accordion');
+        emitter.on(EMITS.BOOKMARKS_IMPORT, onBookmarksImportHandler);
+        emitter.on(EMITS.FILTER_UPDATED, onFilterUpdatedHandler);
+
+        const accordionResponse = await bookmarksStore.getSyncStorage('accordion');
 
         if (accordionResponse) {
-            bookmarksStore.accordionModel = Array.from(accordionResponse);
+            bookmarksStore.accordionModel = Array.from(accordionResponse as number[]);
         } else {
             bookmarksStore.accordionModel = [];
         }

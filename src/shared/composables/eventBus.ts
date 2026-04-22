@@ -1,16 +1,23 @@
-import { ref } from 'vue';
+import mitt from 'mitt';
+import { EMITS } from '@/constants';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const bus = ref(new Map<string, any>());
+export type AppEventMap = {
+    [EMITS.BOOKMARK_ADD]: string;
+    [EMITS.BOOKMARKS_IMPORT]: void;
+    [EMITS.BOOKMARKS_UPDATED]: { type: string; id: string; children?: string[] };
+    [EMITS.CHANGED]: string;
+    [EMITS.CLICK_BACKGROUND]: void;
+    [EMITS.DRAG_START]: void;
+    [EMITS.EDIT]: string;
+    [EMITS.FILTER_UPDATED]: string;
+    [EMITS.ICON_UPDATE]: string;
+    [EMITS.IMAGES_IMPORT]: void;
+};
 
-export default function useEventsBus() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function emit(event: string, ...args: any[]): void {
-        bus.value.set(event, args);
-    }
+// Single shared event bus instance for the entire app.
+// Emit: emitter.emit(EMITS.XXX, payload)
+// Subscribe: emitter.on(EMITS.XXX, handler)  — call in onMounted
+// Unsubscribe: emitter.off(EMITS.XXX, handler) — call in onUnmounted
+const emitter = mitt<AppEventMap>();
 
-    return {
-        emit,
-        bus,
-    };
-}
+export default emitter;

@@ -32,7 +32,7 @@
                     :size="'x-small'"
                     @toggle="onToggle($event)"
                     @delete="onDelete()"
-                    @edit="emit(EMITS.EDIT, bookmark.id)"
+                    @edit="emitter.emit(EMITS.EDIT, bookmark.id)"
                     @openColorEditor="showColorEdit = true" />
             </div>
         </template>
@@ -76,11 +76,11 @@
 <script setup lang="ts">
     import { mdiRename, mdiDeleteOutline, mdiFormatColorFill } from '@mdi/js';
     import {
-        ref, onMounted, watch, toRef, computed, type Ref,
+        ref, onMounted, onUnmounted, toRef, computed, type Ref,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
-    import useEventsBus from '@cmp/eventBus';
+    import emitter from '@cmp/eventBus';
     import type { BookmarkNode, FoldoutListItem } from '@/types/bookmark';
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';
@@ -89,12 +89,10 @@
         from '@/components/fields/BookmarkFoldout.vue';
     import BookmarkColorEdit
         from '@/components/forms/BookmarkColorEdit.vue';
-    import { useUtils } from '@/shared/composables/utils';
+    import { useBookmarkOps } from '@cmp/useBookmarkOps';
     import { uniq } from 'lodash';
 
-    const utils = useUtils();
-
-    const { emit, bus } = useEventsBus();
+    const utils = useBookmarkOps();
 
     interface Props {
         tabIndex?: string;
@@ -132,10 +130,10 @@
     const effectiveSize = computed(() => props.size || (`icon-${bookmarksStore.iconSize}`));
 
     async function updateImage() {
-        const getImageResponse = await bookmarksStore.get_localStorage(props.bookmark.id);
+        const getImageResponse = await bookmarksStore.getLocalStorage(props.bookmark.id);
 
         if (getImageResponse) {
-            image.value = getImageResponse.image;
+            image.value = (getImageResponse as { image?: string }).image ?? null;
         }
 
         ready.value = true;
@@ -189,7 +187,7 @@
             return b.timestamp - a.timestamp;
         });
 
-        bookmarksStore.set_syncStorage({ statistics: sorted });
+        bookmarksStore.setSyncStorage({ statistics: sorted });
 
         if (event.ctrlKey || event.metaKey) {
             window.open(props.bookmark.url, '_blank');
@@ -201,10 +199,10 @@
     const color = toRef(props.bookmark, 'color') as Ref<string | null | undefined>;
 
     async function updateColor() {
-        const getColorResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
+        const getColorResponse = await bookmarksStore.getSyncStorage('bookmarkColors');
 
         if (getColorResponse) {
-            color.value = getColorResponse[props.bookmark.id];
+            color.value = (getColorResponse as Record<string, string>)[props.bookmark.id];
         }
     }
 
@@ -218,9 +216,9 @@
         showConfirmDelete.value = false;
 
         if (props.bookmark.url) {
-            bookmarksStore.remove_bookmark(props.bookmark.id);
+            bookmarksStore.removeBookmark(props.bookmark.id);
         } else {
-            bookmarksStore.remove_bookmarkFolder(props.bookmark.id);
+            bookmarksStore.removeBookmarkFolder(props.bookmark.id);
         }
     }
 
@@ -228,16 +226,16 @@
         isFoldoutOpen.value = event;
     }
 
-    watch(() => bus.value.get(EMITS.IMAGES_IMPORT), () => {
+    function onImagesImportHandler(): void {
         updateImage();
         updateColor();
-    });
+    }
 
-    watch(() => bus.value.get(EMITS.ICON_UPDATE), (id) => {
-        if (id[0] === props.bookmark.id) {
+    function onIconUpdateHandler(id: string): void {
+        if (id === props.bookmark.id) {
             updateImage();
         }
-    });
+    }
 
     const selectedColor = ref();
 
@@ -248,8 +246,8 @@
 
         showColorEdit.value = false;
 
-        const getColorsResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
-        const colorsObj = getColorsResponse || {};
+        const getColorsResponse = await bookmarksStore.getSyncStorage('bookmarkColors');
+        const colorsObj = (getColorsResponse || {}) as Record<string, string>;
 
         const bookmark = utils.getStoredBookmarkById(props.bookmark.id);
 
@@ -264,15 +262,23 @@
         }
 
         if (!Object.keys(colorsObj).length) {
-            bookmarksStore.delete_syncStorageItem('bookmarkColors');
+            bookmarksStore.deleteSyncStorageItem('bookmarkColors');
         } else {
-            bookmarksStore.set_syncStorage({ bookmarkColors: colorsObj });
+            bookmarksStore.setSyncStorage({ bookmarkColors: colorsObj });
         }
 
-        emit(EMITS.BOOKMARKS_UPDATED, { type: 'color', id: props.bookmark.id });
+        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'color', id: props.bookmark.id });
     }
 
+    onUnmounted(() => {
+        emitter.off(EMITS.IMAGES_IMPORT, onImagesImportHandler);
+        emitter.off(EMITS.ICON_UPDATE, onIconUpdateHandler);
+    });
+
     onMounted(() => {
+        emitter.on(EMITS.IMAGES_IMPORT, onImagesImportHandler);
+        emitter.on(EMITS.ICON_UPDATE, onIconUpdateHandler);
+
         if (props.bookmark.url) {
             const colorItem = {
                 title: 'Color',

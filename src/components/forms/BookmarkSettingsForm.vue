@@ -44,7 +44,7 @@
                                             color="blue-darken-1"
                                             variant="tonal"
                                             :prepend-icon="mdiUpload"
-                                            :disabled="!bookmarksStore.bookmarks?.length"
+                                            :disabled="!bookmarksStore.hasBookmarks"
                                             @click="onClickExportBookmarks()">
                                             Export Bookmarks
                                         </v-btn>
@@ -66,7 +66,7 @@
                                         <v-file-input
                                             @click:clear="clearFileInput()"
                                             :disabled="!!$v.formData.bookmarksFileImport.$model
-                                                || !bookmarksStore.bookmarks?.length"
+                                                || !bookmarksStore.hasBookmarks"
                                             label="Icons Data File input"
                                             :prepend-icon="mdiDownload"
                                             v-model="$v.formData.iconsFileImport.$model" />
@@ -83,7 +83,7 @@
                                             color="blue-darken-1"
                                             variant="tonal"
                                             :prepend-icon="mdiUpload"
-                                            :disabled="!bookmarksStore.bookmarks?.length"
+                                            :disabled="!bookmarksStore.hasBookmarks"
                                             @click="onClickExportIcons()">
                                             Export Icons
                                         </v-btn>
@@ -204,17 +204,17 @@
     import useVuelidate from '@vuelidate/core';
     import { EMITS, FILE_NAMES, ICON_SIZE } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import useEventsBus from '@cmp/eventBus';
-    import { useUtils } from '@/shared/composables/utils';
+    import emitter from '@cmp/eventBus';
+    import { useBookmarkOps } from '@cmp/useBookmarkOps';
+    import { useAccordionSync } from '@cmp/useAccordionSync';
     import type { BookmarkNode, FolderColorItem, ImportFileData } from '@/types/bookmark';
     import { useTheme } from 'vuetify';
     import ToolTip from '@/components/fields/ToolTip.vue';
 
     const theme = useTheme();
 
-    const utils = useUtils();
-
-    const { emit } = useEventsBus();
+    const { deleteLocalStoreImages, deleteAllBookmarks, getBookmarksAsFlatArr } = useBookmarkOps();
+    const { buildRootFolder } = useAccordionSync();
 
     const emits = defineEmits([EMITS.CLOSE, EMITS.SAVE]);
 
@@ -259,13 +259,13 @@
 
     async function onClickExportIcons() {
         // Safely get and filter local storage items
-        const localStorageItems = (await bookmarksStore.get_localStorageAll() as Record<string, Record<string, unknown>>) || {};
+        const localStorageItems = (await bookmarksStore.getLocalStorageAll() as Record<string, Record<string, unknown>>) || {};
         const localStorageItemsImageArr = Object.values(localStorageItems)
             .filter((e): e is Record<string, unknown> => !!e && !!(e as Record<string, unknown>).image);
 
         // Get color data from sync storage
-        const folderColorsResponse = await bookmarksStore.get_syncStorage('folderColors');
-        const bookmarkColorsResponse = await bookmarksStore.get_syncStorage('bookmarkColors');
+        const folderColorsResponse = await bookmarksStore.getSyncStorage('folderColors');
+        const bookmarkColorsResponse = await bookmarksStore.getSyncStorage('bookmarkColors');
 
         // Process folders with colors
         const foldersWithColors: FolderColorItem[] = [];
@@ -317,7 +317,7 @@
         const exportBookmarks: BookmarkNode[] = Array.from(bookmarksStore.bookmarks ?? []);
 
         // fetch all images from local storage
-        const localStorageItems = await bookmarksStore.get_localStorageAll() as Record<string, Record<string, unknown>>;
+        const localStorageItems = await bookmarksStore.getLocalStorageAll() as Record<string, Record<string, unknown>>;
         const localStorageItemsImageArr = Object.values(localStorageItems)
             .filter((e): e is Record<string, unknown> => !!(e as Record<string, unknown>).image);
 
@@ -346,7 +346,7 @@
 
     // update global store bookmarks obj with the latest imported bookmarks
     async function updateBookmarksStore(): Promise<void> {
-        const bookmarksResponse = await bookmarksStore.get_bookmarks(bookmarksStore.rootId as string);
+        const bookmarksResponse = await bookmarksStore.getBookmarks(bookmarksStore.rootId as string);
 
         const rawBmChildren = bookmarksResponse[0].children ?? [];
         bookmarksStore.bookmarks = rawBmChildren as BookmarkNode[];
@@ -361,13 +361,13 @@
 
         // save imported colors
         if (colorsFoldersMap && Object.keys(colorsFoldersMap).length) {
-            bookmarksStore.set_syncStorage({ folderColors: colorsFoldersMap });
+            bookmarksStore.setSyncStorage({ folderColors: colorsFoldersMap });
         }
 
         //
         // inject imported colors into new bookmarks object
         Object.entries(colorsBookmarksMap).forEach((item) => {
-            const bookmarksFlatArr = (bookmarksStore.bookmarks ?? []).flatMap((obj) => obj.children ?? []);
+            const bookmarksFlatArr = bookmarksStore.flatBookmarks;
             const bookmark = bookmarksFlatArr.find((e) => e?.id === item[0]);
             if (bookmark) {
                 const [, bookmarkColor] = item;
@@ -377,10 +377,10 @@
 
         // save imported colors
         if (colorsBookmarksMap && Object.keys(colorsBookmarksMap).length) {
-            bookmarksStore.set_syncStorage({ bookmarkColors: colorsBookmarksMap });
+            bookmarksStore.setSyncStorage({ bookmarkColors: colorsBookmarksMap });
         }
 
-        emit(EMITS.BOOKMARKS_UPDATED, { type: 'import', id: '' });
+        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'import', id: '' });
     }
 
     // save imported images
@@ -388,7 +388,7 @@
         const promiseArr: Promise<void>[] = [];
         results.forEach((item, index) => {
             if (images[index]) {
-                promiseArr.push(bookmarksStore.set_localStorage({
+                promiseArr.push(bookmarksStore.setLocalStorage({
                     [item.id]: {
                         id: item.id,
                         parentId: item.parentId,
@@ -432,7 +432,7 @@
 
         bookmarksFlatArr.forEach((bookmark) => {
             bookmarksPromiseArr.push(bookmarksStore
-                .create_bookmark(foldersMap[bookmark.parentId ?? ''], bookmark.title, bookmark.url));
+                .createBookmark(foldersMap[bookmark.parentId ?? ''], bookmark.title, bookmark.url));
             imagesArr.push(bookmark.image);
         });
 
@@ -445,7 +445,7 @@
                     }
                 });
                 bookmarksStore.accordionModel = [0];
-                bookmarksStore.set_syncStorage({
+                bookmarksStore.setSyncStorage({
                     accordion: [...bookmarksStore.accordionModel],
                 });
 
@@ -460,25 +460,25 @@
     async function onBookmarksImportReaderLoad(event: ProgressEvent<FileReader>): Promise<void> {
         bookmarksStore.isImporting = true;
 
-        await utils.deleteLocalStoreImages();
-        await utils.deleteAllBookmarks();
-        await utils.buildRootFolder();
+        await deleteLocalStoreImages();
+        await deleteAllBookmarks();
+        await buildRootFolder();
 
-        await bookmarksStore.delete_syncStorageItem('folderColors');
-        await bookmarksStore.delete_syncStorageItem('statistics');
+        await bookmarksStore.deleteSyncStorageItem('folderColors');
+        await bookmarksStore.deleteSyncStorageItem('statistics');
 
         bookmarksStore.statistics = [];
 
-        emit(EMITS.BOOKMARKS_IMPORT);
+        emitter.emit(EMITS.BOOKMARKS_IMPORT);
 
-        const bookmarksRootResponse = await bookmarksStore.get_bookmarkById(bookmarksStore.rootId as string);
+        const bookmarksRootResponse = await bookmarksStore.getBookmarkById(bookmarksStore.rootId as string);
 
         const importObj = JSON.parse(event.target?.result as string) as ImportFileData;
         const foldersPromiseArr: Promise<chrome.bookmarks.BookmarkTreeNode>[] = [];
 
         (importObj.bookmarks ?? []).forEach((folder) => {
             foldersPromiseArr.push(bookmarksStore
-                .create_bookmark(bookmarksRootResponse.id, folder.title));
+                .createBookmark(bookmarksRootResponse.id, folder.title));
         });
 
         Promise.all(foldersPromiseArr)
@@ -494,11 +494,11 @@
     async function onIconsImportReaderLoad(event: ProgressEvent<FileReader>): Promise<void> {
         bookmarksStore.isImporting = true;
 
-        bookmarksStore.delete_syncStorageItem('bookmarkColors');
-        bookmarksStore.delete_syncStorageItem('folderColors');
+        bookmarksStore.deleteSyncStorageItem('bookmarkColors');
+        bookmarksStore.deleteSyncStorageItem('folderColors');
 
         const importIcons = JSON.parse(event.target?.result as string) as ImportFileData;
-        const bookmarksFlatResponse = await utils.getBookmarksAsFlatArr();
+        const bookmarksFlatResponse = await getBookmarksAsFlatArr();
 
         const promiseAllArr: Promise<void>[] = [];
         const colorArr: Record<string, string> = {};
@@ -513,7 +513,7 @@
                         colorArr[bookmark.id] = item.color;
                     }
 
-                    promiseAllArr.push(bookmarksStore.set_localStorage({
+                    promiseAllArr.push(bookmarksStore.setLocalStorage({
                         [bookmark.id]: {
                             id: bookmark.id,
                             parentId: item.parentId,
@@ -527,7 +527,7 @@
         });
 
         // save bookmarks colors to local storage
-        bookmarksStore.set_syncStorage({ bookmarkColors: colorArr });
+        bookmarksStore.setSyncStorage({ bookmarkColors: colorArr });
 
         const folderColorArr: Record<string, string> = {};
 
@@ -543,16 +543,11 @@
         });
 
         // save folders colors to local storage
-        bookmarksStore.set_syncStorage({ folderColors: folderColorArr });
+        bookmarksStore.setSyncStorage({ folderColors: folderColorArr });
 
         // when all colors and images have been updated and loaded then emit event
-        Promise.all(promiseAllArr)
-            .then(() => {
-                emit(EMITS.IMAGES_IMPORT);
-            })
-            .catch((error) => {
-                throw (error);
-            });
+        await Promise.all(promiseAllArr);
+        emitter.emit(EMITS.IMAGES_IMPORT);
     }
 
     function onClickSave() {
@@ -573,12 +568,12 @@
         bookmarksStore.enableSystemDarkMode = formData.enableSystemDarkMode;
 
         if (formData.enableSystemDarkMode) {
-            bookmarksStore.set_syncStorage({ systemDarkMode: true });
+            bookmarksStore.setSyncStorage({ systemDarkMode: true });
 
             bookmarksStore.enableDarkMode = window
                 .matchMedia('(prefers-color-scheme: dark)').matches;
         } else {
-            bookmarksStore.delete_syncStorageItem('systemDarkMode');
+            bookmarksStore.deleteSyncStorageItem('systemDarkMode');
 
             bookmarksStore.enableDarkMode = false;
         }
@@ -589,16 +584,16 @@
             bookmarksStore.enableDarkMode = bookmarksStore.enablePreferDarkMode;
 
             if (formData.enablePreferDarkMode) {
-                bookmarksStore.set_syncStorage({ darkMode: true });
+                bookmarksStore.setSyncStorage({ darkMode: true });
             } else {
-                bookmarksStore.delete_syncStorageItem('darkMode');
+                bookmarksStore.deleteSyncStorageItem('darkMode');
             }
         }
         theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
 
         // iconSize
         bookmarksStore.iconSize = formData.iconSize;
-        bookmarksStore.set_syncStorage({ iconSize: formData.iconSize });
+        bookmarksStore.setSyncStorage({ iconSize: formData.iconSize });
 
         emits(EMITS.SAVE);
     }

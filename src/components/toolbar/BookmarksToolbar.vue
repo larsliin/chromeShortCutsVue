@@ -64,7 +64,7 @@
                             </p>
                             <p class="text-body-1 mt-3 mb-3 text-center">
                                 <template v-if="showClearbitDomain">
-                                    {{ utils.getDomainFromUrl(showClearbitDomain) }}
+                                    {{ getDomainFromUrl(showClearbitDomain) }}
                                 </template>
                             </p>
                             <p class="text-center text-body-1 mt-3">
@@ -109,21 +109,17 @@
 <script setup lang="ts">
     import { mdiStar, mdiWrench, mdiAlertCircleOutline } from '@mdi/js';
     import {
-        ref, watch, onMounted,
+        ref, watch, onMounted, onUnmounted,
     } from 'vue';
     import BookmarkCreateForm from '@/components/forms/BookmarkCreateForm.vue';
     import BookmarkSettingsForm from '@/components/forms/BookmarkSettingsForm.vue';
-    import useEventsBus from '@cmp/eventBus';
+    import emitter from '@cmp/eventBus';
     import { EMITS, TIMEOUTS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useUtils } from '@/shared/composables/utils';
+    import { getDomainFromUrl } from '@utils/urlUtils';
     import BookmarkConfirmDelete
         from '@/components/forms/BookmarkConfirmDelete.vue';
     import BookmarksFilter from '@/components/fields/BookmarksFilter.vue';
-
-    const utils = useUtils();
-
-    const { bus } = useEventsBus();
 
     const dialogSettings = ref(false);
 
@@ -154,53 +150,46 @@
         showConfirmDelete.value = false;
         dialogAddOpen.value = false;
 
-        const bookmarkResponse = await bookmarksStore.get_bookmarkById(id);
+        const bookmarkResponse = await bookmarksStore.getBookmarkById(id);
         const bookmark = bookmarkResponse;
 
         if (bookmark && bookmark.url) {
-            bookmarksStore.remove_bookmark(bookmark.id);
-            bookmarksStore.delete_localStorageItem(bookmark.id);
+            bookmarksStore.removeBookmark(bookmark.id);
+            bookmarksStore.deleteLocalStorageItem(bookmark.id);
         } else {
-            bookmarksStore.remove_bookmarkFolder(bookmark.id);
+            bookmarksStore.removeBookmarkFolder(bookmark.id);
         }
     }
 
     const editBookmarkData = ref();
 
-    watch(() => bus.value.get(EMITS.EDIT), (id) => {
-        const promiseArr = [
-            bookmarksStore.get_bookmarkById(id[0]),
-            bookmarksStore.get_localStorage(id[0]),
-        ];
+    async function onEditHandler(id: string): Promise<void> {
+        const [bookmark, localData] = await Promise.all([
+            bookmarksStore.getBookmarkById(id),
+            bookmarksStore.getLocalStorage(id),
+        ]);
 
-        Promise.all(promiseArr)
-            .then((results) => {
-                editBookmarkData.value = {
-                    id: results[0].id,
-                    image: results[1]?.image,
-                    title: results[0].title,
-                    url: results[0].url,
-                    parentId: results[0].parentId,
-                };
-                dialogAddOpen.value = true;
-            })
-            .catch((error) => {
-                throw (error);
-            });
-    });
+        editBookmarkData.value = {
+            id: bookmark.id,
+            image: (localData as { image?: string } | undefined)?.image,
+            title: bookmark.title,
+            url: bookmark.url,
+            parentId: bookmark.parentId,
+        };
+        dialogAddOpen.value = true;
+    }
 
     const folderPreSelected = ref();
 
-    watch(() => bus.value.get(EMITS.BOOKMARK_ADD), (folderId) => {
-        // eslint-disable-next-line prefer-destructuring
-        folderPreSelected.value = folderId[0];
+    function onBookmarkAddHandler(folderId: string): void {
+        folderPreSelected.value = folderId;
 
         dialogAddOpen.value = true;
-    });
+    }
 
-    watch(() => bus.value.get(EMITS.CLICK_BACKGROUND), () => {
+    function onClickBackgroundHandler(): void {
         dialogAddOpen.value = true;
-    });
+    }
 
     watch(dialogAddOpen, (val) => {
         if (!val) {
@@ -214,7 +203,17 @@
 
     const ready = ref(false);
 
+    onUnmounted(() => {
+        emitter.off(EMITS.EDIT, onEditHandler);
+        emitter.off(EMITS.BOOKMARK_ADD, onBookmarkAddHandler);
+        emitter.off(EMITS.CLICK_BACKGROUND, onClickBackgroundHandler);
+    });
+
     onMounted(async () => {
+        emitter.on(EMITS.EDIT, onEditHandler);
+        emitter.on(EMITS.BOOKMARK_ADD, onBookmarkAddHandler);
+        emitter.on(EMITS.CLICK_BACKGROUND, onClickBackgroundHandler);
+
         ready.value = true;
     });
 </script>

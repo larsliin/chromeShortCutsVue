@@ -23,15 +23,13 @@
 <script setup lang="ts">
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
     import {
-        onMounted, ref, watch, nextTick,
+        onMounted, onUnmounted, ref, watch, nextTick,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { toArray, cloneDeep } from 'lodash';
     import type { BookmarkNode, BookmarkStat } from '@/types/bookmark';
     import { EMITS } from '@/constants';
-    import useEventsBus from '@cmp/eventBus';
-
-    const { bus } = useEventsBus();
+    import emitter from '@cmp/eventBus';
 
     const bookmarksStore = useBookmarksStore();
 
@@ -83,7 +81,7 @@
 
         bookmarksStore.statistics = cloneDeep(filteredArray);
 
-        await bookmarksStore.set_syncStorage({ statistics: filteredArray });
+        await bookmarksStore.setSyncStorage({ statistics: filteredArray });
 
         buildBookmarks();
     }
@@ -94,15 +92,15 @@
         }
     });
 
-    watch(() => bus.value.get(EMITS.BOOKMARKS_UPDATED), async (type: { type: string; id: string; children?: string[] }[]) => {
-        if (type?.[0]?.type === 'removed' && bookmarksStore.statistics?.length) {
-            if (type[0].children) {
-                await deletePopularBookmarks(type[0].children);
+    async function onBookmarksUpdatedHandler(payload: { type: string; id: string; children?: string[] }): Promise<void> {
+        if (payload.type === 'removed' && bookmarksStore.statistics?.length) {
+            if (payload.children) {
+                await deletePopularBookmarks(payload.children);
             } else {
-                await deletePopularBookmarks([type[0].id]);
+                await deletePopularBookmarks([payload.id]);
             }
         }
-    });
+    }
 
     // removes bookmarks from bookmark statistics that does not have a matching id in bookmarks
     function cleanupStatistics(): void {
@@ -126,12 +124,18 @@
 
             bookmarksStore.statistics = cloneDeep(filteredArray);
 
-            bookmarksStore.set_syncStorage({ statistics: filteredArray });
+            bookmarksStore.setSyncStorage({ statistics: filteredArray });
         }
     }
 
+    onUnmounted(() => {
+        emitter.off(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdatedHandler);
+    });
+
     onMounted(async () => {
-        const response = await bookmarksStore.get_syncStorage('statistics');
+        emitter.on(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdatedHandler);
+
+        const response = await bookmarksStore.getSyncStorage('statistics');
 
         if (response) {
             bookmarksStore.statistics = toArray(response);

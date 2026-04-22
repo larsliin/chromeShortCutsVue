@@ -15,12 +15,12 @@
     import { FOLDER } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useTheme } from 'vuetify';
-    import { useUtils } from '@/shared/composables/utils';
+    import { useAccordionSync } from '@cmp/useAccordionSync';
     import type { BookmarkNode } from '@/types/bookmark';
 
     const theme = useTheme();
 
-    const utils = useUtils();
+    const utils = useAccordionSync();
 
     const bookmarksStore = useBookmarksStore();
 
@@ -43,7 +43,7 @@
 
     async function getBookmarks(): Promise<void> {
         const rootFolderResponse = await bookmarksStore
-            .get_folderByTitle(bookmarksStore.bookmarksBarId as string, FOLDER.ROOT.label);
+            .getFolderByTitle(bookmarksStore.bookmarksBarId as string, FOLDER.ROOT.label);
 
         if (!rootFolderResponse.length) {
             return;
@@ -51,7 +51,7 @@
 
         bookmarksStore.rootId = rootFolderResponse[0].id;
 
-        const bookmarks = await bookmarksStore.get_bookmarks(bookmarksStore.rootId as string);
+        const bookmarks = await bookmarksStore.getBookmarks(bookmarksStore.rootId as string);
 
         const bmChildren = bookmarks?.[0]?.children ?? [];
         bookmarksStore.bookmarks = bmChildren as BookmarkNode[];
@@ -64,16 +64,15 @@
             preferDarkModeResponse,
             systemDarkModeResponse,
         ] = await Promise.all([
-            bookmarksStore.get_tree(),
-            bookmarksStore.get_syncStorage('darkMode'),
-            bookmarksStore.get_syncStorage('systemDarkMode'),
+            bookmarksStore.getTree(),
+            bookmarksStore.getSyncStorage('darkMode'),
+            bookmarksStore.getSyncStorage('systemDarkMode'),
         ]);
 
         // Locate and set up the bookmarks bar
-        const bookmarksBar = (tree[0].children ?? []).find((node) => {
-            const n = node as chrome.bookmarks.BookmarkTreeNode & { folderType?: string };
-            return n.folderType === FOLDER.ROOT.parentFolderType;
-        });
+        type NodeWithFolderType = chrome.bookmarks.BookmarkTreeNode & { folderType?: string };
+        const bookmarksBar = (tree[0].children ?? [])
+            .find((node) => (node as NodeWithFolderType).folderType === FOLDER.ROOT.parentFolderType);
 
         if (!bookmarksBar) {
             return;

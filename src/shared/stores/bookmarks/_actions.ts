@@ -1,309 +1,140 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { BookmarkNode } from '@/types/bookmark';
+import * as chromeApi from '@cmp/chromeApi';
 
 export default {
-    async get_bookmarks(this: any, id: string): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
-        return new Promise((resolve, reject) => {
-            chrome.bookmarks.getSubTree(id, (event) => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                    return;
-                }
-                resolve(event);
-            });
-        });
+    async getBookmarks(id: string): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
+        return chromeApi.getBookmarkSubTree(id);
     },
 
-    async get_colorizedBookmarks(this: any, id: string): Promise<BookmarkNode[]> {
-        const [response1, response2, response3]: any[] = await Promise.all([
-            this.get_bookmarks(id),
-            this.get_syncStorage('folderColors'),
-            this.get_syncStorage('bookmarkColors'),
+    async getColorizedBookmarks(id: string): Promise<BookmarkNode[]> {
+        const [tree, folderColors, bookmarkColors]: [
+            chrome.bookmarks.BookmarkTreeNode[],
+            Record<string, string> | null,
+            Record<string, string> | null,
+        ] = await Promise.all([
+            chromeApi.getBookmarkSubTree(id),
+            chromeApi.getSyncStorage('folderColors') as Promise<Record<string, string> | null>,
+            chromeApi.getSyncStorage('bookmarkColors') as Promise<Record<string, string> | null>,
         ]);
 
-        const returnObj = [...response1];
+        const result = [...tree] as BookmarkNode[];
 
-        if (response2) {
-            Object.entries(response2).forEach((item) => {
-                const bookmarkFolder = returnObj[0].children
-                    .find((e: any) => e.id === item[0]);
-                if (bookmarkFolder) {
-                    const [, bookmarkFolderColor] = item;
-                    bookmarkFolder.color = bookmarkFolderColor;
+        if (folderColors) {
+            Object.entries(folderColors).forEach(([folderId, color]) => {
+                const folder = (result[0].children ?? [])
+                    .find((e) => e.id === folderId) as BookmarkNode | undefined;
+                if (folder) {
+                    folder.color = color;
                 }
             });
         }
-        if (response3) {
-            Object.entries(response3).forEach((item) => {
-                const bookmarksFlatArr = returnObj[0].children
-                    .flatMap((obj: any) => obj.children);
-                const bookmark = bookmarksFlatArr
-                    .find((e: any) => e.id === item[0]);
+
+        if (bookmarkColors) {
+            const flatBookmarks = (result[0].children ?? [])
+                .flatMap((obj) => (obj as BookmarkNode).children ?? []) as BookmarkNode[];
+            Object.entries(bookmarkColors).forEach(([bookmarkId, color]) => {
+                const bookmark = flatBookmarks.find((e) => e.id === bookmarkId);
                 if (bookmark) {
-                    const [, bookmarkColor] = item;
-                    (bookmark as any).color = bookmarkColor;
+                    bookmark.color = color;
                 }
             });
         }
 
-        return returnObj;
+        return result;
     },
 
-    async get_bookmarkById(this: any, id: string): Promise<chrome.bookmarks.BookmarkTreeNode> {
-        return new Promise((resolve, reject) => {
-            chrome.bookmarks.get(id, (event) => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                    return;
-                }
-                if (event && event.length > 0) {
-                    resolve(event[0]);
-                } else {
-                    reject(new Error('Bookmark not found'));
-                }
-            });
-        });
+    async getBookmarkById(id: string): Promise<chrome.bookmarks.BookmarkTreeNode> {
+        return chromeApi.getBookmarkById(id);
     },
 
     searchFolder(
-        this: any,
-        bookmarkTreeNodes: chrome.bookmarks.BookmarkTreeNode[],
+        nodes: chrome.bookmarks.BookmarkTreeNode[],
         folderName: string,
     ): chrome.bookmarks.BookmarkTreeNode | false {
-        // eslint-disable-next-line no-restricted-syntax
-        for (const node of bookmarkTreeNodes) {
-            if (node.title === folderName && node.children) {
-                return node;
-            }
-            if (node.children) {
-                const result = this.searchFolder(node.children, folderName);
-                if (result) {
-                    return result;
-                }
-            }
-        }
-        return false;
+        return chromeApi.searchFolder(nodes, folderName);
     },
 
-    async get_folderByTitle(
-        this: any,
+    async getFolderByTitle(
         parentFolderId: string,
         title: string,
     ): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
-        return new Promise((resolve, reject) => {
-            chrome.bookmarks.getSubTree(parentFolderId, (result) => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                    return;
-                }
-                const bookmarkTreeNodes = result[0].children ?? [];
-                const folder = this.searchFolder(bookmarkTreeNodes, title);
-                const folderResult = folder ? [folder] : [];
-                resolve(folderResult);
-            });
-        });
+        const result = await chromeApi.getBookmarkSubTree(parentFolderId);
+        const nodes = result[0].children ?? [];
+        const folder = chromeApi.searchFolder(nodes, title);
+        return folder ? [folder] : [];
     },
 
-    async create_bookmark(
-        this: any,
+    async createBookmark(
         parentId: string,
         title: string,
         url?: string,
     ): Promise<chrome.bookmarks.BookmarkTreeNode> {
-        return new Promise((resolve, reject) => {
-            chrome.bookmarks.create(
-                { parentId: parentId.toString(), title, url },
-                (bookmark) => {
-                    if (chrome.runtime.lastError) {
-                        reject(new Error(chrome.runtime.lastError.message));
-                        return;
-                    }
-                    resolve(bookmark);
-                },
-            );
-        });
+        return chromeApi.createBookmark(parentId, title, url);
     },
 
-    async update_bookmark(
-        this: any,
+    async updateBookmark(
         id: string,
         data: { title?: string; url?: string },
     ): Promise<chrome.bookmarks.BookmarkTreeNode> {
-        return new Promise((resolve, reject) => {
-            chrome.bookmarks.update(
-                id,
-                { title: data.title, url: data.url },
-                (bookmark) => {
-                    if (chrome.runtime.lastError) {
-                        reject(new Error(chrome.runtime.lastError.message));
-                        return;
-                    }
-                    resolve(bookmark);
-                },
-            );
-        });
+        return chromeApi.updateBookmark(id, data);
     },
 
-    async move_bookmark(
-        this: any,
+    async moveBookmark(
         id: string,
         targetId: { parentId?: string; index?: number },
     ): Promise<void> {
-        return new Promise((resolve, reject) => {
-            chrome.bookmarks.move(id, targetId, () => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                    return;
-                }
-                resolve();
-            });
-        });
+        return chromeApi.moveBookmark(id, targetId);
     },
 
-    async reorder_bookmark(this: any, id: string, index: number): Promise<void> {
-        return new Promise((resolve, reject) => {
-            chrome.bookmarks.move(id, { index }, () => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                    return;
-                }
-                resolve();
-            });
-        });
+    async reorderBookmark(id: string, index: number): Promise<void> {
+        return chromeApi.moveBookmark(id, { index });
     },
 
-    async remove_bookmark(this: any, id: string): Promise<string> {
-        return new Promise((resolve, reject) => {
-            chrome.bookmarks.remove(id, () => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                    return;
-                }
-                resolve(id);
-            });
-        });
+    async removeBookmark(id: string): Promise<string> {
+        return chromeApi.removeBookmark(id);
     },
 
-    async remove_bookmarkFolder(this: any, id: string): Promise<string> {
-        return new Promise((resolve, reject) => {
-            chrome.bookmarks.removeTree(id, () => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                    return;
-                }
-                resolve(id);
-            });
-        });
+    async removeBookmarkFolder(id: string): Promise<string> {
+        return chromeApi.removeBookmarkTree(id);
     },
 
-    async get_tree(this: any): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
-        return new Promise((resolve, reject) => {
-            chrome.bookmarks.getTree((event) => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
-                    return;
-                }
-                resolve(event);
-            });
-        });
+    async getTree(): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
+        return chromeApi.getBookmarkTree();
     },
 
-    async set_localStorage(this: any, storageObj: Record<string, unknown>): Promise<void> {
-        return new Promise((resolve, reject) => {
-            try {
-                chrome.storage.local.set(storageObj).then((event) => {
-                    resolve(event);
-                });
-            } catch (error) {
-                reject(error);
-            }
-        });
+    async setLocalStorage(storageObj: Record<string, unknown>): Promise<void> {
+        return chromeApi.setLocalStorage(storageObj);
     },
 
-    async get_localStorage(this: any, id: string): Promise<any> {
-        return new Promise((resolve, reject) => {
-            try {
-                chrome.storage.local.get(id.toString()).then((event) => {
-                    resolve(event[id]);
-                });
-            } catch (error) {
-                reject(error);
-            }
-        });
+    async getLocalStorage(id: string): Promise<unknown> {
+        return chromeApi.getLocalStorage(id);
     },
 
-    async set_syncStorage(this: any, storageObj: Record<string, unknown>): Promise<void> {
-        return new Promise((resolve, reject) => {
-            try {
-                chrome.storage.sync.set(storageObj).then((event) => {
-                    resolve(event);
-                });
-            } catch (error) {
-                reject(error);
-            }
-        });
+    async setSyncStorage(storageObj: Record<string, unknown>): Promise<void> {
+        return chromeApi.setSyncStorage(storageObj);
     },
 
-    async get_syncStorage(this: any, id: string): Promise<any> {
-        return new Promise((resolve, reject) => {
-            try {
-                chrome.storage.sync.get(id.toString()).then((event) => {
-                    resolve(event[id]);
-                });
-            } catch (error) {
-                reject(error);
-            }
-        });
+    async getSyncStorage(id: string): Promise<unknown> {
+        return chromeApi.getSyncStorage(id);
     },
 
-    async get_localStorageAll(this: any): Promise<Record<string, unknown>> {
-        return new Promise((resolve, reject) => {
-            chrome.storage.local.get(null).then(resolve).catch(reject);
-        });
+    async getLocalStorageAll(): Promise<Record<string, unknown>> {
+        return chromeApi.getAllLocalStorage();
     },
 
-    async delete_localStorageItem(this: any, id: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            try {
-                chrome.storage.local.remove([id], () => {
-                    const error = chrome.runtime.lastError;
-                    if (error) {
-                        throw (error);
-                    }
-                    resolve();
-                });
-            } catch (error) {
-                reject(error);
-            }
-        });
+    async deleteLocalStorageItem(id: string): Promise<void> {
+        return chromeApi.deleteLocalStorageItem(id);
     },
 
-    async delete_syncStorageItem(this: any, id: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            try {
-                chrome.storage.sync.remove([id], () => {
-                    const error = chrome.runtime.lastError;
-                    if (error) {
-                        throw (error);
-                    }
-                    resolve();
-                });
-            } catch (error) {
-                reject(error);
-            }
-        });
+    async deleteSyncStorageItem(id: string): Promise<void> {
+        return chromeApi.deleteSyncStorageItem(id);
     },
 
-    async toBase64(this: any, file: File): Promise<string | ArrayBuffer | null> {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-        });
+    async toBase64(file: File): Promise<string | ArrayBuffer | null> {
+        return chromeApi.toBase64(file);
     },
 
-    setBookmarksBarId(this: any, id: string): void {
+    setBookmarksBarId(this: { bookmarksBarId: string | null }, id: string): void {
         this.bookmarksBarId = id;
     },
 };
