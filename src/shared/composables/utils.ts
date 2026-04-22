@@ -44,20 +44,6 @@ export function useUtils() {
         }
     }
 
-    async function setSliderIndex(index: number, setLocalStorage: boolean): Promise<void> {
-        let indexAdjusted = index;
-        if (bookmarksStore.bookmarks && bookmarksStore.bookmarks.length > 0) {
-            indexAdjusted = Math.min(indexAdjusted, bookmarksStore.bookmarks.length - 1);
-        }
-        indexAdjusted = Math.max(indexAdjusted, 0);
-
-        bookmarksStore.sliderIndex = indexAdjusted;
-
-        if (setLocalStorage) {
-            await bookmarksStore.set_syncStorage({ sliderIndex: bookmarksStore.sliderIndex });
-        }
-    }
-
     async function deleteLocalStoreImages(): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const localStorageItems = await bookmarksStore.get_localStorageAll() as Record<string, any>;
@@ -111,8 +97,6 @@ export function useUtils() {
             bookmarksFlatArray.map((item) => bookmarksStore.remove_bookmarkFolder(item.id)),
         );
 
-        await setSliderIndex(0, true);
-
         bookmarksStore.bookmarks = [];
     }
 
@@ -147,8 +131,6 @@ export function useUtils() {
 
             bookmarksStore.accordionModel = [0];
             await bookmarksStore.set_syncStorage({ accordion: [...bookmarksStore.accordionModel] });
-
-            await setSliderIndex(0, true);
         }
     }
 
@@ -178,7 +160,6 @@ export function useUtils() {
         getDomainFromUrl,
         getStoredBookmarkById,
         isValidURL,
-        setSliderIndex,
         deleteBookmarkFolder,
         updateAccordionModel,
     };

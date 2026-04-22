@@ -1,9 +1,5 @@
 <template>
-    <div class="folder"
-        :class="{
-            'folder-max-height': !bookmarksStore.accordionNavigation,
-            slider: !bookmarksStore.accordionNavigation,
-        }">
+    <div class="folder">
         <div class="folder-inner" v-if="bookmarks">
             <draggable
                 :animation="200"
@@ -25,7 +21,6 @@
                     <li>
                         <BookmarkLink
                             :size="size"
-                            :tabIndex="getTabIndex()"
                             :bookmark="element"
                             :key="element.id" />
                     </li>
@@ -81,7 +76,6 @@
     const { emit } = useEventsBus();
 
     interface Props {
-        slideindex: number;
         folder: BookmarkNode;
         bookmarks?: BookmarkNode[];
     }
@@ -98,7 +92,7 @@
     const bookmarksStore = useBookmarksStore();
 
     const size = computed(() => {
-        if (props.bookmarks.length > 14 || bookmarksStore.accordionNavigation) {
+        if (props.bookmarks.length > 14) {
             return 'small';
         }
         return 'normal';
@@ -108,13 +102,6 @@
 
     function onDelete() {
         showConfirmDelete.value = true;
-    }
-
-    function getTabIndex(): string {
-        if (bookmarksStore.accordionNavigation) {
-            return '';
-        }
-        return props.slideindex === bookmarksStore.sliderIndex ? '1' : '-1';
     }
 
     async function onDeleteConfirm(_event?: unknown): Promise<void> {
@@ -187,11 +174,6 @@
     .folder {
         flex: 0 0 100%;
 
-        &-max-height {
-            max-height: calc(100vh - 200px);
-            overflow-y: auto;
-        }
-
         &-inner {
             display: flex;
             justify-content: center;
@@ -246,12 +228,6 @@
                 :deep(.bookmark-image-container) {
                     transform: none !important;
                 }
-            }
-        }
-
-        &.slider {
-            ul {
-                padding: 0 40px;
             }
         }
     }

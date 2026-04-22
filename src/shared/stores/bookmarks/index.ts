@@ -5,7 +5,6 @@ import getters from './_getters';
 
 export interface BookmarksState {
     accordionModel: number[] | null;
-    accordionNavigation: boolean;
     bookmarks: BookmarkNode[] | null;
     bookmarkSearch: string | null;
     dialogOpen: boolean;
@@ -21,7 +20,6 @@ export interface BookmarksState {
     popup: boolean;
     rootElem: HTMLElement | null;
     rootId: string | null;
-    sliderIndex: number | null;
     statistics: BookmarkStat[] | null;
     titleInputActive: boolean;
     transition: boolean;
@@ -33,7 +31,6 @@ export interface BookmarksState {
 export const useBookmarksStore = defineStore('bookmarksStore', {
     state: (): BookmarksState => ({
         accordionModel: null,
-        accordionNavigation: true,
         bookmarks: null,
         bookmarkSearch: null,
         dialogOpen: false,
@@ -49,7 +46,6 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         popup: false,
         rootElem: null,
         rootId: null,
-        sliderIndex: null,
         statistics: null,
         titleInputActive: false,
         transition: true,

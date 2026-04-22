@@ -86,7 +86,7 @@ The project uses two testing layers to ensure reliability:
 
 **Why Vitest?** It integrates natively with the Vite build toolchain, supports ESM out of the box, and provides near-instant feedback during development. Components are mounted with **Vue Test Utils** and **`createTestingPinia`** via a shared `mountWithPlugins` helper that pre-wires Vuetify and Pinia, keeping test files free of boilerplate.
 
-**What's covered:** store actions and getters, composable utilities, bookmark filtering logic, import/export workflows, the MV3 service worker (`background.js`), and component rendering.
+**What's covered:** store actions, composable utilities, bookmark filtering logic, import/export workflows, the MV3 service worker (`background.js`), and component rendering.
 
 ### E2E Tests — Playwright (`e2e/`)
 

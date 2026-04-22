@@ -36,7 +36,7 @@ interface TestFixtures {
 
 export const test = base.extend<TestFixtures, WorkerFixtures>({
     // Worker-scoped: one Chrome instance for the whole test suite.
-    extensionContext: [async ({}, use) => {
+    extensionContext: [async (_, use) => {
         const ctx = await chromium.launchPersistentContext('', {
             headless: false,
             args: [
@@ -185,54 +185,6 @@ export async function getRootId(page: Page): Promise<string | null> {
                 }
                 resolve((result.root as string) ?? null);
             });
-        }),
-    );
-}
-
-// ---------------------------------------------------------------------------
-// Helper: switch app to slider mode by seeding sync storage.
-// When `accordionNavigation` is truthy in storage, init() computes
-// bookmarksStore.accordionNavigation = !truthy = false → slider rendered.
-// ---------------------------------------------------------------------------
-
-export async function enableSliderMode(page: Page): Promise<void> {
-    return page.evaluate(
-        () => new Promise<void>((resolve) => {
-            chrome.storage.sync.set({ accordionNavigation: true }, resolve);
-        }),
-    );
-}
-
-// ---------------------------------------------------------------------------
-// Helper: restore default accordion mode by removing the sync storage key.
-// init() then gets undefined → bookmarksStore.accordionNavigation = !undefined = true.
-// ---------------------------------------------------------------------------
-
-export async function restoreAccordionMode(page: Page): Promise<void> {
-    return page.evaluate(
-        () => new Promise<void>((resolve) => {
-            chrome.storage.sync.remove('accordionNavigation', resolve);
-        }),
-    );
-}
-
-// ---------------------------------------------------------------------------
-// Helper: seed a sliderIndex value into sync storage so init() picks it up.
-// ---------------------------------------------------------------------------
-
-export async function seedSliderIndex(page: Page, index: number): Promise<void> {
-    return page.evaluate(
-        (idx) => new Promise<void>((resolve) => {
-            chrome.storage.sync.set({ sliderIndex: idx }, resolve);
-        }),
-        index,
-    );
-}
-
-export async function clearSliderIndex(page: Page): Promise<void> {
-    return page.evaluate(
-        () => new Promise<void>((resolve) => {
-            chrome.storage.sync.remove('sliderIndex', resolve);
         }),
     );
 }

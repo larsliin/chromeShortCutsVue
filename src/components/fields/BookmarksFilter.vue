@@ -23,10 +23,7 @@
         ref, onMounted, watch, nextTick,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useUtils } from '@/shared/composables/utils';
     import useEventsBus from '@cmp/eventBus';
-
-    const utils = useUtils();
 
     const { bus, emit } = useEventsBus();
 
@@ -43,18 +40,8 @@
 
     async function runFilter(event = ''): Promise<void> {
         const bookmarks: BookmarkNode[] = cloneDeep(clonedBookmarks);
-        let currentFolder = bookmarksStore.bookmarks?.[bookmarksStore.sliderIndex ?? 0];
-
-        if (!currentFolder) {
-            [currentFolder] = bookmarks;
-        }
-
-        const currentFolderId = currentFolder.id;
-
-        let sliderIndex = 0;
 
         if (event) {
-            // if filter string has a value then filter bookmarks
             const filteredData = bookmarks.map((item) => {
                 if (item.children) {
                     // eslint-disable-next-line no-param-reassign
@@ -67,17 +54,9 @@
             }).filter((x): x is BookmarkNode => x !== null);
 
             bookmarksStore.bookmarks = filteredData;
-
-            sliderIndex = Math.max((bookmarksStore.bookmarks ?? [])
-                .findIndex((e) => e.id === currentFolderId), 0);
         } else {
             bookmarksStore.bookmarks = bookmarks;
-
-            sliderIndex = Math.max((bookmarksStore.bookmarks ?? [])
-                .findIndex((e) => e.id === currentFolderId), 0);
         }
-
-        utils.setSliderIndex(sliderIndex, true);
 
         emit(EMITS.FILTER_UPDATED, event ? event.toLowerCase() : '');
 

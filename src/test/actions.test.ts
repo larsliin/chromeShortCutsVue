@@ -322,9 +322,9 @@ describe('get_localStorage', () => {
 
 describe('get_syncStorage', () => {
     it('resolves with the value for the given key', async () => {
-        chromeMock.storage.sync.get.mockResolvedValue({ sliderIndex: 3 });
+        chromeMock.storage.sync.get.mockResolvedValue({ darkMode: 3 });
 
-        const result = await store.get_syncStorage('sliderIndex');
+        const result = await store.get_syncStorage('darkMode');
 
         expect(result).toBe(3);
     });

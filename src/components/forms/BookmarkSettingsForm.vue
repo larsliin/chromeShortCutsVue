@@ -120,22 +120,8 @@
                                                 If enabled this setting<br />will override operating
                                                 systems dark mode setting." />
                                         </div>
-                                        <p class="mt-5">Layout</p>
-                                        <div class="switch-container">
-                                            <v-switch
-                                                label="Use accordion layout"
-                                                color="info"
-                                                hide-details="auto"
-                                                v-model="$v.formData
-                                                    .enableAccordionNavigation.$model" />
-                                            <ToolTip
-                                                tooltip="Toggle between slider or accordion layout" />
-                                        </div>
                                     </v-col>
                                 </v-row>
-                            </div>
-                        </v-col>
-                    </v-row>
                 </v-container>
             </v-card-text>
             <v-card-actions>
@@ -216,7 +202,6 @@
     const formData = reactive({
         enableSystemDarkMode: bookmarksStore.enableSystemDarkMode,
         enablePreferDarkMode: bookmarksStore.enablePreferDarkMode,
-        enableAccordionNavigation: bookmarksStore.accordionNavigation,
         bookmarksFileImport: null as File | null,
         iconsFileImport: null as File | null,
     });
@@ -225,7 +210,6 @@
         formData: {
             enableSystemDarkMode: {},
             enablePreferDarkMode: {},
-            enableAccordionNavigation: {},
             bookmarksFileImport: { },
             iconsFileImport: { },
         },
@@ -585,20 +569,6 @@
             }
         }
         theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
-
-        // enableAccordionNavigation
-        bookmarksStore.accordionNavigation = formData.enableAccordionNavigation;
-
-        if (formData.enableAccordionNavigation) {
-            bookmarksStore.delete_syncStorageItem('accordionNavigation');
-            bookmarksStore.set_syncStorage({ accordion: [bookmarksStore.sliderIndex ?? 0] });
-        } else {
-            bookmarksStore.set_syncStorage({ accordionNavigation: 'disabled' });
-            bookmarksStore.delete_syncStorageItem('accordion');
-
-            bookmarksStore.sliderIndex = 0;
-            bookmarksStore.set_syncStorage({ sliderIndex: 0 });
-        }
 
         emits(EMITS.SAVE);
     }

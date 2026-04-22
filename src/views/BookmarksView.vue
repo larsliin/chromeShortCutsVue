@@ -1,22 +1,10 @@
 <template>
     <div class="bookmarks-container"
-        v-if="bookmarksStore.bookmarks"
-        :class="bookmarksStore.accordionNavigation ? 'accordion' : 'slider'">
+        v-if="bookmarksStore.bookmarks">
         <BookmarksBackground />
         <BookmarkAddLarge />
         <BookmarksSearchEmpty />
-        <template v-if="bookmarksStore.accordionNavigation">
-            <BookmarksAccordion />
-        </template>
-        <template v-else>
-            <BookmarksSlider />
-            <NavigationDots
-                v-if="bookmarksStore.bookmarks && bookmarksStore.bookmarks.length > 1" />
-            <NavigationArrow
-                direction="left" />
-            <NavigationArrow
-                direction="right" />
-        </template>
+        <BookmarksAccordion />
         <BookmarksPopular />
     </div>
 </template>
@@ -35,9 +23,6 @@
     import BookmarksBackground
         from '@/components/bookmarks/sharedComponents/BookmarksBackground.vue';
     import BookmarksPopular from '@/components/bookmarks/sharedComponents/BookmarksPopular.vue';
-    import BookmarksSlider from '@/components/bookmarks/slider/BookmarksSlider.vue';
-    import NavigationArrow from '@/components/navigation/NavigationArrow.vue';
-    import NavigationDots from '@/components/navigation/NavigationDots.vue';
     import useEventsBus from '@cmp/eventBus';
 
     const theme = useTheme();
@@ -157,10 +142,6 @@
             }
             const bmNode = bookmarkResponse as BookmarkNode;
             folder.children.splice(bookmarkResponse.index ?? 0, 0, bmNode);
-
-            const index = (bookmarksStore.bookmarks ?? [])
-                .findIndex((e) => e.id === folder.id);
-            utils.setSliderIndex(index, true);
         }
 
         // Apply bookmark color from sync storage
@@ -200,9 +181,7 @@
 
                 bookmarksStore.rootId = null;
                 bookmarksStore.bookmarks = [];
-                utils.setSliderIndex(0, true);
                 bookmarksStore.accordionModel = null;
-                bookmarksStore.delete_syncStorageItem('accordion');
 
                 emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
             } catch (_error) {
@@ -232,13 +211,10 @@
                 bookmarksStore.bookmarks = (bookmarksStore.bookmarks ?? []).filter((e) => e.id !== event);
             }
 
-            if ((bookmarksStore.sliderIndex ?? 0) >= (bookmarksStore.bookmarks?.length ?? 0)) {
-                utils.setSliderIndex((bookmarksStore.bookmarks?.length ?? 1) - 1, true);
-            }
-
             emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event, children });
         }
     }
+
     async function onChanged(event: string): Promise<void> {
         // ensure that bookmark is ours in ROOT folder
         if (!isBookmarkInScope(event)) {
@@ -312,12 +288,6 @@
 
         await update();
 
-        const index = (bookmarksStore.bookmarks ?? []).findIndex((a) => a.id === event.toString());
-
-        if (index) {
-            utils.setSliderIndex(index, true);
-        }
-
         emit(EMITS.BOOKMARKS_UPDATED, { type: 'moved', id: event });
     }
 
@@ -325,20 +295,6 @@
     // but image has changed while editing bookmark
     watch(() => bus.value.get(EMITS.CHANGED), (id) => {
         onChanged(id[0]);
-    });
-
-    function toggleOverflowHidden(): void {
-        if (bookmarksStore.accordionNavigation) {
-            document.getElementsByTagName('html')[0].classList.remove('overflow-hidden');
-            document.getElementsByTagName('body')[0].classList.remove('overflow-hidden');
-        } else {
-            document.getElementsByTagName('html')[0].classList.add('overflow-hidden');
-            document.getElementsByTagName('body')[0].classList.add('overflow-hidden');
-        }
-    }
-
-    watch(() => bookmarksStore.accordionNavigation, (_val) => {
-        toggleOverflowHidden();
     });
 
     async function init(): Promise<void> {
@@ -360,24 +316,15 @@
                 bookmarksStore.bookmarksBarId as string,
                 FOLDER.ROOT.label,
             ),
-            bookmarksStore.get_syncStorage('sliderIndex'),
             bookmarksStore.get_syncStorage('darkMode'),
             bookmarksStore.get_syncStorage('systemDarkMode'),
-            bookmarksStore.get_syncStorage('accordionNavigation'),
             utils.buildRootFolder(),
         ];
 
         const [
-            _rootFolder, sliderIndex, darkMode, systemDarkMode, accordionNavigation, _buildRoot,
+            _rootFolder, darkMode, systemDarkMode, _buildRoot,
         ] = await Promise.all(promiseArr);
         getBookmarks();
-
-        // sliderIndex
-        if (typeof sliderIndex === 'number') {
-            bookmarksStore.sliderIndex = sliderIndex;
-        } else {
-            bookmarksStore.sliderIndex = 0;
-        }
 
         // prefer dark mode
         bookmarksStore.enablePreferDarkMode = !!darkMode;
@@ -394,11 +341,6 @@
             bookmarksStore.enableDarkMode = false;
         }
         theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
-
-        // accordion navigation
-        bookmarksStore.accordionNavigation = !accordionNavigation;
-
-        toggleOverflowHidden();
     }
 
     onUnmounted(() => {

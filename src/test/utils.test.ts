@@ -35,54 +35,6 @@ beforeEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// setSliderIndex
-// ---------------------------------------------------------------------------
-
-describe('setSliderIndex', () => {
-    it('sets the slider index in the store', async () => {
-        store.bookmarks = [makeFolder('f1'), makeFolder('f2'), makeFolder('f3')];
-
-        await utils.setSliderIndex(1, false);
-
-        expect(store.sliderIndex).toBe(1);
-    });
-
-    it('clamps index to 0 when negative', async () => {
-        store.bookmarks = [makeFolder('f1'), makeFolder('f2')];
-
-        await utils.setSliderIndex(-5, false);
-
-        expect(store.sliderIndex).toBe(0);
-    });
-
-    it('clamps index to last folder when exceeds bookmarks length', async () => {
-        store.bookmarks = [makeFolder('f1'), makeFolder('f2')];
-
-        await utils.setSliderIndex(99, false);
-
-        expect(store.sliderIndex).toBe(1);
-    });
-
-    it('calls set_syncStorage when setLocalStorage is true', async () => {
-        store.bookmarks = [makeFolder('f1')];
-        const setSyncSpy = vi.spyOn(store, 'set_syncStorage').mockResolvedValue(undefined);
-
-        await utils.setSliderIndex(0, true);
-
-        expect(setSyncSpy).toHaveBeenCalledWith({ sliderIndex: 0 });
-    });
-
-    it('does not call set_syncStorage when setLocalStorage is false', async () => {
-        store.bookmarks = [makeFolder('f1')];
-        const setSyncSpy = vi.spyOn(store, 'set_syncStorage').mockResolvedValue(undefined);
-
-        await utils.setSliderIndex(0, false);
-
-        expect(setSyncSpy).not.toHaveBeenCalled();
-    });
-});
-
-// ---------------------------------------------------------------------------
 // getStoredBookmarkById
 // ---------------------------------------------------------------------------
 

@@ -61,12 +61,10 @@
         // Fetch initial data in parallel for better performance
         const [
             tree,
-            slideIndexResponse,
             preferDarkModeResponse,
             systemDarkModeResponse,
         ] = await Promise.all([
             bookmarksStore.get_tree(),
-            bookmarksStore.get_syncStorage('sliderIndex'),
             bookmarksStore.get_syncStorage('darkMode'),
             bookmarksStore.get_syncStorage('systemDarkMode'),
         ]);
@@ -82,9 +80,6 @@
         }
 
         bookmarksStore.setBookmarksBarId(bookmarksBar.id);
-
-        // Configure slider index from saved settings
-        bookmarksStore.sliderIndex = typeof slideIndexResponse === 'number' ? slideIndexResponse : 0;
 
         // Configure dark mode theme
         bookmarksStore.enablePreferDarkMode = !!preferDarkModeResponse;

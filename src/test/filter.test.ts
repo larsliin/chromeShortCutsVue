@@ -13,8 +13,6 @@ import type { BookmarkNode } from '@/types/bookmark';
 //      (case-insensitive)
 //   3. Drops folders that have no matching children
 //   4. On empty term, restores the full unfiltered clone
-//   5. The resulting sliderIndex is re-anchored to the previously active folder
-//      (clamped to 0 when that folder was filtered out)
 // ---------------------------------------------------------------------------
 
 function applyFilter(allBookmarks: BookmarkNode[], term: string): BookmarkNode[] {
@@ -36,16 +34,6 @@ function applyFilter(allBookmarks: BookmarkNode[], term: string): BookmarkNode[]
             return null;
         })
         .filter((x): x is BookmarkNode => x !== null);
-}
-
-function resolveSliderIndex(
-    filtered: BookmarkNode[],
-    currentFolderId: string,
-): number {
-    return Math.max(
-        filtered.findIndex((e) => e.id === currentFolderId),
-        0,
-    );
 }
 
 // ---------------------------------------------------------------------------
@@ -88,7 +76,6 @@ beforeEach(() => {
     setActivePinia(createPinia());
     store = useBookmarksStore();
     store.bookmarks = cloneDeep(BOOKMARKS);
-    store.sliderIndex = 0;
 });
 
 // ---------------------------------------------------------------------------
@@ -229,46 +216,6 @@ describe('Filter — empty search term', () => {
 
         const afterClear = applyFilter(BOOKMARKS, '');
         expect(afterClear).toHaveLength(3);
-    });
-});
-
-// ---------------------------------------------------------------------------
-// SLIDER INDEX RE-ANCHORING
-// After filtering, sliderIndex is set to the position of the active folder
-// in the filtered result, clamped to 0 when the folder was filtered out.
-// ---------------------------------------------------------------------------
-
-describe('Filter — sliderIndex re-anchoring', () => {
-    it('returns 0 when the active folder is the first folder in filtered results', () => {
-        const result = applyFilter(BOOKMARKS, 'git');
-        const idx = resolveSliderIndex(result, 'f1');
-
-        expect(idx).toBe(0);
-    });
-
-    it('returns the correct index when the active folder is not first in filtered results', () => {
-        // "it" matches: GitHub/GitLab (f1), Reddit (f2), Twitter (f3) → all 3 folders kept
-        const result = applyFilter(BOOKMARKS, 'it');
-        const idx = resolveSliderIndex(result, 'f3');
-
-        // f1 at 0, f2 at 1, f3 at 2
-        expect(idx).toBe(2);
-    });
-
-    it('clamps to 0 when the active folder is filtered out', () => {
-        // f2 is filtered out by "jira" → index returns -1 → clamped to 0
-        const result = applyFilter(BOOKMARKS, 'jira');
-        const idx = resolveSliderIndex(result, 'f2');
-
-        expect(idx).toBe(0);
-    });
-
-    it('reflects sliderIndex in the store after filtering', () => {
-        store.bookmarks = applyFilter(BOOKMARKS, 'jira');
-        store.sliderIndex = resolveSliderIndex(store.bookmarks ?? [], 'f1');
-
-        expect(store.sliderIndex).toBe(0);
-        expect(store.bookmarks[0].children?.[0].title).toBe('Jira');
     });
 });
 
