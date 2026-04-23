@@ -2,6 +2,13 @@
 
 ---
 
+## Defaults
+
+- **Agent**: Use the **chrome-extension-vue-expert** custom agent by default for all tasks unless the user explicitly requests a different agent.
+- **Model**: Use **Claude Opus 4.5** by default unless the user explicitly requests a different model.
+
+---
+
 ## Project Overview
 
 **My Shortcuts Tab** is a Chrome Extension (Manifest V3) that replaces the browser's new tab page with a fully customizable bookmarks manager. Users can organize bookmarks into color-coded, icon-enriched folders, drag-and-drop to reorder, search and filter, import/export, and configure appearance.
@@ -89,6 +96,9 @@ Always use aliases. Never use relative paths that traverse more than one level.
 - Comments must always be on their **own line** — never trailing inline after code
 - Only comment non-obvious logic — do not comment self-explanatory code
 - Never delete comments that explain magic numbers, config values, or non-obvious constants
+- Use single-line `//` comments only — never `/* */` or `/** */` blocks
+- Avoid decorative separators (e.g. `// ----------` banner lines) — let whitespace and section structure speak for themselves
+- Do not overdo comments — fewer, well-placed comments are better than many obvious ones
 
 ### Formatting
 - **4-space indentation** (enforced by ESLint)
