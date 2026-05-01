@@ -48,7 +48,7 @@
                     <BookmarkConfirmDelete
                         :title="props.bookmark.title"
                         :id="bookmark.id"
-                        :showFolderMessage="bookmark.url ? true : false"
+                        :typeFolder="!bookmark.url"
                         @cancel="showConfirmDelete = false"
                         @confirm="onDeleteConfirm($event)" />
                 </v-dialog>

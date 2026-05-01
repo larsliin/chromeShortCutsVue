@@ -98,6 +98,7 @@
                     <BookmarkConfirmDelete
                         :title="deleteConfirmTitle"
                         :id="deleteConfirmId"
+                        :typeFolder="deleteConfirmIsFolder"
                         @cancel="showConfirmDelete = false"
                         @confirm="onDeleteConfirm($event)" />
                 </v-dialog>
@@ -133,11 +134,16 @@
 
     const deleteConfirmId = ref('');
     const deleteConfirmTitle = ref('');
+    const deleteConfirmIsFolder = ref(false);
     const showConfirmDelete = ref(false);
 
-    function onDelete(event: { title: string; id: string }): void {
+    async function onDelete(event: { title: string; id: string }): Promise<void> {
         deleteConfirmTitle.value = event.title;
         deleteConfirmId.value = event.id;
+
+        const bookmark = await bookmarksStore.getBookmarkById(event.id);
+        deleteConfirmIsFolder.value = !bookmark?.url;
+
         showConfirmDelete.value = true;
     }
 

@@ -45,7 +45,7 @@
                     persistent
                     width="450">
                     <BookmarkConfirmDelete
-                        :showFolderMessage="false"
+                        typeFolder
                         :title="folder.title"
                         :id="folder.id"
                         @cancel="showConfirmDelete = false"
