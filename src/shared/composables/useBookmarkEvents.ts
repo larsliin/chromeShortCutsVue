@@ -121,12 +121,16 @@ export function useBookmarkEvents() {
         const colorsObj = await bookmarksStore.getSyncStorage('bookmarkColors') as
             Record<string, string> | null;
 
-        if (!colorsObj || !colorsObj[id]) return;
-
         const bookmark = getStoredBookmarkById(id);
-        if (bookmark) {
-            bookmark.color = colorsObj[id];
-        }
+        if (!bookmark) return;
+
+        bookmark.color = colorsObj?.[id] || '';
+    }
+
+    async function onBookmarksUpdated(event: { type: string; id: string }): Promise<void> {
+        if (event.type !== 'color') return;
+
+        await applyStoredColor(event.id);
     }
 
     async function persistChangedBookmark(
@@ -250,6 +254,7 @@ export function useBookmarkEvents() {
         chrome.bookmarks.onChanged.addListener(onChanged);
 
         emitter.on(EMITS.CHANGED, onChangedFromBus);
+        emitter.on(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdated);
     });
 
     onUnmounted(() => {
@@ -259,5 +264,6 @@ export function useBookmarkEvents() {
         chrome.bookmarks.onChanged.removeListener(onChanged);
 
         emitter.off(EMITS.CHANGED, onChangedFromBus);
+        emitter.off(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdated);
     });
 }
