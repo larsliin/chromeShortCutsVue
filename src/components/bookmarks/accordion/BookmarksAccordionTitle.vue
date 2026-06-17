@@ -376,7 +376,7 @@
         flex-shrink: 0;
         font-size: 11px;
         font-weight: 500;
-        margin-right: 6px;
+        margin-inline: 6px;
         padding: 3px 6px;
         pointer-events: none;
         position: relative;
