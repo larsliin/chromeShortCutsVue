@@ -9,18 +9,16 @@ export function useBookmarkLoader() {
     const bookmarksStore = useBookmarksStore();
     const { getBookmarksAsFlatArr } = useBookmarkOps();
 
-    // Skipped during an active drag — the next event will perform the refresh
     async function update(): Promise<void> {
-        if (bookmarksStore.dragStart) {
+        try {
+            const rootId = await bookmarksStore.getLocalStorage(FOLDER.ROOT.name);
+            const tree = await bookmarksStore.getBookmarks(rootId as string);
+
+            const rootChildren = tree[0].children ?? [];
+            bookmarksStore.bookmarks = rootChildren as BookmarkNode[];
+        } finally {
             bookmarksStore.dragStart = false;
-            return;
         }
-
-        const rootId = await bookmarksStore.getLocalStorage(FOLDER.ROOT.name);
-        const tree = await bookmarksStore.getBookmarks(rootId as string);
-
-        const rootChildren = tree[0].children ?? [];
-        bookmarksStore.bookmarks = rootChildren as BookmarkNode[];
     }
 
     // Remove local-storage entries whose IDs no longer exist in Chrome bookmarks

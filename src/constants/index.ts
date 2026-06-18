@@ -51,6 +51,14 @@ export const TIMEOUTS = Object.freeze({
     DIALOG_CLOSE_MS: 1000,
 });
 
+export const GROUPING = Object.freeze({
+    FOLDER_PREFIX: '__mst_group__:',
+    MAX_ITEMS: 9,
+    PREVIEW_COLUMNS: 3,
+    PREVIEW_ITEMS: 9,
+    MAX_NESTED_LEVEL: 1,
+});
+
 export enum ICON_SIZE {
     SMALL = 'small',
     MEDIUM = 'medium',

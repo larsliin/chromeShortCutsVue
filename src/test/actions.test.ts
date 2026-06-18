@@ -25,6 +25,10 @@ function makeTree(children: chrome.bookmarks.BookmarkTreeNode[] = []): chrome.bo
     return [makeNode({ id: 'root', title: 'root', children })];
 }
 
+function makeFolder(overrides: Partial<chrome.bookmarks.BookmarkTreeNode> = {}): chrome.bookmarks.BookmarkTreeNode {
+    return makeNode({ url: undefined, children: [], ...overrides });
+}
+
 // ---------------------------------------------------------------------------
 // Setup
 // ---------------------------------------------------------------------------
@@ -225,6 +229,158 @@ describe('moveBookmark', () => {
         fireThreeArgCallback(chromeMock.bookmarks.move, [], 'Move failed.');
 
         await expect(store.moveBookmark('3', { parentId: '10' })).rejects.toThrow('Move failed.');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// createBookmarkGroup
+// ---------------------------------------------------------------------------
+
+describe('createBookmarkGroup', () => {
+    it('creates a group folder and moves both bookmarks into it', async () => {
+        const dragged = makeNode({ id: 'b1', parentId: 'f1', title: 'A' });
+        const target = makeNode({ id: 'b2', parentId: 'f1', title: 'B' });
+        const parent = makeFolder({ id: 'f1', title: 'Parent' });
+        const createdGroup = makeFolder({ id: 'g1', parentId: 'f1', title: '__mst_group__:k1' });
+
+        chromeMock.bookmarks.get.mockImplementation((id: string, cb: (result: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
+            if (id === 'f1') cb([parent]);
+            if (id === 'b1') cb([dragged]);
+            if (id === 'b2') cb([target]);
+        });
+
+        fireCallback(chromeMock.bookmarks.create, [createdGroup]);
+        fireThreeArgCallback(chromeMock.bookmarks.move, []);
+
+        const result = await store.createBookmarkGroup('f1', 'b1', 'b2');
+
+        expect(result.id).toBe('g1');
+        expect(chromeMock.bookmarks.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                parentId: 'f1',
+                title: expect.stringContaining('__mst_group__:'),
+                index: target.index,
+            }),
+            expect.any(Function),
+        );
+        expect(chromeMock.bookmarks.move).toHaveBeenCalledWith(
+            'b2',
+            { parentId: 'g1', index: 0 },
+            expect.any(Function),
+        );
+        expect(chromeMock.bookmarks.move).toHaveBeenCalledWith(
+            'b1',
+            { parentId: 'g1', index: 1 },
+            expect.any(Function),
+        );
+    });
+
+    it('rejects when one of the nodes is a folder', async () => {
+        const dragged = makeFolder({ id: 'b1', parentId: 'f1' });
+        const target = makeNode({ id: 'b2', parentId: 'f1', title: 'B' });
+        const parent = makeFolder({ id: 'f1', title: 'Parent' });
+
+        chromeMock.bookmarks.get.mockImplementation((id: string, cb: (result: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
+            if (id === 'f1') cb([parent]);
+            if (id === 'b1') cb([dragged]);
+            if (id === 'b2') cb([target]);
+        });
+
+        await expect(store.createBookmarkGroup('f1', 'b1', 'b2')).rejects
+            .toThrow('Only bookmark links can be grouped');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// addBookmarkToGroup
+// ---------------------------------------------------------------------------
+
+describe('addBookmarkToGroup', () => {
+    it('moves a bookmark into a group when below max capacity', async () => {
+        const groupFolder = makeFolder({
+            id: 'g1',
+            title: '__mst_group__:a1',
+            children: [
+                makeNode({ id: 'b1', parentId: 'g1' }),
+            ],
+        });
+        const bookmark = makeNode({ id: 'b2', parentId: 'f1' });
+
+        chromeMock.bookmarks.get.mockImplementation((id: string, cb: (result: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
+            if (id === 'g1') cb([groupFolder]);
+            if (id === 'b2') cb([bookmark]);
+        });
+
+        fireThreeArgCallback(chromeMock.bookmarks.move, []);
+
+        await expect(store.addBookmarkToGroup('g1', 'b2')).resolves.toBeUndefined();
+        expect(chromeMock.bookmarks.move).toHaveBeenCalledWith(
+            'b2',
+            { parentId: 'g1', index: 1 },
+            expect.any(Function),
+        );
+    });
+
+    it('rejects when target group is already full', async () => {
+        const groupChildren = Array.from({ length: 9 }, (_v, i) => makeNode({
+            id: `b${i}`,
+            parentId: 'g1',
+        }));
+
+        const groupFolder = makeFolder({
+            id: 'g1',
+            title: '__mst_group__:a1',
+            children: groupChildren,
+        });
+        const bookmark = makeNode({ id: 'new', parentId: 'f1' });
+
+        chromeMock.bookmarks.get.mockImplementation((id: string, cb: (result: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
+            if (id === 'g1') cb([groupFolder]);
+            if (id === 'new') cb([bookmark]);
+        });
+
+        await expect(store.addBookmarkToGroup('g1', 'new')).rejects
+            .toThrow('Bookmark group is full');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// ungroupBookmarkGroup
+// ---------------------------------------------------------------------------
+
+describe('ungroupBookmarkGroup', () => {
+    it('moves grouped links back to parent and removes the group folder', async () => {
+        const groupedFolder = makeFolder({
+            id: 'g1',
+            title: '__mst_group__:a1',
+            parentId: 'f1',
+            index: 2,
+            children: [
+                makeNode({ id: 'b1', parentId: 'g1' }),
+                makeNode({ id: 'b2', parentId: 'g1' }),
+            ],
+        });
+
+        chromeMock.bookmarks.get.mockImplementation((id: string, cb: (result: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
+            if (id === 'g1') cb([groupedFolder]);
+        });
+
+        fireThreeArgCallback(chromeMock.bookmarks.move, []);
+        fireCallback(chromeMock.bookmarks.removeTree, []);
+
+        await expect(store.ungroupBookmarkGroup('g1')).resolves.toBeUndefined();
+
+        expect(chromeMock.bookmarks.move).toHaveBeenCalledWith(
+            'b1',
+            { parentId: 'f1', index: 2 },
+            expect.any(Function),
+        );
+        expect(chromeMock.bookmarks.move).toHaveBeenCalledWith(
+            'b2',
+            { parentId: 'f1', index: 3 },
+            expect.any(Function),
+        );
+        expect(chromeMock.bookmarks.removeTree).toHaveBeenCalledWith('g1', expect.any(Function));
     });
 });
 

@@ -1,5 +1,26 @@
 import type { BookmarkNode } from '@/types/bookmark';
+import { GROUPING } from '@/constants';
 import * as chromeApi from '@cmp/chromeApi';
+import {
+    createGroupFolderTitle,
+    isBookmarkLink,
+    isGroupFolder,
+} from '@utils/bookmarkGroups';
+
+function applyBookmarkColors(
+    nodes: BookmarkNode[],
+    bookmarkColors: Record<string, string>,
+): void {
+    nodes.forEach((node) => {
+        if (bookmarkColors[node.id]) {
+            node.color = bookmarkColors[node.id];
+        }
+
+        if (node.children?.length) {
+            applyBookmarkColors(node.children, bookmarkColors);
+        }
+    });
+}
 
 export default {
     async getBookmarks(id: string): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
@@ -30,14 +51,7 @@ export default {
         }
 
         if (bookmarkColors) {
-            const flatBookmarks = (result[0].children ?? [])
-                .flatMap((obj) => (obj as BookmarkNode).children ?? []) as BookmarkNode[];
-            Object.entries(bookmarkColors).forEach(([bookmarkId, color]) => {
-                const bookmark = flatBookmarks.find((e) => e.id === bookmarkId);
-                if (bookmark) {
-                    bookmark.color = color;
-                }
-            });
+            applyBookmarkColors((result[0].children ?? []) as BookmarkNode[], bookmarkColors);
         }
 
         return result;
@@ -68,8 +82,9 @@ export default {
         parentId: string,
         title: string,
         url?: string,
+        index?: number,
     ): Promise<chrome.bookmarks.BookmarkTreeNode> {
-        return chromeApi.createBookmark(parentId, title, url);
+        return chromeApi.createBookmark(parentId, title, url, index);
     },
 
     async updateBookmark(
@@ -88,6 +103,117 @@ export default {
 
     async reorderBookmark(id: string, index: number): Promise<void> {
         return chromeApi.moveBookmark(id, { index });
+    },
+
+    async createBookmarkGroup(
+        parentId: string,
+        draggedBookmarkId: string,
+        targetBookmarkId: string,
+    ): Promise<chrome.bookmarks.BookmarkTreeNode> {
+        if (draggedBookmarkId === targetBookmarkId) {
+            throw new Error('Cannot group the same bookmark');
+        }
+
+        const [parentNode, draggedNode, targetNode] = await Promise.all([
+            chromeApi.getBookmarkById(parentId),
+            chromeApi.getBookmarkById(draggedBookmarkId),
+            chromeApi.getBookmarkById(targetBookmarkId),
+        ]);
+
+        if (!isBookmarkLink(draggedNode) || !isBookmarkLink(targetNode)) {
+            throw new Error('Only bookmark links can be grouped');
+        }
+
+        if (draggedNode.parentId !== parentId || targetNode.parentId !== parentId) {
+            throw new Error('Bookmarks must have the same parent folder');
+        }
+
+        if (isGroupFolder(parentNode as BookmarkNode)) {
+            throw new Error('Nested groups are not allowed');
+        }
+
+        const groupFolder = await chromeApi.createBookmark(
+            parentId,
+            createGroupFolderTitle(),
+            undefined,
+            targetNode.index,
+        );
+
+        await chromeApi.moveBookmark(targetBookmarkId, { parentId: groupFolder.id, index: 0 });
+        await chromeApi.moveBookmark(draggedBookmarkId, { parentId: groupFolder.id, index: 1 });
+
+        return groupFolder;
+    },
+
+    async addBookmarkToGroup(groupFolderId: string, bookmarkId: string): Promise<void> {
+        const [groupFolder, bookmark] = await Promise.all([
+            chromeApi.getBookmarkById(groupFolderId),
+            chromeApi.getBookmarkById(bookmarkId),
+        ]);
+
+        if (!isGroupFolder(groupFolder as BookmarkNode)) {
+            throw new Error('Target is not a bookmark group');
+        }
+
+        if (!isBookmarkLink(bookmark)) {
+            throw new Error('Only bookmark links can be grouped');
+        }
+
+        if (bookmark.parentId === groupFolderId) {
+            return;
+        }
+
+        if (groupFolder.children && groupFolder.children.length >= GROUPING.MAX_ITEMS) {
+            throw new Error('Bookmark group is full');
+        }
+
+        await chromeApi.moveBookmark(bookmarkId, {
+            parentId: groupFolderId,
+            index: groupFolder.children?.length ?? 0,
+        });
+    },
+
+    async ungroupBookmarkGroup(groupFolderId: string): Promise<void> {
+        const groupFolder = await chromeApi.getBookmarkById(groupFolderId);
+
+        if (!isGroupFolder(groupFolder as BookmarkNode)) {
+            return;
+        }
+
+        const { parentId } = groupFolder;
+
+        if (!parentId) {
+            return;
+        }
+
+        const groupChildren = (groupFolder.children ?? []).filter((child) => !!child.url);
+
+        await Promise.all(groupChildren.map((child, index) => chromeApi.moveBookmark(child.id, {
+            parentId,
+            index: (groupFolder.index ?? 0) + index,
+        })));
+
+        await chromeApi.removeBookmarkTree(groupFolderId);
+    },
+
+    async collapseSingleItemGroups(): Promise<void> {
+        const groupChildren = (this.bookmarks ?? [])
+            .flatMap((folder) => folder.children ?? [])
+            .filter((child) => isGroupFolder(child));
+
+        const groupStates = await Promise.all(groupChildren.map(async (groupChild) => {
+            const groupFromApi = await chromeApi.getBookmarkById(groupChild.id);
+            const linksInsideGroup = (groupFromApi.children ?? []).filter((item) => !!item.url);
+
+            return {
+                groupId: groupChild.id,
+                shouldUngroup: linksInsideGroup.length <= 1,
+            };
+        }));
+
+        await Promise.all(groupStates
+            .filter((groupState) => groupState.shouldUngroup)
+            .map((groupState) => this.ungroupBookmarkGroup(groupState.groupId)));
     },
 
     async removeBookmark(id: string): Promise<string> {

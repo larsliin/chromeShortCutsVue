@@ -336,13 +336,13 @@
 
             .bookmark-image-container {
                 width: 100%;
-                padding: 4px;
-                border-radius: 7px;
+                padding: 7.14%;
+                border-radius: 12.5%;
                 font-size: 34px;
             }
 
             :deep(.bookmark-image) {
-                border-radius: 5px;
+                border-radius: 8.93%;
             }
 
             .bookmark-title-container {
@@ -355,7 +355,7 @@
 
             .bookmark-image-container {
                 width: 100%;
-                padding: 6px;
+                padding: 7.32%;
             }
 
             .bookmark-title-container {
@@ -368,13 +368,13 @@
 
             .bookmark-image-container {
                 width: 100%;
-                padding: 8px;
-                border-radius: 14px;
+                padding: 7.41%;
+                border-radius: 12.96%;
                 font-size: 66px;
             }
 
             :deep(.bookmark-image) {
-                border-radius: 10px;
+                border-radius: 9.26%;
             }
 
             .bookmark-title-container {
@@ -386,8 +386,8 @@
             width: 50px;
 
             .bookmark-image-container {
-                border-radius: 6px;
-                padding: 4px;
+                border-radius: 12%;
+                padding: 8%;
                 width: 100%;
 
                 :deep(svg) {

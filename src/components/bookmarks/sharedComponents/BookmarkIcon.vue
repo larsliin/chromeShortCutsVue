@@ -127,14 +127,14 @@
         align-items: center;
         aspect-ratio: 1;
         background-color: #fff;
-        border-radius: 10px;
+        border-radius: 11.11%;
         box-shadow: 0px 0 20px 0px rgba(0, 0, 0, 0.15);
         color: var(--yellow);
         display: flex;
         font-size: 50px;
         justify-content: center;
         overflow: hidden;
-        padding: 8px;
+        padding: 8.89%;
         position: relative;
         transform-origin: center right;
         transition: transform 0.05s;
@@ -154,7 +154,7 @@
         background-position: center;
         background-repeat: no-repeat;
         background-size: contain;
-        border-radius: 7px;
+        border-radius: 7.78%;
         display: block;
         height: 100%;
         width: 100%;

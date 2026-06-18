@@ -6,8 +6,9 @@ import { useBookmarksStore } from '@stores/bookmarks';
 import { useBookmarkOps } from '@cmp/useBookmarkOps';
 import { useAccordionSync } from '@cmp/useAccordionSync';
 import { useBookmarkLoader } from '@cmp/useBookmarkLoader';
-import { FOLDER, EMITS, ARGS } from '@/constants';
+import { FOLDER, EMITS, ARGS, GROUPING } from '@/constants';
 import emitter from '@cmp/eventBus';
+import { findNodeById } from '@utils/bookmarkGroups';
 
 export function useBookmarkEvents() {
     const bookmarksStore = useBookmarksStore();
@@ -15,15 +16,40 @@ export function useBookmarkEvents() {
     const { buildRootFolder, updateAccordionModel } = useAccordionSync();
     const { update } = useBookmarkLoader();
 
+    function collectNodeIds(node: BookmarkNode): string[] {
+        const ids = [node.id];
+
+        (node.children ?? []).forEach((child) => {
+            ids.push(...collectNodeIds(child));
+        });
+
+        return ids;
+    }
+
+    function hasNode(id: string, nodes: BookmarkNode[]): boolean {
+        return !!findNodeById(nodes, id);
+    }
+
+    function findParentNode(nodes: BookmarkNode[], id: string): BookmarkNode | null {
+        return nodes.reduce<BookmarkNode | null>((found, node) => {
+            if (found) {
+                return found;
+            }
+
+            if ((node.children ?? []).some((child) => child.id === id)) {
+                return node;
+            }
+
+            return findParentNode(node.children ?? [], id);
+        }, null);
+    }
+
     function isBookmarkInScope(id: string): boolean {
         if (id === bookmarksStore.rootId) {
             return true;
         }
 
-        const bookmarkExists = bookmarksStore.flatBookmarks.some((e) => e?.id === id);
-        const folderExists = (bookmarksStore.bookmarks ?? []).some((e) => e.id === id);
-
-        return bookmarkExists || folderExists;
+        return hasNode(id, bookmarksStore.bookmarks ?? []);
     }
 
     async function isNewBookmarkInScope(
@@ -34,17 +60,30 @@ export function useBookmarkEvents() {
         }
 
         const event = await bookmarksStore.getBookmarks(bookmarksStore.rootId as string);
-        const rootChildren = event[0].children ?? [];
+        const rootChildren = (event[0].children ?? []) as BookmarkNode[];
 
-        return rootChildren.some((item) => {
-            if (item.id.toString() === bookmark.id.toString()) {
-                return true;
+        const findDepth = (
+            nodes: BookmarkNode[],
+            targetId: string,
+            depth = 1,
+        ): number | null => nodes.reduce<number | null>((found, node) => {
+            if (found !== null) {
+                return found;
             }
 
-            return !!item.children?.some(
-                (child) => child.id.toString() === bookmark.id.toString(),
-            );
-        });
+            if (node.id.toString() === targetId) {
+                return depth;
+            }
+
+            return findDepth(node.children ?? [], targetId, depth + 1);
+        }, null);
+
+        const depth = findDepth(rootChildren, bookmark.id.toString());
+        if (depth === null) {
+            return false;
+        }
+
+        return depth <= GROUPING.MAX_NESTED_LEVEL + 2;
     }
 
     function insertCreatedNode(node: chrome.bookmarks.BookmarkTreeNode): void {
@@ -60,7 +99,7 @@ export function useBookmarkEvents() {
             return;
         }
 
-        const parent = (bookmarksStore.bookmarks ?? []).find((e) => e.id === node.parentId);
+        const parent = findNodeById((bookmarksStore.bookmarks ?? []) as BookmarkNode[], node.parentId ?? '');
         if (!parent) return;
 
         if (!parent.children) {
@@ -70,27 +109,47 @@ export function useBookmarkEvents() {
     }
 
     function removeBookmarkFromTree(id: string): void {
-        bookmarksStore.bookmarks = (bookmarksStore.bookmarks ?? []).map((parent) => ({
-            ...parent,
-            children: (parent.children ?? []).filter((child) => child.id !== id),
-        }));
+        const removeFromNodes = (nodes: BookmarkNode[]): BookmarkNode[] => nodes
+            .filter((node) => node.id !== id)
+            .map((node) => ({
+                ...node,
+                children: removeFromNodes(node.children ?? []),
+            }));
+
+        bookmarksStore.bookmarks = removeFromNodes(bookmarksStore.bookmarks ?? []);
 
         bookmarksStore.deleteLocalStorageItem(id);
     }
 
     function removeFolderFromTree(id: string): string[] {
         const folders = bookmarksStore.bookmarks ?? [];
-        const index = folders.findIndex((e) => e.id === id);
-        const folder = folders.find((e) => e.id === id);
-        const childIds = folder ? (folder.children ?? []).map((e) => e.id) : [];
+        const rootFolderIndex = folders.findIndex((e) => e.id === id);
+        const folder = findNodeById(folders as BookmarkNode[], id);
 
-        childIds.forEach((childId) => bookmarksStore.deleteLocalStorageItem(childId));
+        if (!folder) {
+            return [];
+        }
 
-        updateAccordionModel(index);
+        const descendants = collectNodeIds(folder);
+        const leafIds = descendants.filter((nodeId) => {
+            const node = findNodeById(folders as BookmarkNode[], nodeId);
+            return !!node?.url;
+        });
 
-        bookmarksStore.bookmarks = folders.filter((e) => e.id !== id);
+        leafIds.forEach((leafId) => bookmarksStore.deleteLocalStorageItem(leafId));
 
-        return childIds;
+        if (rootFolderIndex >= 0) {
+            updateAccordionModel(rootFolderIndex);
+            bookmarksStore.bookmarks = folders.filter((e) => e.id !== id);
+            return leafIds;
+        }
+
+        const parent = findParentNode(folders as BookmarkNode[], id);
+        if (parent?.children) {
+            parent.children = parent.children.filter((child) => child.id !== id);
+        }
+
+        return leafIds;
     }
 
     async function removeEverything(event: string): Promise<void> {
@@ -152,12 +211,6 @@ export function useBookmarkEvents() {
         id: string,
         bookmarkResponse: chrome.bookmarks.BookmarkTreeNode,
     ): void {
-        const folder = (bookmarksStore.bookmarks ?? []).find((e) => e.id === id);
-        if (folder) {
-            folder.title = bookmarkResponse.title;
-            return;
-        }
-
         const bm = getStoredBookmarkById(id);
         if (!bm) return;
 
@@ -205,6 +258,8 @@ export function useBookmarkEvents() {
             id: event,
             children: removedChildren,
         });
+
+        await bookmarksStore.collapseSingleItemGroups();
     }
 
     async function onChanged(event: string): Promise<void> {

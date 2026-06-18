@@ -10,6 +10,11 @@
         </div>
         <div>
             <v-btn
+                class="toolbar-group-button"
+                :icon="mdiFolderMultiple"
+                :title="bookmarksStore.groupMode ? 'Disable group mode' : 'Enable group mode'"
+                @click="onToggleGroupMode()" />
+            <v-btn
                 class="toolbar-settings-button"
                 :icon="mdiWrench"
                 @click="dialogSettings = true" />
@@ -108,7 +113,12 @@
 </template>
 
 <script setup lang="ts">
-    import { mdiStar, mdiWrench, mdiAlertCircleOutline } from '@mdi/js';
+    import {
+        mdiStar,
+        mdiWrench,
+        mdiAlertCircleOutline,
+        mdiFolderMultiple,
+    } from '@mdi/js';
     import {
         ref, watch, onMounted, onUnmounted,
     } from 'vue';
@@ -136,6 +146,7 @@
     const deleteConfirmTitle = ref('');
     const deleteConfirmIsFolder = ref(false);
     const showConfirmDelete = ref(false);
+    const bookmarksStore = useBookmarksStore();
 
     async function onDelete(event: { title: string; id: string }): Promise<void> {
         deleteConfirmTitle.value = event.title;
@@ -147,7 +158,6 @@
         showConfirmDelete.value = true;
     }
 
-    const bookmarksStore = useBookmarksStore();
     const dialogAddOpen = ref(false);
 
     async function onDeleteConfirm(id: string): Promise<void> {
@@ -197,6 +207,10 @@
         dialogAddOpen.value = true;
     }
 
+    function onToggleGroupMode(): void {
+        bookmarksStore.groupMode = !bookmarksStore.groupMode;
+    }
+
     watch(dialogAddOpen, (val) => {
         if (!val) {
             // wait with resetting until modal has finished close animation
@@ -232,10 +246,12 @@
     .toolbar {
         $breakpoint: 540px;
 
+        box-sizing: border-box;
         height: 0;
         justify-content: center;
         position: fixed;
         width: $breakpoint;
+        padding-inline: 20px;
         z-index: 999;
 
         @media (min-width: $breakpoint) {
@@ -249,12 +265,19 @@
             top: 45px;
         }
 
+        > div:last-child {
+            gap: 6px;
+        }
+
         > div:first-child {
             flex: 0 1 calc(100% - 90px);
         }
 
         &-add-button {
             color: var(--yellow);
+        }
+
+        &-group-button {
         }
 
         &-filter-input {

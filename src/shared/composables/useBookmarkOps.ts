@@ -2,6 +2,7 @@
 // All functions depend on the bookmarks store.
 import { useBookmarksStore } from '@stores/bookmarks';
 import type { BookmarkNode } from '@/types/bookmark';
+import { findNodeById, flattenBookmarkLinks } from '@utils/bookmarkGroups';
 
 export function useBookmarkOps() {
     const bookmarksStore = useBookmarksStore();
@@ -33,9 +34,9 @@ export function useBookmarkOps() {
             return null;
         }
 
-        return response.flatMap(
+        return flattenBookmarkLinks(response.flatMap(
             (item) => item.children?.flatMap((child) => (child.children ?? [])) ?? [],
-        ) as BookmarkNode[];
+        ) as BookmarkNode[]);
     }
 
     async function deleteAllBookmarks(): Promise<void> {
@@ -56,10 +57,7 @@ export function useBookmarkOps() {
             return null;
         }
 
-        return bookmarksStore.bookmarks.reduce<BookmarkNode | null>((result, folder) => {
-            const child = folder.children?.find((bookmark) => bookmark.id === id);
-            return child || result;
-        }, null);
+        return findNodeById(bookmarksStore.bookmarks as BookmarkNode[], id);
     }
 
     return {

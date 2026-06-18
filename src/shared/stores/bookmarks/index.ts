@@ -17,6 +17,7 @@ export interface BookmarksState {
     bookmarkSearch: string | null;
     dialogOpen: boolean;
     dragStart: boolean;
+    groupMode: boolean;
     editBase64Image: string | null;
     errorMessage: string | null;
     isImporting: boolean;
@@ -51,6 +52,7 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         bookmarkSearch: null,
         dialogOpen: false,
         dragStart: false,
+        groupMode: false,
         editBase64Image: null,
         errorMessage: null,
         isImporting: false,

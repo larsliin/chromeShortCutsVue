@@ -52,9 +52,20 @@ export function createBookmark(
     parentId: string,
     title: string,
     url?: string,
+    index?: number,
 ): Promise<chrome.bookmarks.BookmarkTreeNode> {
     return new Promise((resolve, reject) => {
-        chrome.bookmarks.create({ parentId: parentId.toString(), title, url }, (bookmark) => {
+        const bookmarkData: chrome.bookmarks.CreateDetails = {
+            parentId: parentId.toString(),
+            title,
+            url,
+        };
+
+        if (index !== undefined) {
+            bookmarkData.index = index;
+        }
+
+        chrome.bookmarks.create(bookmarkData, (bookmark) => {
             if (chrome.runtime.lastError) {
                 reject(new Error(chrome.runtime.lastError.message));
                 return;
