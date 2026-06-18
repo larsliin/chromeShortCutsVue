@@ -9,7 +9,7 @@ A Chrome Extension (Manifest V3) that replaces your new tab page with a fully cu
 - **Custom new tab page** — your bookmarks are always one tab away
 - **Folders with colors & icons** — visually distinguish your bookmark groups
 - **Drag-and-drop reordering** — rearrange folders and bookmarks with ease
-- **Instant search/filter** — find any bookmark across all folders in real time
+- **Instant search/filter** — find bookmarks and folder names across all folders in real time
 - **Import / Export** — back up and restore your full bookmark set as JSON
 - **Dark mode** — follows system preference or can be toggled manually
 - **Accordion layout** — compact, collapsible folder view
@@ -86,7 +86,7 @@ The project uses two testing layers to ensure reliability:
 
 **Why Vitest?** It integrates natively with the Vite build toolchain, supports ESM out of the box, and provides near-instant feedback during development. Components are mounted with **Vue Test Utils** and **`createTestingPinia`** via a shared `mountWithPlugins` helper that pre-wires Vuetify and Pinia, keeping test files free of boilerplate.
 
-**What's covered:** store actions, composable utilities, bookmark filtering logic, import/export workflows, the MV3 service worker (`background.js`), and component rendering.
+**What's covered:** store actions, composable utilities, bookmark and folder-name filtering logic, import/export workflows, the MV3 service worker (`background.js`), and component rendering.
 
 ### E2E Tests — Playwright (`e2e/`)
 

@@ -9,10 +9,11 @@ import type { BookmarkNode } from '@/types/bookmark';
 //
 // Given a search term and a full clone of the bookmark tree, the filter:
 //   1. Iterates every folder
-//   2. Keeps only leaf children (no sub-folders) whose title contains the term
-//      (case-insensitive)
-//   3. Drops folders that have no matching children
-//   4. On empty term, restores the full unfiltered clone
+//   2. Matches both folder titles and bookmark titles (case-insensitive)
+//   3. Keeps only leaf children (no sub-folders)
+//   4. For matching folders, keeps all leaf children
+//   5. Drops folders that have no matching children and no matching title
+//   6. On empty term, restores the full unfiltered clone
 // ---------------------------------------------------------------------------
 
 function applyFilter(allBookmarks: BookmarkNode[], term: string): BookmarkNode[] {
@@ -25,11 +26,14 @@ function applyFilter(allBookmarks: BookmarkNode[], term: string): BookmarkNode[]
     return bookmarks
         .map((item) => {
             if (item.children) {
-                item.children = item.children.filter(
-                    (child) => child.title.toLowerCase().includes(term.toLowerCase())
-                        && !child.children,
-                );
-                return item.children.length > 0 ? item : null;
+                const leafChildren = item.children.filter((child) => !child.children);
+                const folderTitleMatches = item.title.toLowerCase().includes(term.toLowerCase());
+
+                item.children = folderTitleMatches
+                    ? leafChildren
+                    : leafChildren.filter((child) => child.title.toLowerCase().includes(term.toLowerCase()));
+
+                return folderTitleMatches || item.children.length > 0 ? item : null;
             }
             return null;
         })
@@ -83,6 +87,15 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('Filter — basic matching', () => {
+    it('returns all leaf bookmarks when the folder title contains the search term', () => {
+        const result = applyFilter(BOOKMARKS, 'work');
+
+        expect(result).toHaveLength(1);
+        expect(result[0].id).toBe('f1');
+        expect(result[0].children).toHaveLength(3);
+        expect((result[0].children ?? []).map((c) => c.title)).toEqual(['GitHub', 'GitLab', 'Jira']);
+    });
+
     it('returns only bookmarks whose title contains the search term', () => {
         const result = applyFilter(BOOKMARKS, 'git');
 

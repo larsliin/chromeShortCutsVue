@@ -40,13 +40,20 @@
         const bookmarks: BookmarkNode[] = cloneDeep(clonedBookmarks);
 
         if (event) {
+            const searchTerm = event.toLowerCase();
+
             const filteredData = bookmarks.map((item) => {
                 if (item.children) {
+                    const leafChildren = item.children.filter((child) => !child.children);
+                    const folderTitleMatches = item.title.toLowerCase().includes(searchTerm);
+
                     // eslint-disable-next-line no-param-reassign
-                    item.children = item.children
-                        .filter((child) => child.title.toLowerCase()
-                            .includes(event.toLowerCase()) && !child.children);
-                    return item.children.length > 0 ? item : null;
+                    item.children = folderTitleMatches
+                        ? leafChildren
+                        : leafChildren.filter((child) => child.title.toLowerCase()
+                            .includes(searchTerm));
+
+                    return folderTitleMatches || item.children.length > 0 ? item : null;
                 }
                 return null;
             }).filter((x): x is BookmarkNode => x !== null);
