@@ -412,25 +412,27 @@
 
         dragging.value = false;
 
-        if (bookmarksStore.groupMode && dropIntent.value && draggedBookmarkId.value) {
-            if (dropIntent.value.type === 'create') {
-                await bookmarksStore.createBookmarkGroup(
-                    props.folder.id,
-                    draggedBookmarkId.value,
-                    dropIntent.value.targetId,
-                );
-            }
+        try {
+            if (bookmarksStore.groupMode && dropIntent.value && draggedBookmarkId.value) {
+                if (dropIntent.value.type === 'create') {
+                    await bookmarksStore.createBookmarkGroup(
+                        props.folder.id,
+                        draggedBookmarkId.value,
+                        dropIntent.value.targetId,
+                    );
+                }
 
-            if (dropIntent.value.type === 'add-to-group') {
-                await bookmarksStore.addBookmarkToGroup(
-                    dropIntent.value.targetId,
-                    draggedBookmarkId.value,
-                );
+                if (dropIntent.value.type === 'add-to-group') {
+                    await bookmarksStore.addBookmarkToGroup(
+                        dropIntent.value.targetId,
+                        draggedBookmarkId.value,
+                    );
+                }
             }
+        } finally {
+            draggedBookmarkId.value = null;
+            resetDropIntent();
         }
-
-        draggedBookmarkId.value = null;
-        resetDropIntent();
     }
 </script>
 <style>
@@ -544,18 +546,6 @@
             box-shadow 0.28s ease,
             border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
         z-index: 1101;
-
-        &.opening,
-        &.closing {
-            transition:
-                left 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-                top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-                width 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-                height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-                opacity 0.18s ease,
-                box-shadow 0.28s ease,
-                border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
-        }
 
         &.opening,
         &.closing {

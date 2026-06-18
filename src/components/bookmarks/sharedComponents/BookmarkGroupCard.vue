@@ -124,6 +124,46 @@
 
         event.preventDefault();
 
+        if (!bookmarksStore.statistics) {
+            bookmarksStore.statistics = [];
+        }
+
+        const bookmarkStats = (bookmarksStore.statistics ?? [])
+            .find((entry) => entry.url === item.url);
+
+        const bookmarkStatsIndex = (bookmarksStore.statistics ?? [])
+            .findIndex((entry) => Object.values(entry.id).includes(item.id));
+
+        const index = bookmarkStatsIndex === -1
+            ? bookmarksStore.statistics.length
+            : bookmarkStatsIndex;
+
+        const clicks = bookmarkStats?.clicks !== undefined
+            ? parseInt(String(bookmarkStats.clicks), 10) + 1
+            : 1;
+
+        const idArr = bookmarkStats
+            ? [...new Set([...Object.values(bookmarkStats.id), item.id])]
+            : [item.id];
+
+        bookmarksStore.statistics[index] = {
+            clicks,
+            id: idArr,
+            title: item.title,
+            timestamp: Date.now(),
+            url: item.url,
+        };
+
+        const sorted = bookmarksStore.statistics.sort((a, b) => {
+            if (b.clicks !== a.clicks) {
+                return b.clicks - a.clicks;
+            }
+
+            return b.timestamp - a.timestamp;
+        });
+
+        bookmarksStore.setSyncStorage({ statistics: sorted });
+
         if (event.ctrlKey || event.metaKey) {
             window.open(item.url, '_blank');
             return;

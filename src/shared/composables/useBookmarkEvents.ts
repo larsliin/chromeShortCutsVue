@@ -16,14 +16,12 @@ export function useBookmarkEvents() {
     const { buildRootFolder, updateAccordionModel } = useAccordionSync();
     const { update } = useBookmarkLoader();
 
-    function collectNodeIds(node: BookmarkNode): string[] {
-        const ids = [node.id];
+    function collectLeafIds(node: BookmarkNode): string[] {
+        if (node.url) {
+            return [node.id];
+        }
 
-        (node.children ?? []).forEach((child) => {
-            ids.push(...collectNodeIds(child));
-        });
-
-        return ids;
+        return (node.children ?? []).flatMap((child) => collectLeafIds(child));
     }
 
     function hasNode(id: string, nodes: BookmarkNode[]): boolean {
@@ -130,11 +128,7 @@ export function useBookmarkEvents() {
             return [];
         }
 
-        const descendants = collectNodeIds(folder);
-        const leafIds = descendants.filter((nodeId) => {
-            const node = findNodeById(folders as BookmarkNode[], nodeId);
-            return !!node?.url;
-        });
+        const leafIds = collectLeafIds(folder);
 
         leafIds.forEach((leafId) => bookmarksStore.deleteLocalStorageItem(leafId));
 

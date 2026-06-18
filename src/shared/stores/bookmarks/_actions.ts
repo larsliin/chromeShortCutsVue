@@ -188,10 +188,11 @@ export default {
 
         const groupChildren = (groupFolder.children ?? []).filter((child) => !!child.url);
 
-        await Promise.all(groupChildren.map((child, index) => chromeApi.moveBookmark(child.id, {
-            parentId,
-            index: (groupFolder.index ?? 0) + index,
-        })));
+        await groupChildren.reduce<Promise<void>>((chain, child, index) => chain
+            .then(() => chromeApi.moveBookmark(child.id, {
+                parentId,
+                index: (groupFolder.index ?? 0) + index,
+            })), Promise.resolve());
 
         await chromeApi.removeBookmarkTree(groupFolderId);
     },
