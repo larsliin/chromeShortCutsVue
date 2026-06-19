@@ -88,6 +88,19 @@ The project uses two testing layers to ensure reliability:
 
 **What's covered:** store actions, composable utilities, bookmark and folder-name filtering logic, bookmark grouping lifecycle (create group, add to group, ungroup), import/export workflows including grouped bookmark handling, the MV3 service worker (`background.js`), and component rendering.
 
+#### `actions.test.ts` — Pinia Store Action Tests
+
+| Test Group | Description |
+|---|---|
+| **getBookmarks** | Resolves with the bookmark tree for a given id, propagating Chrome API errors |
+| **getBookmarkById / getBookmarkByIdOrNull** | Returns a single bookmark by id; the OrNull variant resolves with `null` instead of rejecting when the id is missing |
+| **createBookmark / updateBookmark** | CRUD wrappers around `chrome.bookmarks.create` and `update` |
+| **moveBookmark / reorderBookmark** | Move bookmarks between folders or within a folder, asserting the Chrome destination payload |
+| **createBookmarkGroup / addBookmarkToGroup** | Group-creation lifecycle: validates link-vs-folder constraints, parent matching, nested-group rejection, and the MAX_ITEMS cap |
+| **ungroupBookmarkGroup** | Re-inserts a group's link children at the group folder's original index then removes the now-empty group folder |
+| **collapseEmptyGroups** | Walks the in-memory tree and ungroups any group folder whose link children have all been removed |
+| **Storage wrappers** | Local and sync storage get/set/delete pass-throughs forward errors from `chrome.runtime.lastError` |
+
 #### `import-files.test.ts` — Import/Export Workflow Tests
 
 | Test Group | Description |
