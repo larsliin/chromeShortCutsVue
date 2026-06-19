@@ -91,7 +91,7 @@ describe('isImportBookmarksFileValid — group-aware descendant check', () => {
                         {
                             id: 'g1',
                             parentId: 'f1',
-                            title: `${GROUPING.FOLDER_PREFIX}only`,
+                            title: `${GROUPING.LEGACY_FOLDER_PREFIX}only`,
                             children: [
                                 {
                                     id: 'b1',
@@ -142,7 +142,7 @@ describe('isImportBookmarksFileValid — group-aware descendant check', () => {
                         {
                             id: 'fake',
                             parentId: 'f1',
-                            title: `${GROUPING.FOLDER_PREFIX}fake`,
+                            title: `${GROUPING.LEGACY_FOLDER_PREFIX}fake`,
                             url: 'https://example.com/',
                             children: [{ id: 'inner', parentId: 'fake' }],
                         },

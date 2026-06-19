@@ -201,7 +201,7 @@
     });
 
     function isRegularBookmark(item: BookmarkNode): boolean {
-        return !isGroupFolder(item);
+        return !isGroupFolder(item, bookmarksStore.groupIds);
     }
 
     async function onOpenGroup(payload: { groupId: string; rect?: DOMRect }): Promise<void> {
@@ -259,7 +259,7 @@
     }
 
     function shouldHidePopupOrigin(element: BookmarkNode): boolean {
-        return isGroupFolder(element)
+        return isGroupFolder(element, bookmarksStore.groupIds)
             && showGroupPopup.value
             && activeGroupId.value === element.id;
     }
@@ -275,6 +275,7 @@
             parentFolder: props.folder,
             storeBookmarks: bookmarksStore.bookmarks ?? [],
             groupMode: bookmarksStore.groupMode,
+            groupIds: bookmarksStore.groupIds,
         });
     }
 
@@ -346,7 +347,7 @@
             && dragged.id !== related.id
             && dragged.parentId === props.folder.id
             && related.parentId === props.folder.id
-            && !isGroupFolder(props.folder);
+            && !isGroupFolder(props.folder, bookmarksStore.groupIds);
 
         if (canCreateGroup) {
             dropIntent.value = {
@@ -358,7 +359,7 @@
         }
 
         const canAddToGroup = isBookmarkLink(dragged)
-            && isGroupFolder(related)
+            && isGroupFolder(related, bookmarksStore.groupIds)
             && dragged.id !== related.id;
 
         if (canAddToGroup) {
@@ -419,24 +420,27 @@
                 index: targetIndex,
             });
 
-            // The Chrome event pipeline (useBookmarkEvents.onRemoved ->
-            // collapseEmptyGroups) may have already removed the now-empty
-            // group folder by the time we get here, so probe before removing
-            // to avoid an unhandled rejection that leaves the popup open.
-            const stillExists = await bookmarksStore.getBookmarkByIdOrNull(payload.groupId);
-            if (stillExists) {
-                const groupSubtree = await bookmarksStore.getBookmarks(payload.groupId);
-                const remainingChildren = (groupSubtree?.[0]?.children ?? [])
-                    .filter((child) => !!child.url);
-
-                if (remainingChildren.length === 0) {
-                    await bookmarksStore.removeBookmarkFolder(payload.groupId);
-                }
-            }
+            // Delegate empty-group cleanup to the shared store action so the
+            // popup-drag path mirrors the onRemoved pipeline exactly. This
+            // re-queries Chrome for every registered group's url children
+            // and removes any that have been emptied — including ours when
+            // the last bookmark was just dragged out.
+            await bookmarksStore.collapseEmptyGroups();
         } catch (_error) {
             // Swallow — the group/parent may have been mutated by another
-            // event handler. We still want to close the popup cleanly.
-        } finally {
+            // event handler. The existence probe below decides what to do
+            // next based on Chrome's actual state, not on which await failed.
+        }
+
+        // Probe Chrome directly (not the in-memory store) to know whether
+        // the group survived the move + collapse. Only close the popup when
+        // the group itself is gone — i.e. the last bookmark was dragged out.
+        // While other bookmarks remain, the group stays and so does the popup.
+        const survivor = await bookmarksStore
+            .getBookmarkByIdOrNull(payload.groupId)
+            .catch(() => null);
+
+        if (!survivor) {
             closeGroupPopup();
         }
     }

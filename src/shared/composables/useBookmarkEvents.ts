@@ -6,7 +6,7 @@ import { useBookmarksStore } from '@stores/bookmarks';
 import { useBookmarkOps } from '@cmp/useBookmarkOps';
 import { useAccordionSync } from '@cmp/useAccordionSync';
 import { useBookmarkLoader } from '@cmp/useBookmarkLoader';
-import { FOLDER, EMITS, ARGS, GROUPING } from '@/constants';
+import { FOLDER, EMITS, ARGS, GROUPING, STORAGE_KEYS } from '@/constants';
 import emitter from '@cmp/eventBus';
 import { findNodeById } from '@utils/bookmarkGroups';
 
@@ -14,7 +14,7 @@ export function useBookmarkEvents() {
     const bookmarksStore = useBookmarksStore();
     const { getStoredBookmarkById, deleteLocalStoreImages } = useBookmarkOps();
     const { buildRootFolder, updateAccordionModel } = useAccordionSync();
-    const { update } = useBookmarkLoader();
+    const { getBookmarks: reloadBookmarks, update } = useBookmarkLoader();
 
     function collectLeafIds(node: BookmarkNode): string[] {
         if (node.url) {
@@ -191,8 +191,64 @@ export function useBookmarkEvents() {
         bm.title = bookmarkResponse.title;
     }
 
+    // Single-flight bootstrap promise. When the root folder ("My Shortcuts Tab")
+    // is pasted/recreated, Chrome fires onCreated for the folder and every child
+    // in parallel — without this guard, each handler would race buildRootFolder()
+    // and reloadBookmarks(), potentially creating duplicate root folders or
+    // leaving the UI populated from an early/empty snapshot.
+    let bootstrapPromise: Promise<void> | null = null;
+
+    async function runBootstrap(): Promise<void> {
+        if (bootstrapPromise) {
+            return bootstrapPromise;
+        }
+
+        bootstrapPromise = (async () => {
+            try {
+                await buildRootFolder();
+                if (!bookmarksStore.rootId) return;
+
+                await reloadBookmarks();
+
+                if (bookmarksStore.accordionModel === null) {
+                    bookmarksStore.accordionModel = [0];
+                    await bookmarksStore.setSyncStorage({ [STORAGE_KEYS.ACCORDION]: [0] });
+                }
+            } finally {
+                bootstrapPromise = null;
+            }
+        })();
+
+        return bootstrapPromise;
+    }
+
     async function onCreated(event: string): Promise<void> {
         if (bookmarksStore.isImporting) return;
+
+        // While a bootstrap is in flight (root pasted back, children racing),
+        // funnel every onCreated through the same promise so we do exactly one
+        // buildRootFolder + reloadBookmarks for the whole burst.
+        if (bookmarksStore.rootId === null || bootstrapPromise) {
+            try {
+                await runBootstrap();
+            } catch (_error) {
+                return;
+            }
+
+            if (!bookmarksStore.rootId) return;
+
+            // The bootstrap's reloadBookmarks() snapshot may have been taken
+            // before Chrome finished materializing every child in a paste burst.
+            // Re-snapshot per-event so late-arriving children are captured. We
+            // intentionally skip isNewBookmarkInScope here: we just rebuilt the
+            // tree from scratch, so trust Chrome's current state.
+            await update();
+
+            await applyStoredColor(event);
+
+            emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.CREATED, id: event });
+            return;
+        }
 
         const bookmarkResponse = await bookmarksStore.getBookmarkById(event);
 

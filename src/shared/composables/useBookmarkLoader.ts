@@ -66,11 +66,15 @@ export function useBookmarkLoader() {
         bookmarksStore.rootId = rootId as string | null;
 
         try {
+            await bookmarksStore.loadGroupIds();
+            await bookmarksStore.migrateLegacyGroupFolders();
+
             const tree = await bookmarksStore.getColorizedBookmarks(rootId as string);
             const rootChildren = tree[0]?.children ?? [];
 
             bookmarksStore.bookmarks = rootChildren as BookmarkNode[];
 
+            await bookmarksStore.cleanupGroupIds();
             await runCleanup();
         } catch (_error) {
             bookmarksStore.bookmarks = [];

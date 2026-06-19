@@ -67,20 +67,39 @@
                 :list="list"
                 :size="'x-small'"
                 @toggle="onToggle($event)"
+                @rename="showRenameDialog = true"
                 @delete="onUngroup()" />
         </div>
+        <span
+            v-if="!props.popup"
+            class="bookmark-title-container">{{ displayTitle }}</span>
     </span>
+    <Teleport to="body"
+        v-if="!props.popup && showRenameDialog">
+        <v-row justify="center">
+            <v-dialog
+                v-model="showRenameDialog"
+                persistent
+                width="450">
+                <BookmarkGroupRename
+                    :value="bookmark.title"
+                    @confirm="onRenameConfirm($event)"
+                    @cancel="showRenameDialog = false" />
+            </v-dialog>
+        </v-row>
+    </Teleport>
 </template>
 
 <script setup lang="ts">
-    import { mdiUngroup } from '@mdi/js';
+    import { mdiRename, mdiUngroup } from '@mdi/js';
     import {
         computed, onMounted, onUnmounted, ref, useTemplateRef, watch,
     } from 'vue';
-    import { EMITS } from '@/constants';
+    import { EMITS, GROUPING } from '@/constants';
     import type { BookmarkNode, DragEventInfo, FoldoutListItem } from '@/types/bookmark';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
+    import BookmarkGroupRename from '@/components/forms/BookmarkGroupRename.vue';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import BookmarkGroupPopupItem from '@/components/bookmarks/sharedComponents/BookmarkGroupPopupItem.vue';
     import draggable from 'vuedraggable';
@@ -122,11 +141,30 @@
 
     const list = ref<FoldoutListItem[]>([
         {
+            title: 'Rename Group',
+            icon: mdiRename,
+            event: EMITS.RENAME,
+        },
+        {
             title: 'Ungroup',
             icon: mdiUngroup,
             event: EMITS.DELETE,
         },
     ]);
+
+    const showRenameDialog = ref(false);
+
+    const displayTitle = computed(() => {
+        const t = (props.bookmark.title ?? '').trim();
+        return t.length ? t : GROUPING.DEFAULT_NAME;
+    });
+
+    async function onRenameConfirm(name: string): Promise<void> {
+        showRenameDialog.value = false;
+        await bookmarksStore.renameBookmarkGroup(props.bookmark.id, name);
+        // The new title is picked up via the chrome.bookmarks.onChanged
+        // listener, which refreshes the in-memory tree.
+    }
 
     const previewItems = computed(() => getGroupPreviewItems(props.bookmark));
 
@@ -394,6 +432,31 @@
             padding: 7.41%;
             border-radius: 12.96%;
         }
+    }
+
+    .bookmark-title-container {
+        display: inline-block;
+        margin: 15px 0 0;
+        max-width: 100%;
+        overflow: hidden;
+        padding-bottom: 0;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        width: 100%;
+        color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
+    }
+
+    .bookmark.icon-small .bookmark-title-container {
+        font-size: 10px;
+    }
+
+    .bookmark.icon-medium .bookmark-title-container {
+        font-size: 11px;
+    }
+
+    .bookmark.icon-large .bookmark-title-container {
+        font-size: 12px;
     }
 
     .bookmark-edit {

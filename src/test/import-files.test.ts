@@ -3,7 +3,7 @@ import { setActivePinia, createPinia } from 'pinia';
 import { useBookmarksStore } from '@stores/bookmarks';
 import type { BookmarkNode } from '@/types/bookmark';
 import { GROUPING } from '@/constants';
-import { findNodeById, isGroupName } from '@utils/bookmarkGroups';
+import { findNodeById, hasLegacyGroupPrefix } from '@utils/bookmarkGroups';
 import { chromeMock, fireCallback } from './mocks/chrome';
 
 // ---------------------------------------------------------------------------
@@ -116,9 +116,11 @@ const BOOKMARKS_WITH_GROUPS_FIXTURE = {
                     image: 'data:image/png;base64,slack-icon-data',
                 },
                 {
-                    // Group folder - no url, title starts with GROUPING.FOLDER_PREFIX
+                    // Group folder - no url, title starts with the legacy
+                    // group prefix. This mirrors what older export files look
+                    // like; new exports use the `isGroup: true` flag instead.
                     id: '602',
-                    title: `${GROUPING.FOLDER_PREFIX}abc123`,
+                    title: `${GROUPING.LEGACY_FOLDER_PREFIX}abc123`,
                     parentId: '600',
                     dateAdded: 1759914890401,
                     index: 1,
@@ -162,7 +164,7 @@ const BOOKMARKS_WITH_GROUPS_FIXTURE = {
             children: [
                 {
                     id: '701',
-                    title: `${GROUPING.FOLDER_PREFIX}def456`,
+                    title: `${GROUPING.LEGACY_FOLDER_PREFIX}def456`,
                     parentId: '700',
                     dateAdded: 1759914890500,
                     index: 0,
@@ -631,12 +633,12 @@ describe('Import/export with bookmark groups', () => {
     });
 
     describe('Import - recreation of group folders and their children', () => {
-        it('identifies group folders by their title prefix', () => {
-            const groupTitle = `${GROUPING.FOLDER_PREFIX}abc123`;
+        it('identifies legacy-prefixed group folders by their title prefix', () => {
+            const groupTitle = `${GROUPING.LEGACY_FOLDER_PREFIX}abc123`;
             const regularTitle = 'Regular Folder';
 
-            expect(isGroupName(groupTitle)).toBe(true);
-            expect(isGroupName(regularTitle)).toBe(false);
+            expect(hasLegacyGroupPrefix(groupTitle)).toBe(true);
+            expect(hasLegacyGroupPrefix(regularTitle)).toBe(false);
         });
 
         it('creates group folders and their child bookmarks during import', async () => {
@@ -644,7 +646,7 @@ describe('Import/export with bookmark groups', () => {
             const newWorkFolder = makeCreatedFolder('new-600', 'Work');
             const newGroupFolder = makeCreatedFolder(
                 'new-602',
-                `${GROUPING.FOLDER_PREFIX}abc123`,
+                `${GROUPING.LEGACY_FOLDER_PREFIX}abc123`,
                 'new-600',
             );
             const newSlack = makeCreatedBookmark('new-601', 'Slack', 'https://slack.com/', 'new-600');
@@ -685,7 +687,7 @@ describe('Import/export with bookmark groups', () => {
                         child.url,
                     );
                     createdBookmarks.push(created);
-                } else if (isGroupName(child.title)) {
+                } else if (hasLegacyGroupPrefix(child.title)) {
                     // Group folder
                     // eslint-disable-next-line no-await-in-loop
                     const createdGroup = await store.createBookmark(
@@ -728,7 +730,7 @@ describe('Import/export with bookmark groups', () => {
                 if (child.url && child.color) {
                     colorsMap[child.id] = child.color;
                 }
-                if (isGroupName(child.title)) {
+                if (hasLegacyGroupPrefix(child.title)) {
                     (child.children ?? []).forEach((groupChild) => {
                         if (groupChild.url && groupChild.color) {
                             colorsMap[groupChild.id] = groupChild.color;
@@ -759,7 +761,7 @@ describe('Import/export with bookmark groups', () => {
 
             // But group folder children do have urls
             const groupFolderChildren = directChildren
-                .filter((c) => isGroupName(c.title) && !c.url)
+                .filter((c) => hasLegacyGroupPrefix(c.title) && !c.url)
                 .flatMap((g) => g.children ?? []);
             const hasNestedUrl = groupFolderChildren.some((c) => c.url);
             expect(hasNestedUrl).toBe(true);
@@ -775,7 +777,7 @@ describe('Import/export with bookmark groups', () => {
             // Mimic the validation logic
             const directChildren = parsed.bookmarks.flatMap((e) => e.children ?? []);
             const groupFolderChildren = directChildren
-                .filter((child) => isGroupName(child.title ?? '') && !child.url)
+                .filter((child) => hasLegacyGroupPrefix(child.title ?? '') && !child.url)
                 .flatMap((group) => group.children ?? []);
             const allBookmarks = [...directChildren, ...groupFolderChildren];
 

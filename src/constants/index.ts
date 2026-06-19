@@ -53,8 +53,20 @@ export const TIMEOUTS = Object.freeze({
     DIALOG_CLOSE_MS: 1000,
 });
 
+export const STORAGE_KEYS = Object.freeze({
+    GROUP_IDS: 'groupIds',
+    FOLDER_COLORS: 'folderColors',
+    BOOKMARK_COLORS: 'bookmarkColors',
+    ACCORDION: 'accordion',
+});
+
 export const GROUPING = Object.freeze({
-    FOLDER_PREFIX: '__mst_group__:',
+    // Legacy prefix used by older versions to identify group folders by their
+    // Chrome bookmark title. Kept only for one-time migration of pre-existing
+    // groups and as a fallback when importing legacy export files. Runtime
+    // group identification now uses the STORAGE_KEYS.GROUP_IDS sync map.
+    LEGACY_FOLDER_PREFIX: '__mst_group__:',
+    DEFAULT_NAME: 'Group',
     MAX_ITEMS: 9,
     PREVIEW_COLUMNS: 3,
     PREVIEW_ITEMS: 9,

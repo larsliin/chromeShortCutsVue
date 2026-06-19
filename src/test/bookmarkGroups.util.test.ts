@@ -4,11 +4,11 @@ import type { BookmarkNode } from '@/types/bookmark';
 import {
     isGroupFolder,
     isBookmarkLink,
-    createGroupFolderTitle,
+    defaultGroupName,
+    hasLegacyGroupPrefix,
     getGroupPreviewItems,
     flattenBookmarkLinks,
     findNodeById,
-    isGroupName,
 } from '@utils/bookmarkGroups';
 
 // ---------------------------------------------------------------------------
@@ -30,12 +30,21 @@ function link(id: string, overrides: Partial<BookmarkNode> = {}): BookmarkNode {
     return node({ id, url: `https://${id}.com`, title: id, ...overrides });
 }
 
+// Group folders are now identified by ID through a groupIds lookup, not by
+// title prefix. Test helper creates the folder and exposes a matching map.
 function group(id: string, children: BookmarkNode[] = []): BookmarkNode {
     return node({
         id,
-        title: `${GROUPING.FOLDER_PREFIX}${id}`,
+        title: 'Group',
         children,
     });
+}
+
+function groupIdsFor(...ids: string[]): Record<string, true> {
+    return ids.reduce<Record<string, true>>((acc, id) => {
+        acc[id] = true;
+        return acc;
+    }, {});
 }
 
 function folder(id: string, children: BookmarkNode[] = []): BookmarkNode {
@@ -43,27 +52,31 @@ function folder(id: string, children: BookmarkNode[] = []): BookmarkNode {
 }
 
 // ---------------------------------------------------------------------------
-// isGroupFolder / isBookmarkLink / isGroupName
+// isGroupFolder / isBookmarkLink / hasLegacyGroupPrefix
 // ---------------------------------------------------------------------------
 
 describe('isGroupFolder', () => {
-    it('returns true for a folder whose title starts with the GROUPING prefix', () => {
-        expect(isGroupFolder(group('g1'))).toBe(true);
+    it('returns true for a folder whose id is registered in groupIds', () => {
+        expect(isGroupFolder(group('g1'), groupIdsFor('g1'))).toBe(true);
     });
 
-    it('returns false for a regular folder', () => {
-        expect(isGroupFolder(folder('f1'))).toBe(false);
+    it('returns false for a folder whose id is not in groupIds', () => {
+        expect(isGroupFolder(folder('f1'), groupIdsFor('g1'))).toBe(false);
     });
 
-    it('returns false for a link even if its title starts with the prefix', () => {
+    it('returns false for a link even if its id is in groupIds', () => {
         // A link must be excluded — only URL-less nodes are folders.
-        const fake = link('x', { title: `${GROUPING.FOLDER_PREFIX}fake` });
-        expect(isGroupFolder(fake)).toBe(false);
+        const fake = link('x');
+        expect(isGroupFolder(fake, groupIdsFor('x'))).toBe(false);
     });
 
-    it('returns false for a folder whose title does not start with the prefix', () => {
-        const f = node({ id: 'f', title: `prefix-${GROUPING.FOLDER_PREFIX}wrong` });
-        expect(isGroupFolder(f)).toBe(false);
+    it('returns false when groupIds is null or undefined', () => {
+        expect(isGroupFolder(group('g1'), null)).toBe(false);
+        expect(isGroupFolder(group('g1'), undefined)).toBe(false);
+    });
+
+    it('returns false for an empty groupIds map', () => {
+        expect(isGroupFolder(group('g1'), {})).toBe(false);
     });
 });
 
@@ -81,34 +94,30 @@ describe('isBookmarkLink', () => {
     });
 });
 
-describe('isGroupName', () => {
-    it('returns true when title starts with the GROUPING prefix', () => {
-        expect(isGroupName(`${GROUPING.FOLDER_PREFIX}abc`)).toBe(true);
+describe('hasLegacyGroupPrefix', () => {
+    it('returns true when title starts with the legacy prefix', () => {
+        expect(hasLegacyGroupPrefix(`${GROUPING.LEGACY_FOLDER_PREFIX}abc`)).toBe(true);
     });
 
     it('returns false otherwise', () => {
-        expect(isGroupName('My Folder')).toBe(false);
-        expect(isGroupName('')).toBe(false);
+        expect(hasLegacyGroupPrefix('My Folder')).toBe(false);
+        expect(hasLegacyGroupPrefix('')).toBe(false);
+        expect(hasLegacyGroupPrefix(null)).toBe(false);
+        expect(hasLegacyGroupPrefix(undefined)).toBe(false);
     });
 });
 
 // ---------------------------------------------------------------------------
-// createGroupFolderTitle
+// defaultGroupName
 // ---------------------------------------------------------------------------
 
-describe('createGroupFolderTitle', () => {
-    it('starts with the GROUPING prefix', () => {
-        expect(createGroupFolderTitle().startsWith(GROUPING.FOLDER_PREFIX)).toBe(true);
+describe('defaultGroupName', () => {
+    it('returns the GROUPING.DEFAULT_NAME constant', () => {
+        expect(defaultGroupName()).toBe(GROUPING.DEFAULT_NAME);
     });
 
-    it('produces a value isGroupName recognises', () => {
-        expect(isGroupName(createGroupFolderTitle())).toBe(true);
-    });
-
-    it('appends a non-empty suffix after the prefix', () => {
-        const title = createGroupFolderTitle();
-        const suffix = title.slice(GROUPING.FOLDER_PREFIX.length);
-        expect(suffix.length).toBeGreaterThan(0);
+    it('returns a non-empty string', () => {
+        expect(defaultGroupName().length).toBeGreaterThan(0);
     });
 });
 
@@ -135,7 +144,7 @@ describe('getGroupPreviewItems', () => {
     });
 
     it('returns an empty array when children is undefined', () => {
-        const g = node({ id: 'g', title: `${GROUPING.FOLDER_PREFIX}g` });
+        const g = node({ id: 'g', title: 'Group' });
         expect(getGroupPreviewItems(g)).toEqual([]);
     });
 });

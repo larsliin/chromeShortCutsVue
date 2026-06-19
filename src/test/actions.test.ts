@@ -241,7 +241,7 @@ describe('createBookmarkGroup', () => {
         const dragged = makeNode({ id: 'b1', parentId: 'f1', title: 'A' });
         const target = makeNode({ id: 'b2', parentId: 'f1', title: 'B' });
         const parent = makeFolder({ id: 'f1', title: 'Parent' });
-        const createdGroup = makeFolder({ id: 'g1', parentId: 'f1', title: '__mst_group__:k1' });
+        const createdGroup = makeFolder({ id: 'g1', parentId: 'f1', title: 'Group' });
 
         chromeMock.bookmarks.get.mockImplementation((id: string, cb: (result: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
             if (id === 'f1') cb([parent]);
@@ -258,11 +258,15 @@ describe('createBookmarkGroup', () => {
         expect(chromeMock.bookmarks.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 parentId: 'f1',
-                title: expect.stringContaining('__mst_group__:'),
+                title: 'Group',
                 index: target.index,
             }),
             expect.any(Function),
         );
+        // The new group's id is registered in the groupIds map.
+        expect(store.groupIds).toEqual({ g1: true });
+        // And persisted to chrome.storage.sync.
+        expect(chromeMock.storage.sync.set).toHaveBeenCalledWith({ groupIds: { g1: true } });
         expect(chromeMock.bookmarks.move).toHaveBeenCalledWith(
             'b2',
             { parentId: 'g1', index: 0 },
@@ -319,9 +323,11 @@ describe('createBookmarkGroup', () => {
         const target = makeNode({ id: 'b2', parentId: 'g1', title: 'B' });
         const groupParent = makeFolder({
             id: 'g1',
-            // Use the real prefix so isGroupFolder() returns true.
-            title: '__mst_group__:nested',
+            title: 'Group',
         });
+
+        // Register the parent in groupIds so isGroupFolder() returns true.
+        store.groupIds = { g1: true };
 
         chromeMock.bookmarks.get.mockImplementation((id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
             if (id === 'g1') cb([groupParent]);
@@ -340,10 +346,14 @@ describe('createBookmarkGroup', () => {
 // ---------------------------------------------------------------------------
 
 describe('addBookmarkToGroup', () => {
+    beforeEach(() => {
+        store.groupIds = { g1: true };
+    });
+
     it('moves a bookmark into a group when below max capacity', async () => {
         const groupFolder = makeFolder({
             id: 'g1',
-            title: '__mst_group__:a1',
+            title: 'Group',
             children: [
                 makeNode({ id: 'b1', parentId: 'g1' }),
             ],
@@ -373,7 +383,7 @@ describe('addBookmarkToGroup', () => {
 
         const groupFolder = makeFolder({
             id: 'g1',
-            title: '__mst_group__:a1',
+            title: 'Group',
             children: groupChildren,
         });
         const bookmark = makeNode({ id: 'new', parentId: 'f1' });
@@ -388,6 +398,8 @@ describe('addBookmarkToGroup', () => {
     });
 
     it('rejects when the target is a non-group folder', async () => {
+        // Not registered in groupIds, so isGroupFolder returns false.
+        store.groupIds = {};
         const regularFolder = makeFolder({ id: 'f1', title: 'Regular' });
         const bookmark = makeNode({ id: 'b1', parentId: 'fx' });
 
@@ -402,7 +414,7 @@ describe('addBookmarkToGroup', () => {
     });
 
     it('rejects when the bookmark being added is itself a folder', async () => {
-        const groupFolder = makeFolder({ id: 'g1', title: '__mst_group__:a', children: [] });
+        const groupFolder = makeFolder({ id: 'g1', title: 'Group', children: [] });
         const folderBeingDragged = makeFolder({ id: 'f1', title: 'Folder', parentId: 'root' });
 
         chromeMock.bookmarks.get.mockImplementation((id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
@@ -418,7 +430,7 @@ describe('addBookmarkToGroup', () => {
     it('is a no-op when the bookmark is already inside the target group', async () => {
         const groupFolder = makeFolder({
             id: 'g1',
-            title: '__mst_group__:a',
+            title: 'Group',
             children: [makeNode({ id: 'b1', parentId: 'g1' })],
         });
         // Critical: bookmark.parentId === groupFolderId triggers the early return.
@@ -439,10 +451,20 @@ describe('addBookmarkToGroup', () => {
 // ---------------------------------------------------------------------------
 
 describe('ungroupBookmarkGroup', () => {
+    beforeEach(() => {
+        store.groupIds = { g1: true };
+        // persistGroupIds() will call chrome.storage.sync.remove when the
+        // groupIds map ends up empty; make sure the callback fires so the
+        // promise resolves.
+        chromeMock.storage.sync.remove.mockImplementation((_keys: string[], cb?: () => void) => {
+            if (cb) cb();
+        });
+    });
+
     it('moves grouped links back to parent and removes the group folder', async () => {
         const groupedFolder = makeFolder({
             id: 'g1',
-            title: '__mst_group__:a1',
+            title: 'Group',
             parentId: 'f1',
             index: 2,
             children: [
@@ -451,7 +473,7 @@ describe('ungroupBookmarkGroup', () => {
             ],
         });
 
-        chromeMock.bookmarks.get.mockImplementation((id: string, cb: (result: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
+        chromeMock.bookmarks.getSubTree.mockImplementation((id: string, cb: (result: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
             if (id === 'g1') cb([groupedFolder]);
         });
 
@@ -471,11 +493,16 @@ describe('ungroupBookmarkGroup', () => {
             expect.any(Function),
         );
         expect(chromeMock.bookmarks.removeTree).toHaveBeenCalledWith('g1', expect.any(Function));
+        // The unregistered id is removed from the groupIds map.
+        expect(store.groupIds).toEqual({});
+        // And persisted (with the key deleted when the map is empty).
+        expect(chromeMock.storage.sync.remove).toHaveBeenCalled();
     });
 
     it('is a no-op when the target id is not actually a group folder', async () => {
+        store.groupIds = {};
         const regularFolder = makeFolder({ id: 'reg', title: 'Regular', parentId: 'root' });
-        chromeMock.bookmarks.get.mockImplementation((id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
+        chromeMock.bookmarks.getSubTree.mockImplementation((id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
             if (id === 'reg') cb([regularFolder]);
         });
 
@@ -487,11 +514,11 @@ describe('ungroupBookmarkGroup', () => {
     it('is a no-op when the group folder has no parentId (e.g. it has been detached)', async () => {
         const orphan = makeFolder({
             id: 'g1',
-            title: '__mst_group__:a',
+            title: 'Group',
             parentId: undefined,
             children: [makeNode({ id: 'b1' })],
         });
-        chromeMock.bookmarks.get.mockImplementation((id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
+        chromeMock.bookmarks.getSubTree.mockImplementation((id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
             if (id === 'g1') cb([orphan]);
         });
 
@@ -503,7 +530,7 @@ describe('ungroupBookmarkGroup', () => {
     it('only re-inserts link children, skipping any nested folder children defensively', async () => {
         const grouped = makeFolder({
             id: 'g1',
-            title: '__mst_group__:a',
+            title: 'Group',
             parentId: 'f1',
             index: 5,
             children: [
@@ -515,7 +542,7 @@ describe('ungroupBookmarkGroup', () => {
             ],
         });
 
-        chromeMock.bookmarks.get.mockImplementation((id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
+        chromeMock.bookmarks.getSubTree.mockImplementation((id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
             if (id === 'g1') cb([grouped]);
         });
         fireThreeArgCallback(chromeMock.bookmarks.move, []);
@@ -542,6 +569,103 @@ describe('ungroupBookmarkGroup', () => {
 });
 
 // ---------------------------------------------------------------------------
+// renameBookmarkGroup
+// ---------------------------------------------------------------------------
+
+describe('renameBookmarkGroup', () => {
+    beforeEach(() => {
+        store.groupIds = { g1: true };
+    });
+
+    it('updates the Chrome folder title when the id is a registered group', async () => {
+        const updated = makeFolder({ id: 'g1', title: 'My Stuff' });
+        fireThreeArgCallback(chromeMock.bookmarks.update, [updated]);
+
+        const result = await store.renameBookmarkGroup('g1', '  My Stuff  ');
+
+        expect(result?.title).toBe('My Stuff');
+        expect(chromeMock.bookmarks.update).toHaveBeenCalledWith(
+            'g1',
+            { title: 'My Stuff' },
+            expect.any(Function),
+        );
+    });
+
+    it('falls back to the default name when the input is empty', async () => {
+        const updated = makeFolder({ id: 'g1', title: 'Group' });
+        fireThreeArgCallback(chromeMock.bookmarks.update, [updated]);
+
+        await store.renameBookmarkGroup('g1', '   ');
+
+        expect(chromeMock.bookmarks.update).toHaveBeenCalledWith(
+            'g1',
+            { title: 'Group' },
+            expect.any(Function),
+        );
+    });
+
+    it('returns null and does not call Chrome when the id is not a registered group', async () => {
+        store.groupIds = {};
+        const result = await store.renameBookmarkGroup('not-a-group', 'Whatever');
+        expect(result).toBeNull();
+        expect(chromeMock.bookmarks.update).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// migrateLegacyGroupFolders
+// ---------------------------------------------------------------------------
+
+describe('migrateLegacyGroupFolders', () => {
+    it('registers legacy-prefixed folders in groupIds and renames them to the default name', async () => {
+        store.rootId = 'root';
+        const legacy = makeFolder({
+            id: 'leg1',
+            title: '__mst_group__:abc',
+            parentId: 'f1',
+        });
+        const regular = makeFolder({
+            id: 'reg',
+            title: 'Regular Folder',
+            parentId: 'f1',
+        });
+        const tree = makeTree([
+            { ...makeFolder({ id: 'f1', title: 'F1' }), children: [legacy, regular] },
+        ]);
+
+        fireCallback(chromeMock.bookmarks.getSubTree, [tree]);
+        fireThreeArgCallback(chromeMock.bookmarks.update, [makeFolder({ id: 'leg1', title: 'Group' })]);
+
+        await store.migrateLegacyGroupFolders();
+
+        expect(store.groupIds).toEqual({ leg1: true });
+        expect(chromeMock.bookmarks.update).toHaveBeenCalledWith(
+            'leg1',
+            { title: 'Group' },
+            expect.any(Function),
+        );
+        expect(chromeMock.storage.sync.set).toHaveBeenCalledWith({ groupIds: { leg1: true } });
+    });
+
+    it('is a no-op when no legacy folders are present', async () => {
+        store.rootId = 'root';
+        const tree = makeTree([makeFolder({ id: 'f1', title: 'F1' })]);
+        fireCallback(chromeMock.bookmarks.getSubTree, [tree]);
+
+        await store.migrateLegacyGroupFolders();
+
+        expect(chromeMock.bookmarks.update).not.toHaveBeenCalled();
+        expect(chromeMock.storage.sync.set).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when rootId is unset', async () => {
+        store.rootId = null;
+        await store.migrateLegacyGroupFolders();
+        expect(chromeMock.bookmarks.getSubTree).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
 // collapseEmptyGroups
 // Walks the in-memory tree and ungroups any group folder whose link children
 // have all been removed (e.g. after a bookmark is dragged out via the popup).
@@ -550,16 +674,17 @@ describe('ungroupBookmarkGroup', () => {
 describe('collapseEmptyGroups', () => {
     it('ungroups empty group folders and leaves populated ones alone', async () => {
         const emptyGroup = makeFolder({
-            id: 'g-empty', title: '__mst_group__:e', parentId: 'f1', index: 0, children: [],
+            id: 'g-empty', title: 'Group', parentId: 'f1', index: 0, children: [],
         });
         const fullGroup = makeFolder({
             id: 'g-full',
-            title: '__mst_group__:f',
+            title: 'Group',
             parentId: 'f1',
             index: 1,
             children: [makeNode({ id: 'b1', parentId: 'g-full' })],
         });
 
+        store.groupIds = { 'g-empty': true, 'g-full': true };
         store.bookmarks = [
             { ...makeFolder({ id: 'f1', title: 'F1' }), children: [emptyGroup, fullGroup] },
         ] as unknown as typeof store.bookmarks;
@@ -585,12 +710,13 @@ describe('collapseEmptyGroups', () => {
         // for collapse purposes.
         const stragglerGroup = makeFolder({
             id: 'g1',
-            title: '__mst_group__:s',
+            title: 'Group',
             parentId: 'f1',
             index: 0,
             children: [makeFolder({ id: 'sub', parentId: 'g1', title: 'sub' })],
         });
 
+        store.groupIds = { g1: true };
         store.bookmarks = [
             { ...makeFolder({ id: 'f1', title: 'F1' }), children: [stragglerGroup] },
         ] as unknown as typeof store.bookmarks;

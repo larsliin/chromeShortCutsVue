@@ -98,7 +98,9 @@ The project uses two testing layers to ensure reliability:
 | **moveBookmark / reorderBookmark** | Move bookmarks between folders or within a folder, asserting the Chrome destination payload |
 | **createBookmarkGroup** | Group-creation lifecycle: link-vs-folder constraints, same-id guard, mismatched-parent rejection, nested-group rejection |
 | **addBookmarkToGroup** | MAX_ITEMS cap, target-is-not-group rejection, dragged-is-folder rejection, no-op when already in the same group |
-| **ungroupBookmarkGroup** | Re-inserts group's link children at the original index then removes the group folder; no-op when target is not a group, missing parentId, or has non-link children |
+| **ungroupBookmarkGroup** | Re-inserts group's link children at the original index then removes the group folder; unregisters the id from the `groupIds` map; no-op when target is not a registered group, missing parentId, or has non-link children |
+| **renameBookmarkGroup** | Updates the Chrome folder title for a registered group id; trims input and falls back to the default name when empty; no-op (returns `null`) when the id is not in `groupIds` |
+| **migrateLegacyGroupFolders** | One-time migration: registers any folder whose title starts with the legacy `__mst_group__:` prefix in the `groupIds` map and renames it to the default name; no-op when no legacy folders are present or `rootId` is unset |
 | **collapseEmptyGroups** | Walks the in-memory tree and ungroups any group folder whose link children have all been removed, leaving populated groups alone; tolerates empty/null bookmarks |
 | **Storage wrappers** | Local and sync storage get/set/delete pass-throughs forward errors from `chrome.runtime.lastError` |
 
@@ -106,10 +108,10 @@ The project uses two testing layers to ensure reliability:
 
 | Test Group | Description |
 |---|---|
-| **isGroupFolder** | Identifies group folders by the `__mst_group__:` title prefix and the absence of a url; rejects links that mimic the prefix |
+| **isGroupFolder** | Identifies group folders by membership in the `groupIds` map and the absence of a url; rejects links even when their id is registered |
 | **isBookmarkLink** | Treats any node with a non-empty url as a link; rejects empty-string urls |
-| **isGroupName** | Pure title-prefix predicate for use in import/export validation |
-| **createGroupFolderTitle** | Generates a prefixed, recognisable group folder title |
+| **defaultGroupName** | Returns `GROUPING.DEFAULT_NAME` for new and rename-fallback paths |
+| **hasLegacyGroupPrefix** | Legacy-only predicate for detecting old `__mst_group__:` titles during import and migration |
 | **getGroupPreviewItems** | Caps preview to `GROUPING.PREVIEW_ITEMS`, drops non-link children, tolerates undefined children |
 | **flattenBookmarkLinks** | Recursively collects link descendants from nested folders and groups |
 | **findNodeById** | Locates nodes anywhere in the tree (including inside group folders); returns null when absent; stops at first match |

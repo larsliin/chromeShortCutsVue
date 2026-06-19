@@ -1,16 +1,22 @@
 import { GROUPING } from '@/constants';
 import type { BookmarkNode } from '@/types/bookmark';
 
-export function isGroupFolder(bookmark: BookmarkNode | chrome.bookmarks.BookmarkTreeNode): boolean {
-    return !bookmark.url && bookmark.title.startsWith(GROUPING.FOLDER_PREFIX);
+// A node is a bookmark group when it has no URL (is a folder) AND its ID is
+// registered in the groupIds map (loaded from chrome.storage.sync). Identity
+// is now by folder ID — group folders can carry any user-chosen title.
+export function isGroupFolder(
+    bookmark: BookmarkNode | chrome.bookmarks.BookmarkTreeNode,
+    groupIds: Record<string, true> | null | undefined,
+): boolean {
+    return !bookmark.url && !!groupIds && groupIds[bookmark.id] === true;
 }
 
 export function isBookmarkLink(bookmark: BookmarkNode | chrome.bookmarks.BookmarkTreeNode): boolean {
     return !!bookmark.url;
 }
 
-export function createGroupFolderTitle(): string {
-    return `${GROUPING.FOLDER_PREFIX}${Date.now().toString(36)}`;
+export function defaultGroupName(): string {
+    return GROUPING.DEFAULT_NAME;
 }
 
 export function getGroupPreviewItems(groupFolder: BookmarkNode): BookmarkNode[] {
@@ -47,6 +53,8 @@ export function findNodeById(nodes: BookmarkNode[], id: string): BookmarkNode | 
     }, null);
 }
 
-export function isGroupName(title: string): boolean {
-    return title.startsWith(GROUPING.FOLDER_PREFIX);
+// Legacy helper retained only for import-time fallback and migration. New
+// runtime code must use isGroupFolder(node, groupIds) instead.
+export function hasLegacyGroupPrefix(title: string | undefined | null): boolean {
+    return !!title && title.startsWith(GROUPING.LEGACY_FOLDER_PREFIX);
 }

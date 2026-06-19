@@ -34,7 +34,7 @@ function makeFolder(id: string, parentId: string, title = `Folder ${id}`, childr
 }
 
 function makeGroup(id: string, parentId: string, children: BookmarkNode[] = []): BookmarkNode {
-    return makeFolder(id, parentId, `${GROUPING.FOLDER_PREFIX}${id}`, children);
+    return makeFolder(id, parentId, 'Group', children);
 }
 
 function buildScene(opts: {
@@ -63,8 +63,15 @@ function buildScene(opts: {
         { ...parent, children: items } as BookmarkNode,
     ];
 
+    // groupIds maps every modelled group folder by id. The parent folder
+    // itself is included only when parentIsGroup is true.
+    const groupIds: Record<string, true> = { g1: true };
+    if (opts.parentIsGroup) {
+        groupIds[parentId] = true;
+    }
+
     return {
-        parent, b1, b2, g1, items, storeBookmarks,
+        parent, b1, b2, g1, items, storeBookmarks, groupIds,
     };
 }
 
@@ -81,6 +88,7 @@ const baseArgs = (
         parentFolder: scene.parent,
         storeBookmarks: scene.storeBookmarks,
         groupMode: true,
+        groupIds: scene.groupIds,
         ...overrides,
     };
 };

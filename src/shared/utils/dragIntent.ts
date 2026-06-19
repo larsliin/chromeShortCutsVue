@@ -18,6 +18,7 @@ interface ComputeDropIntentArgs {
     parentFolder: BookmarkNode;
     storeBookmarks: BookmarkNode[];
     groupMode: boolean;
+    groupIds: Record<string, true>;
 }
 
 // Pure derivation of a drag-and-drop intent. Returns the intent that the
@@ -31,6 +32,7 @@ export function computeDropIntent({
     parentFolder,
     storeBookmarks,
     groupMode,
+    groupIds,
 }: ComputeDropIntentArgs): DropIntent | null {
     if (!groupMode) {
         return null;
@@ -51,13 +53,13 @@ export function computeDropIntent({
         && isBookmarkLink(related)
         && dragged.parentId === parentFolder.id
         && related.parentId === parentFolder.id
-        && !isGroupFolder(parentFolder);
+        && !isGroupFolder(parentFolder, groupIds);
 
     if (canCreateGroup) {
         return { type: 'create', targetId: related.id };
     }
 
-    const canAddToGroup = isBookmarkLink(dragged) && isGroupFolder(related);
+    const canAddToGroup = isBookmarkLink(dragged) && isGroupFolder(related, groupIds);
 
     if (canAddToGroup) {
         const groupedNode = findNodeById(storeBookmarks, related.id);

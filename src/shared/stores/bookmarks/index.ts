@@ -11,6 +11,7 @@ export interface BookmarksState {
     bookmarksBarId: string | null;
     statistics: BookmarkStat[] | null;
     icons: Record<string, string> | null;
+    groupIds: Record<string, true>;
 
     // --- UI state ---
     accordionModel: number[] | null;
@@ -46,6 +47,7 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         bookmarksBarId: null,
         statistics: null,
         icons: null,
+        groupIds: {},
 
         // --- UI state ---
         accordionModel: null,

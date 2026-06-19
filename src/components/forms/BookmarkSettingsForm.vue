@@ -202,13 +202,14 @@
     } from 'vue';
     // eslint-disable-next-line
     import useVuelidate from '@vuelidate/core';
-    import { EMITS, FILE_NAMES, ICON_SIZE } from '@/constants';
+    import { EMITS, FILE_NAMES, GROUPING, ICON_SIZE } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import emitter from '@cmp/eventBus';
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
     import { useAccordionSync } from '@cmp/useAccordionSync';
+    import { useBookmarkLoader } from '@cmp/useBookmarkLoader';
     import type { BookmarkNode, FolderColorItem, ImportFileData } from '@/types/bookmark';
-    import { findNodeById, isGroupName } from '@utils/bookmarkGroups';
+    import { findNodeById, hasLegacyGroupPrefix } from '@utils/bookmarkGroups';
     import {
         isImportBookmarksFileValid,
         isImportIconsFileValid,
@@ -220,6 +221,7 @@
 
     const { deleteLocalStoreImages, deleteAllBookmarks, getBookmarksAsFlatArr } = useBookmarkOps();
     const { buildRootFolder } = useAccordionSync();
+    const bookmarkLoader = useBookmarkLoader();
 
     const emits = defineEmits([EMITS.CLOSE, EMITS.SAVE]);
 
@@ -335,6 +337,21 @@
             }
         });
 
+        // Tag every node whose id is in groupIds with isGroup so the importer
+        // can recreate the group registration without the legacy title prefix.
+        const { groupIds } = bookmarksStore;
+        function tagGroups(nodes: BookmarkNode[]): void {
+            nodes.forEach((node) => {
+                if (groupIds[node.id]) {
+                    node.isGroup = true;
+                }
+                if (node.children?.length) {
+                    tagGroups(node.children);
+                }
+            });
+        }
+        tagGroups(exportBookmarks);
+
         // run exporter
         const result = { bookmarks: exportBookmarks, type: 'bookmarks' };
         const jsonString = JSON.stringify(result);
@@ -348,41 +365,30 @@
     const colorsFoldersMap: Record<string, string> = {};
     const colorsBookmarksMap: Record<string, string> = {};
 
-    // update global store bookmarks obj with the latest imported bookmarks
+    // Persist imported colors to sync storage AND reload the bookmark tree
+    // using the same loader that runs on page refresh. This ensures groupIds
+    // and persisted colors are loaded BEFORE bookmarks are assigned, so
+    // BookmarkGroupCard sees populated children and correct groupIds on first
+    // mount after import — which is what was causing the missing in-group
+    // preview icons until a manual refresh.
     async function updateBookmarksStore(): Promise<void> {
-        const bookmarksResponse = await bookmarksStore.getBookmarks(bookmarksStore.rootId as string);
+        const persistPromises: Promise<unknown>[] = [];
 
-        const rawBmChildren = bookmarksResponse[0].children ?? [];
-        bookmarksStore.bookmarks = rawBmChildren as BookmarkNode[];
-
-        Object.entries(colorsFoldersMap).forEach((item) => {
-            const bookmarkFolder = (bookmarksStore.bookmarks ?? []).find((e) => e.id === item[0]);
-            if (bookmarkFolder) {
-                const [, bookmarkFolderColor] = item;
-                bookmarkFolder.color = bookmarkFolderColor;
-            }
-        });
-
-        // save imported colors
-        if (colorsFoldersMap && Object.keys(colorsFoldersMap).length) {
-            bookmarksStore.setSyncStorage({ folderColors: colorsFoldersMap });
+        if (Object.keys(colorsFoldersMap).length) {
+            persistPromises.push(
+                bookmarksStore.setSyncStorage({ folderColors: { ...colorsFoldersMap } }),
+            );
         }
 
-        //
-        // inject imported colors into new bookmarks object
-        Object.entries(colorsBookmarksMap).forEach((item) => {
-            const bookmarksFlatArr = bookmarksStore.flatBookmarks;
-            const bookmark = bookmarksFlatArr.find((e) => e?.id === item[0]);
-            if (bookmark) {
-                const [, bookmarkColor] = item;
-                bookmark.color = bookmarkColor;
-            }
-        });
-
-        // save imported colors
-        if (colorsBookmarksMap && Object.keys(colorsBookmarksMap).length) {
-            bookmarksStore.setSyncStorage({ bookmarkColors: colorsBookmarksMap });
+        if (Object.keys(colorsBookmarksMap).length) {
+            persistPromises.push(
+                bookmarksStore.setSyncStorage({ bookmarkColors: { ...colorsBookmarksMap } }),
+            );
         }
+
+        await Promise.all(persistPromises);
+
+        await bookmarkLoader.getBookmarks();
 
         emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'import', id: '' });
     }
@@ -432,6 +438,10 @@
         const createdBookmarks: chrome.bookmarks.BookmarkTreeNode[] = [];
         const imagesArr: (string | null | undefined)[] = [];
 
+        // Newly-created group folder IDs to register in bookmarksStore.groupIds
+        // once the whole import is done (single persistence at the end).
+        const newGroupIds: string[] = [];
+
         // Helper to create group folder children sequentially
         async function createGroupChildren(
             groupFolderId: string,
@@ -457,6 +467,13 @@
             );
         }
 
+        // Detect groups via the explicit isGroup flag, with a legacy fallback
+        // for older export files that still relied on the title prefix.
+        function isImportedGroup(child: BookmarkNode): boolean {
+            if (child.url) return false;
+            return child.isGroup === true || hasLegacyGroupPrefix(child.title);
+        }
+
         // Process each top-level folder's children sequentially to preserve order
         await Promise.all(bookmarks.map(async (topLevelFolder) => {
             const newParentId = foldersMap[topLevelFolder.id];
@@ -478,12 +495,22 @@
                         if (child.color) {
                             colorsBookmarksMap[created.id] = child.color;
                         }
-                    } else if (isGroupName(child.title)) {
-                        // Group folder - create the group folder first, then its children
+                    } else if (isImportedGroup(child)) {
+                        // Group folder - create the group folder first, then its children.
+                        // Prefer the imported title; fall back to the default name when
+                        // missing, empty, or still carrying the legacy prefix.
+                        const importedTitle = (child.title ?? '').trim();
+                        const cleanTitle = (importedTitle.length === 0
+                            || hasLegacyGroupPrefix(importedTitle))
+                            ? GROUPING.DEFAULT_NAME
+                            : importedTitle;
+
                         const createdGroupFolder = await bookmarksStore.createBookmark(
                             newParentId,
-                            child.title,
+                            cleanTitle,
                         );
+
+                        newGroupIds.push(createdGroupFolder.id);
 
                         await createGroupChildren(
                             createdGroupFolder.id,
@@ -496,6 +523,16 @@
             );
         }));
 
+        // Register all imported groups in groupIds and persist once.
+        if (newGroupIds.length) {
+            const merged: Record<string, true> = { ...bookmarksStore.groupIds };
+            newGroupIds.forEach((id) => {
+                merged[id] = true;
+            });
+            bookmarksStore.groupIds = merged;
+            await bookmarksStore.persistGroupIds();
+        }
+
         bookmarksStore.accordionModel = [0];
         await bookmarksStore.setSyncStorage({
             accordion: [...bookmarksStore.accordionModel],
@@ -507,6 +544,11 @@
     // import bookmarks
     async function onBookmarksImportReaderLoad(event: ProgressEvent<FileReader>): Promise<void> {
         bookmarksStore.isImporting = true;
+
+        // Reset accumulator maps so entries from a previous import in the same
+        // session don't leak into this run.
+        Object.keys(colorsFoldersMap).forEach((key) => { delete colorsFoldersMap[key]; });
+        Object.keys(colorsBookmarksMap).forEach((key) => { delete colorsBookmarksMap[key]; });
 
         await deleteLocalStoreImages();
         await deleteAllBookmarks();
