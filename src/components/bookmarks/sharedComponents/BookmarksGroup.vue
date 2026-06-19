@@ -84,7 +84,7 @@
                     popup
                     @open="closeGroupPopup()"
                     @[EMITS.DRAG_START]="popupDragging = true"
-                    @popupDragEnd="popupDragging = false"
+                    @[EMITS.POPUP_DRAG_END]="popupDragging = false"
                     @[EMITS.DRAG_OUT_OF_GROUP]="onPopupDragOutOfGroup($event)" />
             </div>
         </div>
@@ -93,8 +93,9 @@
 
 <script setup lang="ts">
     import {
-        computed, nextTick, ref,
+        computed, nextTick, onUnmounted, ref,
     } from 'vue';
+    import { useDragCursor } from '@cmp/useDragCursor';
     import type { BookmarkNode, DragEventInfo } from '@/types/bookmark';
     import { GROUPING, EMITS } from '@/constants';
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
@@ -140,17 +141,21 @@
     const popupOrigin = ref<{ left: number; top: number; width: number; height: number } | null>(null);
     const popupTargetSize = 360;
     const popupAnimationMs = 280;
+    const popupSwallowClickMs = 300;
+
+    const dragCursor = useDragCursor();
+    const closePopupTimeoutId = ref<number | null>(null);
 
     function getInlineGroupRadius(): string {
         if (bookmarksStore.iconSize === 'small') {
-            return '5.36%';
+            return GROUPING.RADIUS_SMALL;
         }
 
         if (bookmarksStore.iconSize === 'large') {
-            return '12.96%';
+            return GROUPING.RADIUS_LARGE;
         }
 
-        return '11.11%';
+        return GROUPING.RADIUS_MEDIUM;
     }
 
     const renderItems = computed(() => props.bookmarks ?? []);
@@ -225,11 +230,16 @@
 
         popupState.value = 'closing';
 
-        window.setTimeout(() => {
+        if (closePopupTimeoutId.value !== null) {
+            window.clearTimeout(closePopupTimeoutId.value);
+        }
+
+        closePopupTimeoutId.value = window.setTimeout(() => {
             showGroupPopup.value = false;
             activeGroupId.value = '';
             popupOrigin.value = null;
             popupState.value = 'opening';
+            closePopupTimeoutId.value = null;
         }, popupAnimationMs);
     }
 
@@ -429,21 +439,34 @@
     }): Promise<void> {
         popupDragging.value = false;
 
-        const parentSubtree = await bookmarksStore.getBookmarks(payload.groupParentId);
-        const parentChildren = (parentSubtree?.[0]?.children ?? []) as BookmarkNode[];
-        const targetIndex = parentChildren.length;
+        try {
+            const parentSubtree = await bookmarksStore.getBookmarks(payload.groupParentId);
+            const parentChildren = (parentSubtree?.[0]?.children ?? []) as BookmarkNode[];
+            const targetIndex = parentChildren.length;
 
-        await bookmarksStore.moveBookmark(payload.bookmarkId, {
-            parentId: payload.groupParentId,
-            index: targetIndex,
-        });
+            await bookmarksStore.moveBookmark(payload.bookmarkId, {
+                parentId: payload.groupParentId,
+                index: targetIndex,
+            });
 
-        const groupSubtree = await bookmarksStore.getBookmarks(payload.groupId);
-        const remainingChildren = (groupSubtree?.[0]?.children ?? [])
-            .filter((child) => !!child.url);
+            // The Chrome event pipeline (useBookmarkEvents.onRemoved ->
+            // collapseEmptyGroups) may have already removed the now-empty
+            // group folder by the time we get here, so probe before removing
+            // to avoid an unhandled rejection that leaves the popup open.
+            const stillExists = await bookmarksStore.getBookmarkByIdOrNull(payload.groupId);
+            if (stillExists) {
+                const groupSubtree = await bookmarksStore.getBookmarks(payload.groupId);
+                const remainingChildren = (groupSubtree?.[0]?.children ?? [])
+                    .filter((child) => !!child.url);
 
-        if (remainingChildren.length === 0) {
-            await bookmarksStore.removeBookmarkFolder(payload.groupId);
+                if (remainingChildren.length === 0) {
+                    await bookmarksStore.removeBookmarkFolder(payload.groupId);
+                }
+            }
+        } catch (_error) {
+            // Swallow — the group/parent may have been mutated by another
+            // event handler. We still want to close the popup cleanly.
+        } finally {
             closeGroupPopup();
         }
     }
@@ -465,6 +488,14 @@
     }
 
     // when bookmark is moved to a different folder/parentId
+    //
+    // NOTE: the auto-group branches (canCreateGroup / addToGroup based on
+    // adjacent renderItems) were removed because @add fires BEFORE the
+    // chrome move resolves — at that point parentId on the dragged
+    // bookmark still references the SOURCE folder, so the comparisons
+    // could never become true. Group creation / add-to-group is already
+    // handled at drag end (onDragEnd) via dropIntent, which carries the
+    // real source/target context.
     async function onDragAdd(event: DragEventInfo): Promise<void> {
         if (dropIntent.value || bookmarksStore.groupMode) {
             return;
@@ -473,33 +504,6 @@
         const bookmark = renderItems.value?.[event.newIndex];
 
         if (!bookmark) {
-            return;
-        }
-
-        const droppedOn = renderItems.value?.[event.newIndex + 1]
-            ?? renderItems.value?.[event.newIndex - 1];
-
-        const canCreateGroup = !!droppedOn
-            && isBookmarkLink(bookmark)
-            && isBookmarkLink(droppedOn)
-            && bookmark.parentId === props.folder.id
-            && droppedOn.parentId === props.folder.id
-            && !isGroupFolder(props.folder);
-
-        if (canCreateGroup) {
-            await bookmarksStore.createBookmarkGroup(props.folder.id, bookmark.id, droppedOn.id);
-            return;
-        }
-
-        if (isGroupFolder(droppedOn as BookmarkNode) && isBookmarkLink(bookmark)) {
-            const groupedNode = findNodeById(bookmarksStore.bookmarks ?? [], droppedOn.id);
-            const groupedCount = groupedNode?.children?.filter((item) => !!item.url).length ?? 0;
-
-            if (groupedCount >= GROUPING.MAX_ITEMS) {
-                return;
-            }
-
-            await bookmarksStore.addBookmarkToGroup(droppedOn.id, bookmark.id);
             return;
         }
 
@@ -539,29 +543,24 @@
 
         dragging.value = true;
 
-        document.body.classList.add('cursor-pointer');
-        document.addEventListener('pointermove', onPointerMoveDuringDrag, true);
+        dragCursor.start(onPointerMoveDuringDrag);
 
         emitter.emit(EMITS.DRAG_START);
     }
 
     async function onDragEnd() {
-        document.body.classList.remove('cursor-pointer');
-        document.removeEventListener('pointermove', onPointerMoveDuringDrag, true);
+        dragCursor.stop();
 
         dragging.value = false;
         bookmarksStore.dragStart = false;
 
-        const swallowClick = (clickEvent: MouseEvent) => {
-            clickEvent.preventDefault();
-            clickEvent.stopPropagation();
-            clickEvent.stopImmediatePropagation();
-        };
-
-        document.addEventListener('click', swallowClick, { capture: true, once: true });
-        window.setTimeout(() => {
-            document.removeEventListener('click', swallowClick, { capture: true });
-        }, 300);
+        // Scope the click swallower to bookmark elements only — clicks
+        // elsewhere (toolbar, dialogs, anchors) should pass through.
+        dragCursor.swallowClicksFor(
+            (target) => target instanceof Element
+                && !!target.closest('[data-bookmark-id]'),
+            popupSwallowClickMs,
+        );
 
         try {
             if (bookmarksStore.groupMode && dropIntent.value && draggedBookmarkId.value) {
@@ -585,6 +584,13 @@
             resetDropIntent();
         }
     }
+
+    onUnmounted(() => {
+        if (closePopupTimeoutId.value !== null) {
+            window.clearTimeout(closePopupTimeoutId.value);
+            closePopupTimeoutId.value = null;
+        }
+    });
 </script>
 <style>
     .cursor-pointer,

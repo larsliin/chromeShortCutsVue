@@ -85,6 +85,7 @@
     import BookmarkGroupPopupItem from '@/components/bookmarks/sharedComponents/BookmarkGroupPopupItem.vue';
     import draggable from 'vuedraggable';
     import emitter from '@cmp/eventBus';
+    import { useDragCursor } from '@cmp/useDragCursor';
     import { getGroupPreviewItems } from '@utils/bookmarkGroups';
 
     interface Props {
@@ -102,6 +103,8 @@
         groupId: string;
         groupParentId: string;
     }
+
+    const EMPTY_BOOKMARKS: BookmarkNode[] = [];
 
     const props = defineProps<Props>();
 
@@ -132,12 +135,16 @@
     // renderItems = computed(() => props.bookmarks ?? []).
     // vuedraggable needs the same array reference between renders so its
     // in-place mutations propagate via Vue reactivity.
-    const popupRenderItems = computed(() => props.bookmark.children ?? []);
+    const popupRenderItems = computed(() => props.bookmark.children ?? EMPTY_BOOKMARKS);
 
     const popupDragGroup = { name: 'popup-bookmarks', pull: true, put: true };
     const draggedPopupBookmarkId = ref<string | null>(null);
     const popupDragging = ref(false);
     const popupGridRef = useTemplateRef<HTMLElement>('popupGridRef');
+
+    const dragCursor = useDragCursor();
+    const popupDragEndTimeoutId = ref<number | null>(null);
+    const popupDragEndDelayMs = 220;
 
     const imageMap = ref<Record<string, string>>({});
     const ready = ref(false);
@@ -170,7 +177,7 @@
 
         popupDragging.value = true;
         bookmarksStore.dragStart = true;
-        document.body.classList.add('cursor-pointer');
+        dragCursor.start();
         emitter.emit(EMITS.DRAG_START);
         emits(EMITS.DRAG_START);
     }
@@ -198,7 +205,7 @@
         from?: HTMLElement;
         to?: HTMLElement;
     }): Promise<void> {
-        document.body.classList.remove('cursor-pointer');
+        dragCursor.stop();
         bookmarksStore.dragStart = false;
 
         const draggedId = draggedPopupBookmarkId.value;
@@ -220,13 +227,17 @@
             }
         } finally {
             draggedPopupBookmarkId.value = null;
-            emits('popupDragEnd');
+            emits(EMITS.POPUP_DRAG_END);
             // keep popupDragging true through the SortableJS animation so
             // the .dragging class continues suppressing hover transforms while
             // items slide into their new positions
-            window.setTimeout(() => {
+            if (popupDragEndTimeoutId.value !== null) {
+                window.clearTimeout(popupDragEndTimeoutId.value);
+            }
+            popupDragEndTimeoutId.value = window.setTimeout(() => {
                 popupDragging.value = false;
-            }, 220);
+                popupDragEndTimeoutId.value = null;
+            }, popupDragEndDelayMs);
         }
     }
 
@@ -271,6 +282,11 @@
 
     onUnmounted(() => {
         emitter.off(EMITS.IMAGES_IMPORT, onImagesImportHandler);
+
+        if (popupDragEndTimeoutId.value !== null) {
+            window.clearTimeout(popupDragEndTimeoutId.value);
+            popupDragEndTimeoutId.value = null;
+        }
     });
 </script>
 

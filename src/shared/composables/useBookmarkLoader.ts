@@ -1,5 +1,4 @@
-// Initial loading and refresh of the bookmarks tree, plus cleanup of
-// orphaned local-storage entries.
+import { watch } from 'vue';
 import type { BookmarkNode } from '@/types/bookmark';
 import { useBookmarksStore } from '@stores/bookmarks';
 import { useBookmarkOps } from '@cmp/useBookmarkOps';
@@ -9,19 +8,38 @@ export function useBookmarkLoader() {
     const bookmarksStore = useBookmarksStore();
     const { getBookmarksAsFlatArr } = useBookmarkOps();
 
-    async function update(): Promise<void> {
-        try {
-            const rootId = await bookmarksStore.getLocalStorage(FOLDER.ROOT.name);
-            const tree = await bookmarksStore.getColorizedBookmarks(rootId as string);
+    let pendingRefresh = false;
 
-            const rootChildren = tree[0].children ?? [];
-            bookmarksStore.bookmarks = rootChildren as BookmarkNode[];
-        } finally {
-            bookmarksStore.dragStart = false;
-        }
+    async function performUpdate(): Promise<void> {
+        const rootId = await bookmarksStore.getLocalStorage(FOLDER.ROOT.name);
+        const tree = await bookmarksStore.getColorizedBookmarks(rootId as string);
+
+        const rootChildren = tree[0].children ?? [];
+        bookmarksStore.bookmarks = rootChildren as BookmarkNode[];
     }
 
-    // Remove local-storage entries whose IDs no longer exist in Chrome bookmarks
+    // Skip refreshes while a drag is in progress — swapping bookmarksStore.bookmarks
+    // mid-drag swaps vuedraggable's source array and causes visual glitches. Flag a
+    // pending refresh so the final Chrome state is captured once the drag ends.
+    async function update(): Promise<void> {
+        if (bookmarksStore.dragStart) {
+            pendingRefresh = true;
+            return;
+        }
+
+        await performUpdate();
+    }
+
+    watch(
+        () => bookmarksStore.dragStart,
+        async (dragging) => {
+            if (!dragging && pendingRefresh) {
+                pendingRefresh = false;
+                await performUpdate();
+            }
+        },
+    );
+
     async function runCleanup(): Promise<void> {
         const localItems = await bookmarksStore.getLocalStorageAll() as Record<
             string,
