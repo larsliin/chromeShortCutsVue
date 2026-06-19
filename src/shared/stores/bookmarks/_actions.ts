@@ -203,12 +203,13 @@ export default {
             .filter((child) => isGroupFolder(child));
 
         const groupStates = await Promise.all(groupChildren.map(async (groupChild) => {
-            const groupFromApi = await chromeApi.getBookmarkById(groupChild.id);
-            const linksInsideGroup = (groupFromApi.children ?? []).filter((item) => !!item.url);
+            const subTree = await chromeApi.getBookmarkSubTree(groupChild.id);
+            const groupFromApi = subTree?.[0];
+            const linksInsideGroup = (groupFromApi?.children ?? []).filter((item) => !!item.url);
 
             return {
                 groupId: groupChild.id,
-                shouldUngroup: linksInsideGroup.length <= 1,
+                shouldUngroup: linksInsideGroup.length === 0,
             };
         }));
 

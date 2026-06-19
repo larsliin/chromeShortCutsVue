@@ -71,7 +71,7 @@
             tabindex="0"
             aria-modal="true"
             @keydown.esc="onOverlayEscape()"
-            @click.self="onOverlayClickSelf()">
+            @mousedown.self="onOverlayClickSelf()">
             <div
                 class="group-popup-wrapper"
                 :class="popupState"
