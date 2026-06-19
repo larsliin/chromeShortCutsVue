@@ -4,7 +4,7 @@
 
 ## Defaults
 
-- **Agent**: Use the **chrome-extension-vue-expert** custom agent by default for all tasks unless the user explicitly requests a different agent, or another custom agent in `.github/agents/` is a better fit for the task (see _Custom Agents_ below).
+- **Agent**: The **chrome-extension-vue-expert** custom agent is specifically for **code changes** — **always** use it whenever a task involves writing, editing, refactoring, or debugging code in this repository. For non-code tasks (pure design audits, feature planning), pick the matching custom agent from `.github/agents/` (see _Custom Agents_ below). Only deviate if the user explicitly requests a different agent.
 - **Model**: Use **Claude Opus 4.5** by default unless the user explicitly requests a different model.
 
 ---
@@ -13,11 +13,11 @@
 
 The repository defines specialized custom agents in `.github/agents/`. Pick the agent whose scope best matches the task. If multiple agents match, prefer the most specific one. When in doubt, fall back to the default `chrome-extension-vue-expert`.
 
-### `chrome-extension-vue-expert` (default)
+### `chrome-extension-vue-expert` (default for all code changes)
 
 **File**: `.github/agents/chrome-extension-vue-expert.agent.md`
 
-**Use when** the task involves implementing, refactoring, debugging, or designing anything inside this Chrome Extension — Vue 3 components, Pinia stores, Vuetify usage, Chrome Bookmarks/Storage APIs, MV3 service worker behaviour, CRXJS/Vite build, or general UI/UX work on extension surfaces.
+**Always use this agent for code changes.** Any task that writes, edits, refactors, debugs, or otherwise modifies code in this repository — Vue 3 components, Pinia stores, Vuetify usage, Chrome Bookmarks/Storage APIs, MV3 service worker behaviour, CRXJS/Vite build, styles, or general UI/UX implementation work — must go through this agent.
 
 **Trigger examples:**
 - "help me build this Chrome extension feature"
@@ -73,9 +73,9 @@ The repository defines specialized custom agents in `.github/agents/`. Pick the 
 
 | Task shape | Agent |
 |------------|-------|
-| Build, refactor, debug, or implement anything in `src/` or `background.js` | `chrome-extension-vue-expert` |
-| Pure visual / accessibility / UX audit with feedback as deliverable | `ui-design-specialist` |
-| Plan a new feature or rigorously evaluate feature completeness | `frontend-feature-architect` |
+| **Any code change** in `src/`, `background.js`, or anywhere else in the repo | **`chrome-extension-vue-expert`** (always) |
+| Pure visual / accessibility / UX audit with feedback as deliverable (no code) | `ui-design-specialist` |
+| Plan a new feature or rigorously evaluate feature completeness (no code) | `frontend-feature-architect` |
 | Anything else, or ambiguous | `chrome-extension-vue-expert` (default) |
 
 ---

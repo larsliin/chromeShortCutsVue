@@ -482,7 +482,12 @@
             height: 100%;
             border-radius: var(--popup-group-radius, 14%);
             box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+            background-color: color-mix(in srgb, var(--blue-lighter) 85%, transparent);
             transition: border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+
+            &.dark {
+                background-color: color-mix(in srgb, var(--darkmode-200) 85%, transparent);
+            }
             // popup padding is pinned here so it is consistent across all
             // icon sizes — the per-size .bookmark.icon-* rules would
             // otherwise produce too little padding for small icons.
