@@ -1,24 +1,53 @@
 <template>
     <div class="toolbar d-flex" v-if="ready">
         <div>
-            <v-btn
-                class="toolbar-add-button"
-                :icon="mdiStar"
-                @click="dialogAddOpen = true" />
+            <v-tooltip
+                location="top center"
+                origin="auto"
+                open-delay="600"
+                transition="none"
+                text="Add bookmark">
+                <template v-slot:activator="{ props: tooltipProps }">
+                    <v-btn
+                        class="toolbar-add-button"
+                        :icon="mdiStar"
+                        v-bind="tooltipProps"
+                        @click="dialogAddOpen = true" />
+                </template>
+            </v-tooltip>
             <BookmarksFilter
                 class="toolbar-filter-input" />
         </div>
         <div>
-            <v-btn
-                class="toolbar-group-button"
-                :class="{ active: bookmarksStore.groupMode }"
-                :icon="mdiFolderMultiple"
-                :title="bookmarksStore.groupMode ? 'Disable group mode' : 'Enable group mode'"
-                @click="onToggleGroupMode()" />
-            <v-btn
-                class="toolbar-settings-button"
-                :icon="mdiWrench"
-                @click="dialogSettings = true" />
+            <v-tooltip
+                location="top center"
+                origin="auto"
+                open-delay="600"
+                transition="none"
+                :text="bookmarksStore.groupMode ? 'Disable group mode' : 'Enable group mode'">
+                <template v-slot:activator="{ props: tooltipProps }">
+                    <v-btn
+                        class="toolbar-group-button"
+                        :class="{ active: bookmarksStore.groupMode }"
+                        :icon="mdiFolderMultiple"
+                        v-bind="tooltipProps"
+                        @click="onToggleGroupMode()" />
+                </template>
+            </v-tooltip>
+            <v-tooltip
+                location="top center"
+                origin="auto"
+                open-delay="600"
+                transition="none"
+                text="Settings">
+                <template v-slot:activator="{ props: tooltipProps }">
+                    <v-btn
+                        class="toolbar-settings-button"
+                        :icon="mdiWrench"
+                        v-bind="tooltipProps"
+                        @click="dialogSettings = true" />
+                </template>
+            </v-tooltip>
         </div>
     </div>
     <Teleport to="body"
