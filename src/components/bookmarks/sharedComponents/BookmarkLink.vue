@@ -90,7 +90,7 @@
     import BookmarkColorEdit
         from '@/components/forms/BookmarkColorEdit.vue';
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
-    import { uniq } from 'lodash';
+    import { useOpenBookmark } from '@cmp/useOpenBookmark';
 
     const utils = useBookmarkOps();
 
@@ -141,59 +141,15 @@
         emits(EMITS.UPDATE);
     }
 
-    function onClick(event: MouseEvent | KeyboardEvent): void {
-        event.preventDefault();
+    const { open: openBookmark } = useOpenBookmark();
 
-        if ((event as PointerEvent).pointerId < 0 || !props.bookmark.url) {
+    function onClick(event: MouseEvent | KeyboardEvent): void {
+        if ((event as PointerEvent).pointerId < 0) {
+            event.preventDefault();
             return;
         }
 
-        if (!bookmarksStore.statistics) {
-            bookmarksStore.statistics = [];
-        }
-
-        const bookmarkStats = (bookmarksStore.statistics ?? [])
-            .find((item) => item.url === props.bookmark.url);
-
-        const bookmarkStatsIndex = (bookmarksStore.statistics ?? [])
-            .findIndex((item) => Object.values(item.id).includes(props.bookmark.id));
-
-        const index = (bookmarkStatsIndex) === -1 ? bookmarksStore.statistics.length
-            : bookmarkStatsIndex;
-        const clicks = bookmarkStats?.clicks !== undefined
-            ? parseInt(String(bookmarkStats.clicks), 10) + 1 : 1;
-
-        let idArr;
-        if (bookmarkStats) {
-            idArr = Object.values(bookmarkStats.id);
-            idArr.push(props.bookmark.id);
-            idArr = uniq(idArr);
-        } else {
-            idArr = [props.bookmark.id];
-        }
-
-        bookmarksStore.statistics[index] = ({
-            clicks,
-            id: idArr,
-            title: props.bookmark.title,
-            timestamp: Date.now(),
-            url: props.bookmark.url,
-        });
-
-        const sorted = bookmarksStore.statistics.sort((a, b) => {
-            if (b.clicks !== a.clicks) {
-                return b.clicks - a.clicks;
-            }
-            return b.timestamp - a.timestamp;
-        });
-
-        bookmarksStore.setSyncStorage({ statistics: sorted });
-
-        if (event.ctrlKey || event.metaKey) {
-            window.open(props.bookmark.url, '_blank');
-        } else {
-            window.location.href = props.bookmark.url;
-        }
+        openBookmark(props.bookmark, event);
     }
 
     const color = toRef(props.bookmark, 'color') as Ref<string | null | undefined>;

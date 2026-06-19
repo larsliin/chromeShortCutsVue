@@ -76,6 +76,7 @@
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
     import BookmarkColorEdit from '@/components/forms/BookmarkColorEdit.vue';
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
+    import { useOpenBookmark } from '@cmp/useOpenBookmark';
 
     const utils = useBookmarkOps();
 
@@ -163,60 +164,10 @@
         emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'color', id: props.bookmark.id });
     }
 
+    const { open: openBookmark } = useOpenBookmark();
+
     function onOpenBookmark(event: MouseEvent): void {
-        if (!props.bookmark.url) {
-            event.preventDefault();
-            return;
-        }
-
-        event.preventDefault();
-
-        if (!bookmarksStore.statistics) {
-            bookmarksStore.statistics = [];
-        }
-
-        const bookmarkStats = (bookmarksStore.statistics ?? [])
-            .find((entry) => entry.url === props.bookmark.url);
-
-        const bookmarkStatsIndex = (bookmarksStore.statistics ?? [])
-            .findIndex((entry) => Object.values(entry.id).includes(props.bookmark.id));
-
-        const index = bookmarkStatsIndex === -1
-            ? bookmarksStore.statistics.length
-            : bookmarkStatsIndex;
-
-        const clicks = bookmarkStats?.clicks !== undefined
-            ? parseInt(String(bookmarkStats.clicks), 10) + 1
-            : 1;
-
-        const idArr = bookmarkStats
-            ? [...new Set([...Object.values(bookmarkStats.id), props.bookmark.id])]
-            : [props.bookmark.id];
-
-        bookmarksStore.statistics[index] = {
-            clicks,
-            id: idArr,
-            title: props.bookmark.title,
-            timestamp: Date.now(),
-            url: props.bookmark.url,
-        };
-
-        const sorted = bookmarksStore.statistics.sort((a, b) => {
-            if (b.clicks !== a.clicks) {
-                return b.clicks - a.clicks;
-            }
-
-            return b.timestamp - a.timestamp;
-        });
-
-        bookmarksStore.setSyncStorage({ statistics: sorted });
-
-        if (event.ctrlKey || event.metaKey) {
-            window.open(props.bookmark.url, '_blank');
-            return;
-        }
-
-        window.location.href = props.bookmark.url;
+        openBookmark(props.bookmark, event);
     }
 
     async function updateColor(): Promise<void> {
