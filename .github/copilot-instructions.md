@@ -4,8 +4,79 @@
 
 ## Defaults
 
-- **Agent**: Use the **chrome-extension-vue-expert** custom agent by default for all tasks unless the user explicitly requests a different agent.
+- **Agent**: Use the **chrome-extension-vue-expert** custom agent by default for all tasks unless the user explicitly requests a different agent, or another custom agent in `.github/agents/` is a better fit for the task (see _Custom Agents_ below).
 - **Model**: Use **Claude Opus 4.5** by default unless the user explicitly requests a different model.
+
+---
+
+## Custom Agents
+
+The repository defines specialized custom agents in `.github/agents/`. Pick the agent whose scope best matches the task. If multiple agents match, prefer the most specific one. When in doubt, fall back to the default `chrome-extension-vue-expert`.
+
+### `chrome-extension-vue-expert` (default)
+
+**File**: `.github/agents/chrome-extension-vue-expert.agent.md`
+
+**Use when** the task involves implementing, refactoring, debugging, or designing anything inside this Chrome Extension — Vue 3 components, Pinia stores, Vuetify usage, Chrome Bookmarks/Storage APIs, MV3 service worker behaviour, CRXJS/Vite build, or general UI/UX work on extension surfaces.
+
+**Trigger examples:**
+- "help me build this Chrome extension feature"
+- "how do I use the Chrome bookmarks API"
+- "fix this extension bug"
+- "review my Vue component" / "refactor this component, it is too large"
+- "why is my bookmark listener leaking"
+- "how do I handle Chrome storage"
+- "improve this store action"
+- "improve the UI" / "make this look better" / "style this element"
+- "design this component" / "review the design"
+
+**Do NOT use for:** pure visual/accessibility audits with no implementation (use `ui-design-specialist`), or pure planning/scoping deliverables for a new feature (use `frontend-feature-architect`).
+
+### `ui-design-specialist`
+
+**File**: `.github/agents/ui-design-specialist.agent.md`
+
+**Use when** the task is a focused **design review or audit** — visual hierarchy, color theory, typography, spacing, responsive behaviour, or WCAG 2.1 AA/AAA accessibility compliance — and the deliverable is feedback and recommendations rather than code changes.
+
+**Trigger examples:**
+- "review my UI design"
+- "improve this component's styling"
+- "check if this is accessible"
+- "fix the accessibility issues"
+- "is this responsive?"
+- "suggest design improvements"
+- "validate the UX"
+- "audit the design system"
+
+**Do NOT use for:** implementing the design changes in code (hand off to `chrome-extension-vue-expert` after the audit).
+
+### `frontend-feature-architect`
+
+**File**: `.github/agents/frontend-feature-architect.md`
+
+**Use when** the task is **planning or evaluating a frontend feature** end-to-end — requirements, component architecture, state management, edge cases, dependencies, and completeness review — and the deliverable is a plan or rigorous review rather than implementation.
+
+**Trigger examples:**
+- "help me plan this frontend feature"
+- "review my UI feature design"
+- "is this frontend feature complete?"
+- "what am I missing in this component?"
+- "how should I implement this UI feature?"
+- "validate this frontend implementation"
+- "what does this page/component need?"
+
+**Note:** This agent's prompt references a Nuxt `ui/` folder, but in this repository its planning methodology applies to the Vue 3 + Pinia + Vuetify app under `src/`. Translate any Nuxt-specific guidance to the equivalent Vite + Vue 3 patterns used here.
+
+**Do NOT use for:** straightforward implementation tasks (use `chrome-extension-vue-expert`) or design-only audits (use `ui-design-specialist`).
+
+### Agent selection cheat sheet
+
+| Task shape | Agent |
+|------------|-------|
+| Build, refactor, debug, or implement anything in `src/` or `background.js` | `chrome-extension-vue-expert` |
+| Pure visual / accessibility / UX audit with feedback as deliverable | `ui-design-specialist` |
+| Plan a new feature or rigorously evaluate feature completeness | `frontend-feature-architect` |
+| Anything else, or ambiguous | `chrome-extension-vue-expert` (default) |
 
 ---
 
