@@ -112,6 +112,7 @@
         isBookmarkLink,
         isGroupFolder,
     } from '@utils/bookmarkGroups';
+    import { computeDropIntent } from '@utils/dragIntent';
 
     const utils = useBookmarkOps();
 
@@ -267,45 +268,14 @@
         type: 'create' | 'add-to-group';
         targetId: string;
     } | null {
-        if (!bookmarksStore.groupMode) {
-            return null;
-        }
-
-        if (!draggedId || !targetId || draggedId === targetId) {
-            return null;
-        }
-
-        const dragged = renderItems.value.find((item) => item.id === draggedId);
-        const related = renderItems.value.find((item) => item.id === targetId);
-
-        if (!dragged || !related) {
-            return null;
-        }
-
-        const canCreateGroup = isBookmarkLink(dragged)
-            && isBookmarkLink(related)
-            && dragged.parentId === props.folder.id
-            && related.parentId === props.folder.id
-            && !isGroupFolder(props.folder);
-
-        if (canCreateGroup) {
-            return { type: 'create', targetId: related.id };
-        }
-
-        const canAddToGroup = isBookmarkLink(dragged) && isGroupFolder(related);
-
-        if (canAddToGroup) {
-            const groupedNode = findNodeById(bookmarksStore.bookmarks ?? [], related.id);
-            const groupedCount = groupedNode?.children?.filter((item) => !!item.url).length ?? 0;
-
-            if (groupedCount >= GROUPING.MAX_ITEMS) {
-                return null;
-            }
-
-            return { type: 'add-to-group', targetId: related.id };
-        }
-
-        return null;
+        return computeDropIntent({
+            draggedId,
+            targetId,
+            items: renderItems.value,
+            parentFolder: props.folder,
+            storeBookmarks: bookmarksStore.bookmarks ?? [],
+            groupMode: bookmarksStore.groupMode,
+        });
     }
 
     function onPointerMoveDuringDrag(event: PointerEvent): void {
