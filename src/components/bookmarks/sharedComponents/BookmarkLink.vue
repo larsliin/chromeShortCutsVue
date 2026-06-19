@@ -1,6 +1,6 @@
 <template>
     <span class="bookmark relative inline-block"
-        :class="{ 'foldout-open': isFoldoutOpen }">
+        :class="{ 'foldout-open': isFoldoutOpen, 'drag-active': bookmarksStore.dragStart }">
         <span class="handle">
             <a
                 v-bind="props"
@@ -475,12 +475,12 @@
         }
     }
 
-    .bookmark:hover .bookmark-link:not(.folder) .bookmark-image-container {
+    .bookmark:not(.drag-active):hover .bookmark-link:not(.folder) .bookmark-image-container {
         transform: perspective(400px) rotateY(25deg) scale(1.02);
         box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
     }
 
-    .bookmark .bookmark-link:active:not(.folder) .bookmark-image-container {
+    .bookmark:not(.drag-active) .bookmark-link:active:not(.folder) .bookmark-image-container {
         transform: perspective(400px) rotateY(-15deg) scale(.98);
         box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
         transform-origin: center right;

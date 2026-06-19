@@ -20,7 +20,9 @@
                 @start="onDragStart($event)"
                 @update="onDragUpdate($event)">
                 <template #item="{ element }">
-                    <li :class="[getDragTargetClass(element), { 'popup-origin-hidden': shouldHidePopupOrigin(element) }]">
+                    <li
+                        :data-bookmark-id="element.id"
+                        :class="[getDragTargetClass(element), { 'popup-origin-hidden': shouldHidePopupOrigin(element) }]">
                         <BookmarkLink
                             v-if="isRegularBookmark(element)"
                             :bookmark="element"
@@ -136,7 +138,7 @@
     const draggedBookmarkId = ref<string | null>(null);
     const dropIntent = ref<{ type: 'create' | 'add-to-group'; targetId: string } | null>(null);
     const popupOrigin = ref<{ left: number; top: number; width: number; height: number } | null>(null);
-    const popupTargetSize = 300;
+    const popupTargetSize = 360;
     const popupAnimationMs = 280;
 
     function getInlineGroupRadius(): string {
@@ -249,6 +251,95 @@
         return isGroupFolder(element)
             && showGroupPopup.value
             && activeGroupId.value === element.id;
+    }
+
+    function computeDropIntentFor(draggedId: string, targetId: string): {
+        type: 'create' | 'add-to-group';
+        targetId: string;
+    } | null {
+        if (!bookmarksStore.groupMode) {
+            return null;
+        }
+
+        if (!draggedId || !targetId || draggedId === targetId) {
+            return null;
+        }
+
+        const dragged = renderItems.value.find((item) => item.id === draggedId);
+        const related = renderItems.value.find((item) => item.id === targetId);
+
+        if (!dragged || !related) {
+            return null;
+        }
+
+        const canCreateGroup = isBookmarkLink(dragged)
+            && isBookmarkLink(related)
+            && dragged.parentId === props.folder.id
+            && related.parentId === props.folder.id
+            && !isGroupFolder(props.folder);
+
+        if (canCreateGroup) {
+            return { type: 'create', targetId: related.id };
+        }
+
+        const canAddToGroup = isBookmarkLink(dragged) && isGroupFolder(related);
+
+        if (canAddToGroup) {
+            const groupedNode = findNodeById(bookmarksStore.bookmarks ?? [], related.id);
+            const groupedCount = groupedNode?.children?.filter((item) => !!item.url).length ?? 0;
+
+            if (groupedCount >= GROUPING.MAX_ITEMS) {
+                return null;
+            }
+
+            return { type: 'add-to-group', targetId: related.id };
+        }
+
+        return null;
+    }
+
+    function onPointerMoveDuringDrag(event: PointerEvent): void {
+        const draggedId = draggedBookmarkId.value;
+
+        if (!draggedId) {
+            return;
+        }
+
+        const stack = document.elementsFromPoint(event.clientX, event.clientY) as HTMLElement[];
+        let targetId: string | undefined;
+
+        stack.some((node) => {
+            const liEl = node.closest('[data-bookmark-id]') as HTMLElement | null;
+            const id = liEl?.dataset.bookmarkId;
+
+            if (id && id !== draggedId) {
+                targetId = id;
+                return true;
+            }
+
+            return false;
+        });
+
+        if (!targetId) {
+            if (dropIntent.value) {
+                resetDropIntent();
+            }
+            return;
+        }
+
+        const next = computeDropIntentFor(draggedId, targetId);
+        const current = dropIntent.value;
+
+        if (!next) {
+            if (current) {
+                resetDropIntent();
+            }
+            return;
+        }
+
+        if (!current || current.targetId !== next.targetId || current.type !== next.type) {
+            dropIntent.value = next;
+        }
     }
 
     function onDragMove(evt: {
@@ -449,14 +540,28 @@
         dragging.value = true;
 
         document.body.classList.add('cursor-pointer');
+        document.addEventListener('pointermove', onPointerMoveDuringDrag, true);
 
         emitter.emit(EMITS.DRAG_START);
     }
 
     async function onDragEnd() {
         document.body.classList.remove('cursor-pointer');
+        document.removeEventListener('pointermove', onPointerMoveDuringDrag, true);
 
         dragging.value = false;
+        bookmarksStore.dragStart = false;
+
+        const swallowClick = (clickEvent: MouseEvent) => {
+            clickEvent.preventDefault();
+            clickEvent.stopPropagation();
+            clickEvent.stopImmediatePropagation();
+        };
+
+        document.addEventListener('click', swallowClick, { capture: true, once: true });
+        window.setTimeout(() => {
+            document.removeEventListener('click', swallowClick, { capture: true });
+        }, 300);
 
         try {
             if (bookmarksStore.groupMode && dropIntent.value && draggedBookmarkId.value) {

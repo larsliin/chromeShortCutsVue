@@ -1,6 +1,13 @@
 <template>
     <span class="bookmark relative inline-block"
-        :class="[effectiveSize, { 'foldout-open': isFoldoutOpen, popup: props.popup }]">
+        :class="[
+            effectiveSize,
+            {
+                'foldout-open': isFoldoutOpen,
+                popup: props.popup,
+                'drag-active': bookmarksStore.dragStart,
+            },
+        ]">
         <span class="handle">
             <button
                 v-if="!props.popup"
@@ -258,6 +265,7 @@
         to?: HTMLElement;
     }): Promise<void> {
         document.body.classList.remove('cursor-pointer');
+        bookmarksStore.dragStart = false;
 
         const draggedId = draggedPopupBookmarkId.value;
         const original = event?.originalEvent;
@@ -400,9 +408,12 @@
         width: 56px;
 
         .group-grid {
-            padding: 2%;
+            // small icons need a higher percentage to produce a
+            // visually comparable absolute padding to medium/large
+            // (~6 px on a 56 px grid).
+            padding: 11%;
             border-radius: 5.36%;
-            gap: 3%;
+            gap: 5%;
         }
     }
 
@@ -472,6 +483,11 @@
             border-radius: var(--popup-group-radius, 14%);
             box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
             transition: border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+            // popup padding is pinned here so it is consistent across all
+            // icon sizes — the per-size .bookmark.icon-* rules would
+            // otherwise produce too little padding for small icons.
+            padding: 7%;
+            gap: 3%;
             // override the base grid layout with flex+wrap so SortableJS
             // can detect swaps inside the popup. CSS Grid leaves empty
             // cells when an item is removed mid-drag, which prevents
@@ -517,12 +533,12 @@
     }
 
     .bookmark {
-        &:not(.popup):hover .group-link .group-grid {
+        &:not(.popup):not(.drag-active):hover .group-link .group-grid {
             transform: perspective(400px) rotateY(25deg) scale(1.02);
             box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
         }
 
-        &:not(.popup) .group-link:active .group-grid {
+        &:not(.popup):not(.drag-active) .group-link:active .group-grid {
             transform: perspective(400px) rotateY(-15deg) scale(.98);
             box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
             transform-origin: center right;
