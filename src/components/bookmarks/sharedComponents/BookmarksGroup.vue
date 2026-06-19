@@ -70,8 +70,8 @@
             role="dialog"
             tabindex="0"
             aria-modal="true"
-            @keydown.esc="closeGroupPopup()"
-            @click.self="closeGroupPopup()">
+            @keydown.esc="onOverlayEscape()"
+            @click.self="onOverlayClickSelf()">
             <div
                 class="group-popup-wrapper"
                 :class="popupState"
@@ -80,7 +80,10 @@
                     class="group-popup-card"
                     :bookmark="activeGroup"
                     popup
-                    @open="closeGroupPopup()" />
+                    @open="closeGroupPopup()"
+                    @[EMITS.DRAG_START]="popupDragging = true"
+                    @popupDragEnd="popupDragging = false"
+                    @[EMITS.DRAG_OUT_OF_GROUP]="onPopupDragOutOfGroup($event)" />
             </div>
         </div>
     </Teleport>
@@ -122,6 +125,7 @@
     ]);
 
     const dragging = ref(false);
+    const popupDragging = ref(false);
 
     const bookmarksStore = useBookmarksStore();
 
@@ -309,6 +313,48 @@
 
     function onDelete() {
         showConfirmDelete.value = true;
+    }
+
+    function onOverlayEscape(): void {
+        if (popupDragging.value) {
+            return;
+        }
+
+        closeGroupPopup();
+    }
+
+    function onOverlayClickSelf(): void {
+        if (popupDragging.value) {
+            return;
+        }
+
+        closeGroupPopup();
+    }
+
+    async function onPopupDragOutOfGroup(payload: {
+        bookmarkId: string;
+        groupId: string;
+        groupParentId: string;
+    }): Promise<void> {
+        popupDragging.value = false;
+
+        const parentSubtree = await bookmarksStore.getBookmarks(payload.groupParentId);
+        const parentChildren = (parentSubtree?.[0]?.children ?? []) as BookmarkNode[];
+        const targetIndex = parentChildren.length;
+
+        await bookmarksStore.moveBookmark(payload.bookmarkId, {
+            parentId: payload.groupParentId,
+            index: targetIndex,
+        });
+
+        const groupSubtree = await bookmarksStore.getBookmarks(payload.groupId);
+        const remainingChildren = (groupSubtree?.[0]?.children ?? [])
+            .filter((child) => !!child.url);
+
+        if (remainingChildren.length === 0) {
+            await bookmarksStore.removeBookmarkFolder(payload.groupId);
+            closeGroupPopup();
+        }
     }
 
     async function onDeleteConfirm(_event?: unknown): Promise<void> {

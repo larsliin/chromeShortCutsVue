@@ -24,27 +24,43 @@
             </button>
             <span
                 v-else
+                ref="popupGridRef"
                 class="bookmark-link group-link"
                 :aria-label="groupAriaLabel">
-                <span
+                <draggable
                     class="group-grid"
-                    :class="{ dark: bookmarksStore.enableDarkMode }">
-                    <span
-                        v-for="item in previewItems"
-                        :key="item.id"
-                        class="group-grid-item">
-                        <a
-                            class="group-grid-link"
-                            :href="item.url || undefined"
-                            :aria-label="item.title"
-                            @click="onOpenBookmark(item, $event)">
-                            <BookmarkIcon
-                                :color="item.color ?? undefined"
-                                :folder="false"
-                                :image="imageMap[item.id] ?? null" />
-                        </a>
-                    </span>
-                </span>
+                    :class="{ dark: bookmarksStore.enableDarkMode, dragging: popupDragging }"
+                    :animation="200"
+                    :fallbackTolerance="10"
+                    :force-fallback="true"
+                    :ghost-class="'ghost'"
+                    :group="popupDragGroup"
+                    :handle="'.popup-handle'"
+                    :item-key="'id'"
+                    :list="popupRenderItems"
+                    :tag="'div'"
+                    @end="onPopupDragEnd($event)"
+                    @start="onPopupDragStart($event)"
+                    @update="onPopupDragUpdate($event)">
+                    <template #item="{ element }">
+                        <div class="group-grid-item">
+                            <span class="popup-handle">
+                                <a
+                                    class="group-grid-link"
+                                    :href="element.url || undefined"
+                                    :aria-label="element.title"
+                                    draggable="false"
+                                    @dragstart.prevent
+                                    @click="onOpenBookmark(element, $event)">
+                                    <BookmarkIcon
+                                        :color="element.color ?? undefined"
+                                        :folder="false"
+                                        :image="imageMap[element.id] ?? null" />
+                                </a>
+                            </span>
+                        </div>
+                    </template>
+                </draggable>
             </span>
         </span>
         <div class="bookmark-edit">
@@ -60,12 +76,16 @@
 
 <script setup lang="ts">
     import { mdiUngroup } from '@mdi/js';
-    import { computed, ref, watch } from 'vue';
+    import {
+        computed, ref, useTemplateRef, watch,
+    } from 'vue';
     import { EMITS } from '@/constants';
-    import type { BookmarkNode, FoldoutListItem } from '@/types/bookmark';
+    import type { BookmarkNode, DragEventInfo, FoldoutListItem } from '@/types/bookmark';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
+    import draggable from 'vuedraggable';
+    import emitter from '@cmp/eventBus';
     import { getGroupPreviewItems } from '@utils/bookmarkGroups';
 
     interface Props {
@@ -78,10 +98,19 @@
         rect?: DOMRect;
     }
 
+    interface DragOutOfGroupPayload {
+        bookmarkId: string;
+        groupId: string;
+        groupParentId: string;
+    }
+
     const props = defineProps<Props>();
 
     const emits = defineEmits<{
         open: [payload: GroupOpenPayload];
+        dragOutOfGroup: [payload: DragOutOfGroupPayload];
+        dragStart: [];
+        popupDragEnd: [];
     }>();
 
     const bookmarksStore = useBookmarksStore();
@@ -98,6 +127,18 @@
     ]);
 
     const previewItems = computed(() => getGroupPreviewItems(props.bookmark));
+
+    // Bind directly to props.bookmark.children, mirroring how the outer
+    // BookmarksGroup binds :list="renderItems" where
+    // renderItems = computed(() => props.bookmarks ?? []).
+    // vuedraggable needs the same array reference between renders so its
+    // in-place mutations propagate via Vue reactivity.
+    const popupRenderItems = computed(() => props.bookmark.children ?? []);
+
+    const popupDragGroup = { name: 'popup-bookmarks', pull: true, put: true };
+    const draggedPopupBookmarkId = ref<string | null>(null);
+    const popupDragging = ref(false);
+    const popupGridRef = useTemplateRef<HTMLElement>('popupGridRef');
 
     const imageMap = ref<Record<string, string>>({});
 
@@ -176,6 +217,86 @@
         await bookmarksStore.ungroupBookmarkGroup(props.bookmark.id);
     }
 
+    function onPopupDragStart(event?: Partial<DragEventInfo> & { item?: HTMLElement; from?: HTMLElement }): void {
+        const oldIndex = event?.oldIndex;
+
+        draggedPopupBookmarkId.value = oldIndex === undefined
+            ? null
+            : popupRenderItems.value[oldIndex]?.id ?? null;
+
+        popupDragging.value = true;
+        bookmarksStore.dragStart = true;
+        document.body.classList.add('cursor-pointer');
+        emitter.emit(EMITS.DRAG_START);
+        emits(EMITS.DRAG_START);
+    }
+
+    function isPointerInsidePopupGrid(clientX: number, clientY: number): boolean {
+        const el = popupGridRef.value;
+
+        if (!el) {
+            return false;
+        }
+
+        const rect = el.getBoundingClientRect();
+
+        return clientX >= rect.left
+            && clientX <= rect.right
+            && clientY >= rect.top
+            && clientY <= rect.bottom;
+    }
+
+    async function onPopupDragEnd(event: {
+        originalEvent?: { clientX?: number; clientY?: number };
+        oldIndex?: number;
+        newIndex?: number;
+        item?: HTMLElement;
+        from?: HTMLElement;
+        to?: HTMLElement;
+    }): Promise<void> {
+        document.body.classList.remove('cursor-pointer');
+
+        const draggedId = draggedPopupBookmarkId.value;
+        const original = event?.originalEvent;
+        const clientX = original?.clientX;
+        const clientY = original?.clientY;
+
+        const droppedOutside = clientX !== undefined
+            && clientY !== undefined
+            && !isPointerInsidePopupGrid(clientX, clientY);
+
+        try {
+            if (droppedOutside && draggedId && props.bookmark.parentId) {
+                emits(EMITS.DRAG_OUT_OF_GROUP, {
+                    bookmarkId: draggedId,
+                    groupId: props.bookmark.id,
+                    groupParentId: props.bookmark.parentId,
+                });
+            }
+        } finally {
+            draggedPopupBookmarkId.value = null;
+            emits('popupDragEnd');
+            // keep popupDragging true through the SortableJS animation so
+            // the .dragging class continues suppressing hover transforms while
+            // items slide into their new positions
+            window.setTimeout(() => {
+                popupDragging.value = false;
+            }, 220);
+        }
+    }
+
+    async function onPopupDragUpdate(event: DragEventInfo): Promise<void> {
+        const bookmark = popupRenderItems.value[event.newIndex];
+
+        if (!bookmark) {
+            return;
+        }
+
+        const index = event.newIndex > event.oldIndex ? event.newIndex + 1 : event.newIndex;
+
+        await bookmarksStore.reorderBookmark(bookmark.id, index);
+    }
+
     async function loadGroupImages(): Promise<void> {
         const imageEntries = await Promise.all(previewItems.value.map(async (item) => {
             const stored = await bookmarksStore.getLocalStorage(item.id);
@@ -187,7 +308,7 @@
     }
 
     watch(
-        () => props.bookmark.children,
+        () => (props.bookmark.children ?? []).map((child) => child.id).join('|'),
         () => {
             loadGroupImages();
         },
@@ -347,11 +468,39 @@
             border-radius: var(--popup-group-radius, 14%);
             box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
             transition: border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+            // override the base grid layout with flex+wrap so SortableJS
+            // can detect swaps inside the popup. CSS Grid leaves empty
+            // cells when an item is removed mid-drag, which prevents
+            // SortableJS from registering a sort change.
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            justify-content: flex-start;
+
+            &.dragging {
+                .group-grid-link {
+                    &:hover :deep(.bookmark-image-container),
+                    &:active :deep(.bookmark-image-container) {
+                        transform: none;
+                        box-shadow: none;
+                    }
+                }
+            }
         }
 
         .group-grid-item {
+            // 3 columns with 3% gap on a 100% wide row:
+            // 3w + 2 * 3% = 100% → w = (100% - 6%) / 3
+            width: calc((100% - 6%) / 3);
+
             :deep(.bookmark-image-container) {
                 padding: 8%;
+            }
+
+            .popup-handle {
+                display: flex;
+                width: 100%;
+                height: 100%;
             }
         }
 

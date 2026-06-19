@@ -23,6 +23,7 @@ export enum EMITS {
     BEFORE_DELETE = 'beforeDelete',
     DELETE = 'delete',
     DRAG_START = 'dragStart',
+    DRAG_OUT_OF_GROUP = 'dragOutOfGroup',
     EDIT = 'edit',
     FILTER_UPDATED = 'filterUpdated',
     ICON_UPDATE = 'iconUpdate',
