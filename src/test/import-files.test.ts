@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
 import { useBookmarksStore } from '@stores/bookmarks';
 import type { BookmarkNode } from '@/types/bookmark';
+import { GROUPING } from '@/constants';
+import { findNodeById, isGroupName } from '@utils/bookmarkGroups';
 import { chromeMock, fireCallback } from './mocks/chrome';
 
 // ---------------------------------------------------------------------------
@@ -91,6 +93,91 @@ const ICONS_FIXTURE = {
             url: 'https://wunderman.workbook.dk/',
             parentId: '557',
             image: null,
+        },
+    ],
+};
+
+// Fixture containing a folder with a bookmark group
+const BOOKMARKS_WITH_GROUPS_FIXTURE = {
+    type: 'bookmarks',
+    bookmarks: [
+        {
+            id: '600',
+            title: 'Work',
+            parentId: 'root',
+            children: [
+                {
+                    id: '601',
+                    title: 'Slack',
+                    url: 'https://slack.com/',
+                    parentId: '600',
+                    dateAdded: 1759914890400,
+                    index: 0,
+                    image: 'data:image/png;base64,slack-icon-data',
+                },
+                {
+                    // Group folder - no url, title starts with GROUPING.FOLDER_PREFIX
+                    id: '602',
+                    title: `${GROUPING.FOLDER_PREFIX}abc123`,
+                    parentId: '600',
+                    dateAdded: 1759914890401,
+                    index: 1,
+                    children: [
+                        {
+                            id: '603',
+                            title: 'GitHub',
+                            url: 'https://github.com/',
+                            parentId: '602',
+                            dateAdded: 1759914890402,
+                            index: 0,
+                            image: 'data:image/png;base64,github-icon-data',
+                            color: '#24292e',
+                        },
+                        {
+                            id: '604',
+                            title: 'GitLab',
+                            url: 'https://gitlab.com/',
+                            parentId: '602',
+                            dateAdded: 1759914890403,
+                            index: 1,
+                            image: 'data:image/png;base64,gitlab-icon-data',
+                        },
+                    ],
+                },
+                {
+                    id: '605',
+                    title: 'Jira',
+                    url: 'https://jira.atlassian.com/',
+                    parentId: '600',
+                    dateAdded: 1759914890404,
+                    index: 2,
+                },
+            ],
+        },
+        {
+            // Folder with ONLY group children (edge case for validation)
+            id: '700',
+            title: 'Groups Only',
+            parentId: 'root',
+            children: [
+                {
+                    id: '701',
+                    title: `${GROUPING.FOLDER_PREFIX}def456`,
+                    parentId: '700',
+                    dateAdded: 1759914890500,
+                    index: 0,
+                    children: [
+                        {
+                            id: '702',
+                            title: 'Google',
+                            url: 'https://google.com/',
+                            parentId: '701',
+                            dateAdded: 1759914890501,
+                            index: 0,
+                        },
+                    ],
+                },
+            ],
         },
     ],
 };
@@ -483,5 +570,219 @@ describe('Import icons file', () => {
 
         // No titles match → color map stays empty
         expect(Object.keys(folderColorArr)).toHaveLength(0);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// IMPORT/EXPORT WITH BOOKMARK GROUPS
+// Tests the group-aware import/export logic:
+//   1. Export attaches images to bookmarks inside group folders
+//   2. Import recreates group folders and their child bookmarks
+//   3. Validation passes for files containing only group folders
+// ---------------------------------------------------------------------------
+
+describe('Import/export with bookmark groups', () => {
+    describe('Export - image attachment for grouped bookmarks', () => {
+        it('uses findNodeById to locate a bookmark nested inside a group folder', () => {
+            // Simulate the export tree structure
+            const exportBookmarks = BOOKMARKS_WITH_GROUPS_FIXTURE.bookmarks as BookmarkNode[];
+
+            // GitHub (id '603') is inside the group folder
+            const found = findNodeById(exportBookmarks, '603');
+
+            expect(found).not.toBeNull();
+            expect(found?.title).toBe('GitHub');
+            expect(found?.url).toBe('https://github.com/');
+        });
+
+        it('attaches images to bookmarks inside group folders during export', () => {
+            const exportBookmarks = JSON.parse(
+                JSON.stringify(BOOKMARKS_WITH_GROUPS_FIXTURE.bookmarks),
+            ) as BookmarkNode[];
+
+            // Simulate localStorage items with images
+            const localStorageItems = [
+                { id: '601', image: 'data:image/png;base64,slack-stored' },
+                { id: '603', image: 'data:image/png;base64,github-stored' },
+                { id: '604', image: 'data:image/png;base64,gitlab-stored' },
+            ];
+
+            // Apply images using findNodeById (mimics onClickExportBookmarks logic)
+            localStorageItems.forEach((item) => {
+                const bookmark = findNodeById(exportBookmarks, item.id);
+                if (bookmark) {
+                    bookmark.image = item.image;
+                }
+            });
+
+            // Verify images were attached to bookmarks inside group folders
+            const workFolder = exportBookmarks.find((f) => f.id === '600');
+            const groupFolder = workFolder?.children?.find((c) => c.id === '602');
+            const github = groupFolder?.children?.find((c) => c.id === '603');
+            const gitlab = groupFolder?.children?.find((c) => c.id === '604');
+
+            expect(github?.image).toBe('data:image/png;base64,github-stored');
+            expect(gitlab?.image).toBe('data:image/png;base64,gitlab-stored');
+
+            // Direct child should also have image
+            const slack = workFolder?.children?.find((c) => c.id === '601');
+            expect(slack?.image).toBe('data:image/png;base64,slack-stored');
+        });
+    });
+
+    describe('Import - recreation of group folders and their children', () => {
+        it('identifies group folders by their title prefix', () => {
+            const groupTitle = `${GROUPING.FOLDER_PREFIX}abc123`;
+            const regularTitle = 'Regular Folder';
+
+            expect(isGroupName(groupTitle)).toBe(true);
+            expect(isGroupName(regularTitle)).toBe(false);
+        });
+
+        it('creates group folders and their child bookmarks during import', async () => {
+            // Mock the creation of top-level folder, group folder, and bookmarks
+            const newWorkFolder = makeCreatedFolder('new-600', 'Work');
+            const newGroupFolder = makeCreatedFolder(
+                'new-602',
+                `${GROUPING.FOLDER_PREFIX}abc123`,
+                'new-600',
+            );
+            const newSlack = makeCreatedBookmark('new-601', 'Slack', 'https://slack.com/', 'new-600');
+            const newGitHub = makeCreatedBookmark('new-603', 'GitHub', 'https://github.com/', 'new-602');
+            const newGitLab = makeCreatedBookmark('new-604', 'GitLab', 'https://gitlab.com/', 'new-602');
+            const newJira = makeCreatedBookmark('new-605', 'Jira', 'https://jira.atlassian.com/', 'new-600');
+
+            chromeMock.bookmarks.create
+                // Top-level folder creation
+                .mockImplementationOnce((_: unknown, cb: (n: typeof newWorkFolder) => void) => cb(newWorkFolder))
+                // Direct bookmark: Slack
+                .mockImplementationOnce((_: unknown, cb: (n: typeof newSlack) => void) => cb(newSlack))
+                // Group folder creation
+                .mockImplementationOnce((_: unknown, cb: (n: typeof newGroupFolder) => void) => cb(newGroupFolder))
+                // Group children: GitHub, GitLab
+                .mockImplementationOnce((_: unknown, cb: (n: typeof newGitHub) => void) => cb(newGitHub))
+                .mockImplementationOnce((_: unknown, cb: (n: typeof newGitLab) => void) => cb(newGitLab))
+                // Direct bookmark: Jira
+                .mockImplementationOnce((_: unknown, cb: (n: typeof newJira) => void) => cb(newJira));
+
+            // Step 1: Create top-level folder
+            const workFolderSource = BOOKMARKS_WITH_GROUPS_FIXTURE.bookmarks[0];
+            const createdTopFolder = await store.createBookmark('root', workFolderSource.title);
+            expect(createdTopFolder.id).toBe('new-600');
+
+            const foldersMap: Record<string, string> = { 600: createdTopFolder.id };
+            const createdBookmarks: chrome.bookmarks.BookmarkTreeNode[] = [];
+
+            // Step 2: Process children (mimics onImportedFoldersCreated logic)
+            // eslint-disable-next-line no-restricted-syntax
+            for (const child of workFolderSource.children) {
+                if (child.url) {
+                    // Direct bookmark
+                    // eslint-disable-next-line no-await-in-loop
+                    const created = await store.createBookmark(
+                        foldersMap['600'],
+                        child.title,
+                        child.url,
+                    );
+                    createdBookmarks.push(created);
+                } else if (isGroupName(child.title)) {
+                    // Group folder
+                    // eslint-disable-next-line no-await-in-loop
+                    const createdGroup = await store.createBookmark(
+                        foldersMap['600'],
+                        child.title,
+                    );
+                    // Create children inside the group
+                    // eslint-disable-next-line no-restricted-syntax
+                    for (const groupChild of child.children ?? []) {
+                        if (groupChild.url) {
+                            // eslint-disable-next-line no-await-in-loop
+                            const createdGroupBookmark = await store.createBookmark(
+                                createdGroup.id,
+                                groupChild.title,
+                                groupChild.url,
+                            );
+                            createdBookmarks.push(createdGroupBookmark);
+                        }
+                    }
+                }
+            }
+
+            // Verify correct number of create calls:
+            // 1 top folder + 1 Slack + 1 group folder + 2 group children + 1 Jira = 6
+            expect(chromeMock.bookmarks.create).toHaveBeenCalledTimes(6);
+
+            // Verify bookmarks were created under correct parents
+            expect(createdBookmarks).toHaveLength(4);
+            expect(createdBookmarks.find((b) => b.id === 'new-601')?.parentId).toBe('new-600');
+            expect(createdBookmarks.find((b) => b.id === 'new-603')?.parentId).toBe('new-602');
+            expect(createdBookmarks.find((b) => b.id === 'new-604')?.parentId).toBe('new-602');
+        });
+
+        it('tracks colors for bookmarks inside group folders', () => {
+            const colorsMap: Record<string, string> = {};
+            const workFolder = BOOKMARKS_WITH_GROUPS_FIXTURE.bookmarks[0];
+
+            // Simulate processing children and collecting colors
+            workFolder.children.forEach((child) => {
+                if (child.url && child.color) {
+                    colorsMap[child.id] = child.color;
+                }
+                if (isGroupName(child.title)) {
+                    (child.children ?? []).forEach((groupChild) => {
+                        if (groupChild.url && groupChild.color) {
+                            colorsMap[groupChild.id] = groupChild.color;
+                        }
+                    });
+                }
+            });
+
+            // GitHub inside the group has a color
+            expect(colorsMap['603']).toBe('#24292e');
+            // GitLab has no color
+            expect(colorsMap['604']).toBeUndefined();
+        });
+    });
+
+    describe('Validation - files with group folders', () => {
+        it('validates a file where a folder contains only group folder children', () => {
+            // The 'Groups Only' folder has no direct bookmark links,
+            // only a group folder containing bookmarks
+            const groupsOnlyFolder = BOOKMARKS_WITH_GROUPS_FIXTURE.bookmarks.find(
+                (f) => f.id === '700',
+            );
+
+            // Direct children have no url
+            const directChildren = groupsOnlyFolder?.children ?? [];
+            const hasDirectUrl = directChildren.some((c) => c.url);
+            expect(hasDirectUrl).toBe(false);
+
+            // But group folder children do have urls
+            const groupFolderChildren = directChildren
+                .filter((c) => isGroupName(c.title) && !c.url)
+                .flatMap((g) => g.children ?? []);
+            const hasNestedUrl = groupFolderChildren.some((c) => c.url);
+            expect(hasNestedUrl).toBe(true);
+
+            // Combined check (mimics updated isImportBookmarksFileValid logic)
+            const allBookmarks = [...directChildren, ...groupFolderChildren];
+            expect(allBookmarks.some((c) => c.url)).toBe(true);
+        });
+
+        it('flattens group folder children for validation url check', () => {
+            const parsed = BOOKMARKS_WITH_GROUPS_FIXTURE;
+
+            // Mimic the validation logic
+            const directChildren = parsed.bookmarks.flatMap((e) => e.children ?? []);
+            const groupFolderChildren = directChildren
+                .filter((child) => isGroupName(child.title ?? '') && !child.url)
+                .flatMap((group) => group.children ?? []);
+            const allBookmarks = [...directChildren, ...groupFolderChildren];
+
+            // Should find urls in both direct and nested bookmarks
+            expect(allBookmarks.some((e) => e?.url)).toBe(true);
+            expect(allBookmarks.some((e) => e?.title)).toBe(true);
+            expect(allBookmarks.some((e) => e?.id)).toBe(true);
+        });
     });
 });

@@ -208,6 +208,7 @@
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
     import { useAccordionSync } from '@cmp/useAccordionSync';
     import type { BookmarkNode, FolderColorItem, ImportFileData } from '@/types/bookmark';
+    import { findNodeById, isGroupName } from '@utils/bookmarkGroups';
     import { useTheme } from 'vuetify';
     import ToolTip from '@/components/fields/ToolTip.vue';
 
@@ -322,12 +323,11 @@
             .filter((e): e is Record<string, unknown> => !!(e as Record<string, unknown>).image);
 
         localStorageItemsImageArr.forEach((localitem) => {
-            const bookmark = exportBookmarks
-                .flatMap((outerItem) => outerItem.children ?? [])
-                .find((child) => child.id === (localitem.id as string));
+            // Use findNodeById to traverse all descendants including bookmarks inside group folders
+            const bookmark = findNodeById(exportBookmarks, localitem.id as string);
 
             if (bookmark) {
-                (bookmark as BookmarkNode).image = localitem.image as string;
+                bookmark.image = localitem.image as string;
             }
         });
 
@@ -384,7 +384,10 @@
     }
 
     // save imported images
-    async function saveImages(results: chrome.bookmarks.BookmarkTreeNode[], images: (string | undefined | null)[]): Promise<void> {
+    async function saveImages(
+        results: chrome.bookmarks.BookmarkTreeNode[],
+        images: (string | undefined | null)[],
+    ): Promise<void> {
         const promiseArr: Promise<void>[] = [];
         results.forEach((item, index) => {
             if (images[index]) {
@@ -400,60 +403,101 @@
             }
         });
 
-        Promise.all(promiseArr)
-            .then(() => {
-                // when all images are saved then update bookmarks
-                updateBookmarksStore();
+        await Promise.all(promiseArr);
 
-                bookmarksStore.isImporting = false;
-            })
-            .catch((error) => {
-                throw (error);
-            });
+        // when all images are saved then update bookmarks
+        await updateBookmarksStore();
+
+        bookmarksStore.isImporting = false;
     }
 
-    function onImportedFoldersCreated(promise: chrome.bookmarks.BookmarkTreeNode[], bookmarks: BookmarkNode[]): void {
+    async function onImportedFoldersCreated(
+        createdTopLevelFolders: chrome.bookmarks.BookmarkTreeNode[],
+        bookmarks: BookmarkNode[],
+    ): Promise<void> {
+        // Map old top-level folder id to new folder id
         const foldersMap: Record<string, string> = {};
-
-        // put all bookmarks children in a flat array for easier iteration
-        const bookmarksFlatArr = bookmarks.flatMap((obj) => obj.children ?? []);
-
-        // map old parent folder id to new folder id created in the step before
-        promise.forEach((f, i) => {
-            foldersMap[bookmarks[i].id] = f.id;
+        createdTopLevelFolders.forEach((folder, i) => {
+            foldersMap[bookmarks[i].id] = folder.id;
             if (bookmarks[i].color) {
-                colorsFoldersMap[f.id] = bookmarks[i].color as string;
+                colorsFoldersMap[folder.id] = bookmarks[i].color as string;
             }
         });
 
+        // Collect all created bookmark links and their images
+        const createdBookmarks: chrome.bookmarks.BookmarkTreeNode[] = [];
         const imagesArr: (string | null | undefined)[] = [];
-        const bookmarksPromiseArr: Promise<chrome.bookmarks.BookmarkTreeNode>[] = [];
-        const bookmarksMap: Record<string, string> = {};
 
-        bookmarksFlatArr.forEach((bookmark) => {
-            bookmarksPromiseArr.push(bookmarksStore
-                .createBookmark(foldersMap[bookmark.parentId ?? ''], bookmark.title, bookmark.url));
-            imagesArr.push(bookmark.image);
+        // Helper to create group folder children sequentially
+        async function createGroupChildren(
+            groupFolderId: string,
+            groupChildren: BookmarkNode[],
+        ): Promise<void> {
+            await groupChildren.reduce<Promise<void>>(
+                (chain, groupChild) => chain.then(async () => {
+                    if (groupChild.url) {
+                        const createdGroupBookmark = await bookmarksStore.createBookmark(
+                            groupFolderId,
+                            groupChild.title,
+                            groupChild.url,
+                        );
+                        createdBookmarks.push(createdGroupBookmark);
+                        imagesArr.push(groupChild.image);
+
+                        if (groupChild.color) {
+                            colorsBookmarksMap[createdGroupBookmark.id] = groupChild.color;
+                        }
+                    }
+                }),
+                Promise.resolve(),
+            );
+        }
+
+        // Process each top-level folder's children sequentially to preserve order
+        await Promise.all(bookmarks.map(async (topLevelFolder) => {
+            const newParentId = foldersMap[topLevelFolder.id];
+            const children = topLevelFolder.children ?? [];
+
+            // Process children sequentially using reduce chain
+            await children.reduce<Promise<void>>(
+                (chain, child) => chain.then(async () => {
+                    if (child.url) {
+                        // Regular bookmark link - create directly under top-level folder
+                        const created = await bookmarksStore.createBookmark(
+                            newParentId,
+                            child.title,
+                            child.url,
+                        );
+                        createdBookmarks.push(created);
+                        imagesArr.push(child.image);
+
+                        if (child.color) {
+                            colorsBookmarksMap[created.id] = child.color;
+                        }
+                    } else if (isGroupName(child.title)) {
+                        // Group folder - create the group folder first, then its children
+                        const createdGroupFolder = await bookmarksStore.createBookmark(
+                            newParentId,
+                            child.title,
+                        );
+
+                        await createGroupChildren(
+                            createdGroupFolder.id,
+                            child.children ?? [],
+                        );
+                    }
+                    // Defensive: skip any other child types (non-group folders without url)
+                }),
+                Promise.resolve(),
+            );
+        }));
+
+        bookmarksStore.accordionModel = [0];
+        await bookmarksStore.setSyncStorage({
+            accordion: [...bookmarksStore.accordionModel],
         });
 
-        Promise.all(bookmarksPromiseArr)
-            .then((result) => {
-                result.forEach((f, i) => {
-                    bookmarksMap[bookmarksFlatArr[i].id] = f.id;
-                    if (bookmarksFlatArr[i].color) {
-                        colorsBookmarksMap[f.id] = bookmarksFlatArr[i].color as string;
-                    }
-                });
-                bookmarksStore.accordionModel = [0];
-                bookmarksStore.setSyncStorage({
-                    accordion: [...bookmarksStore.accordionModel],
-                });
-
-                saveImages(result, imagesArr);
-            })
-            .catch((error) => {
-                throw (error);
-            });
+        await saveImages(createdBookmarks, imagesArr);
     }
 
     // import bookmarks
@@ -481,13 +525,8 @@
                 .createBookmark(bookmarksRootResponse.id, folder.title));
         });
 
-        Promise.all(foldersPromiseArr)
-            .then((result) => {
-                onImportedFoldersCreated(result, importObj.bookmarks ?? []);
-            })
-            .catch((error) => {
-                throw (error);
-            });
+        const createdFolders = await Promise.all(foldersPromiseArr);
+        await onImportedFoldersCreated(createdFolders, importObj.bookmarks ?? []);
     }
 
     // import bookmarks
@@ -611,13 +650,19 @@
         ];
 
         if (args.bookmarks.some((b) => b.children?.length)) {
-            const bookmarksFlatArray = args.bookmarks.flatMap((e) => e.children ?? []);
+            // Flatten direct children and also children inside group folders
+            const directChildren = args.bookmarks.flatMap((e) => e.children ?? []);
+            const groupFolderChildren = directChildren
+                .filter((child) => isGroupName(child.title ?? '') && !child.url)
+                .flatMap((group) => group.children ?? []);
+            const allBookmarks = [...directChildren, ...groupFolderChildren];
 
-            if (bookmarksFlatArray.length) {
-                arr.push(bookmarksFlatArray.some((e) => e?.url));
-                arr.push(bookmarksFlatArray.some((e) => e?.title));
-                arr.push(bookmarksFlatArray.some((e) => e?.parentId));
-                arr.push(bookmarksFlatArray.some((e) => e?.id));
+            if (allBookmarks.length) {
+                // At least one bookmark must have a url (either direct child or inside group)
+                arr.push(allBookmarks.some((e) => e?.url));
+                arr.push(allBookmarks.some((e) => e?.title));
+                arr.push(allBookmarks.some((e) => e?.parentId));
+                arr.push(allBookmarks.some((e) => e?.id));
             }
         }
 

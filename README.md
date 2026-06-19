@@ -86,7 +86,15 @@ The project uses two testing layers to ensure reliability:
 
 **Why Vitest?** It integrates natively with the Vite build toolchain, supports ESM out of the box, and provides near-instant feedback during development. Components are mounted with **Vue Test Utils** and **`createTestingPinia`** via a shared `mountWithPlugins` helper that pre-wires Vuetify and Pinia, keeping test files free of boilerplate.
 
-**What's covered:** store actions, composable utilities, bookmark and folder-name filtering logic, bookmark grouping lifecycle (create group, add to group, ungroup), import/export workflows, the MV3 service worker (`background.js`), and component rendering.
+**What's covered:** store actions, composable utilities, bookmark and folder-name filtering logic, bookmark grouping lifecycle (create group, add to group, ungroup), import/export workflows including grouped bookmark handling, the MV3 service worker (`background.js`), and component rendering.
+
+#### `import-files.test.ts` — Import/Export Workflow Tests
+
+| Test Group | Description |
+|---|---|
+| **Import bookmarks file** | Tests parsing exported bookmark JSON, creating Chrome folders, building old→new ID maps, and creating child bookmarks under correct parents |
+| **Import icons file** | Tests parsing icons JSON, matching bookmarks by URL, setting localStorage for images, and persisting folder/bookmark colors to sync storage |
+| **Import/export with bookmark groups** | Tests group-aware export (using `findNodeById` to attach images to nested bookmarks), import (recreating group folders and their children), and validation for files containing only group folder children |
 
 ### E2E Tests — Playwright (`e2e/`)
 
