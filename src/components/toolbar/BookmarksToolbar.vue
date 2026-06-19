@@ -11,6 +11,7 @@
         <div>
             <v-btn
                 class="toolbar-group-button"
+                :class="{ active: bookmarksStore.groupMode }"
                 :icon="mdiFolderMultiple"
                 :title="bookmarksStore.groupMode ? 'Disable group mode' : 'Enable group mode'"
                 @click="onToggleGroupMode()" />
@@ -278,6 +279,15 @@
         }
 
         &-group-button {
+            transition: box-shadow 0.28s cubic-bezier(0.2, 0.85, 0.2, 1), color 0.28s ease;
+
+            &.active {
+                color: #4ade80;
+                box-shadow:
+                    0 0 10px rgba(74, 222, 128, 0.6),
+                    0 0 20px rgba(74, 222, 128, 0.4),
+                    inset 0 0 8px rgba(74, 222, 128, 0.2);
+            }
         }
 
         &-filter-input {
