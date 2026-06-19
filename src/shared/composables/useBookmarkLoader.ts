@@ -12,7 +12,7 @@ export function useBookmarkLoader() {
     async function update(): Promise<void> {
         try {
             const rootId = await bookmarksStore.getLocalStorage(FOLDER.ROOT.name);
-            const tree = await bookmarksStore.getBookmarks(rootId as string);
+            const tree = await bookmarksStore.getColorizedBookmarks(rootId as string);
 
             const rootChildren = tree[0].children ?? [];
             bookmarksStore.bookmarks = rootChildren as BookmarkNode[];

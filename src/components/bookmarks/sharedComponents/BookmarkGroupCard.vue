@@ -18,6 +18,7 @@
                         <BookmarkIcon
                             :color="item.color ?? undefined"
                             :folder="false"
+                            :hide="!ready"
                             :image="imageMap[item.id] ?? null" />
                     </span>
                 </span>
@@ -55,6 +56,7 @@
                                     <BookmarkIcon
                                         :color="element.color ?? undefined"
                                         :folder="false"
+                                        :hide="!ready"
                                         :image="imageMap[element.id] ?? null" />
                                 </a>
                             </span>
@@ -141,6 +143,7 @@
     const popupGridRef = useTemplateRef<HTMLElement>('popupGridRef');
 
     const imageMap = ref<Record<string, string>>({});
+    const ready = ref(false);
 
     const groupAriaLabel = computed(() => `Open group with ${previewItems.value.length} bookmarks`);
 
@@ -305,6 +308,7 @@
         }));
 
         imageMap.value = Object.fromEntries(imageEntries.filter((entry) => !!entry[1]));
+        ready.value = true;
     }
 
     watch(
