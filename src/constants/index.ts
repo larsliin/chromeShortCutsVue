@@ -29,6 +29,7 @@ export enum EMITS {
     ICON_UPDATE = 'iconUpdate',
     UPDATE = 'update',
     IMAGES_IMPORT = 'imagesImport',
+    POPUP_DRAG_END = 'popupDragEnd',
     RENAME = 'rename',
     SAVE = 'save',
     TOGGLE = 'toggle',
@@ -58,6 +59,15 @@ export const GROUPING = Object.freeze({
     PREVIEW_COLUMNS: 3,
     PREVIEW_ITEMS: 9,
     MAX_NESTED_LEVEL: 1,
+    // Depth offset for the root + top-level bookmarks-bar folder when
+    // measuring a node's depth via findDepth. Added to MAX_NESTED_LEVEL
+    // to derive the maximum allowed depth value.
+    ROOT_DEPTH_OFFSET: 2,
+    // Border radii applied to the group card thumbnail per icon size.
+    // Mirror the SCSS values in BookmarkGroupCard.vue.
+    RADIUS_SMALL: '5.36%',
+    RADIUS_MEDIUM: '11.11%',
+    RADIUS_LARGE: '12.96%',
 });
 
 export enum ICON_SIZE {

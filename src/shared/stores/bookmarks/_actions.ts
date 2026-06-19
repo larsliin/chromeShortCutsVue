@@ -61,6 +61,10 @@ export default {
         return chromeApi.getBookmarkById(id);
     },
 
+    async getBookmarkByIdOrNull(id: string): Promise<chrome.bookmarks.BookmarkTreeNode | null> {
+        return chromeApi.getBookmarkByIdOrNull(id);
+    },
+
     searchFolder(
         nodes: chrome.bookmarks.BookmarkTreeNode[],
         folderName: string,
@@ -186,6 +190,11 @@ export default {
             return;
         }
 
+        // Re-insert each child sequentially at the group folder's original
+        // index plus the child's offset. Chrome's move(index) inserts BEFORE the
+        // target index, so sequential inserts at (origIndex + 0), (origIndex + 1),
+        // ... lay the children out in order at the position the group folder
+        // occupied. parentId is asserted above to be defined.
         const groupChildren = (groupFolder.children ?? []).filter((child) => !!child.url);
 
         await groupChildren.reduce<Promise<void>>((chain, child, index) => chain
@@ -197,7 +206,7 @@ export default {
         await chromeApi.removeBookmarkTree(groupFolderId);
     },
 
-    async collapseSingleItemGroups(): Promise<void> {
+    async collapseEmptyGroups(): Promise<void> {
         const groupChildren = (this.bookmarks ?? [])
             .flatMap((folder) => folder.children ?? [])
             .filter((child) => isGroupFolder(child));

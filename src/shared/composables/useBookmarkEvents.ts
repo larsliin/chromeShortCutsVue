@@ -81,7 +81,7 @@ export function useBookmarkEvents() {
             return false;
         }
 
-        return depth <= GROUPING.MAX_NESTED_LEVEL + 2;
+        return depth <= GROUPING.MAX_NESTED_LEVEL + GROUPING.ROOT_DEPTH_OFFSET;
     }
 
     function removeBookmarkFromTree(id: string): void {
@@ -232,7 +232,7 @@ export function useBookmarkEvents() {
             children: removedChildren,
         });
 
-        await bookmarksStore.collapseSingleItemGroups();
+        await bookmarksStore.collapseEmptyGroups();
     }
 
     async function onChanged(event: string): Promise<void> {

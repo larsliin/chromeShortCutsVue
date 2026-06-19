@@ -36,6 +36,20 @@ export function getBookmarkById(
     });
 }
 
+export function getBookmarkByIdOrNull(
+    id: string,
+): Promise<chrome.bookmarks.BookmarkTreeNode | null> {
+    return new Promise((resolve) => {
+        chrome.bookmarks.get(id, (result) => {
+            if (chrome.runtime.lastError) {
+                resolve(null);
+                return;
+            }
+            resolve(result && result.length > 0 ? result[0] : null);
+        });
+    });
+}
+
 export function getBookmarkTree(): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
     return new Promise((resolve, reject) => {
         chrome.bookmarks.getTree((result) => {
