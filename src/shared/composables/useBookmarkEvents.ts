@@ -84,28 +84,6 @@ export function useBookmarkEvents() {
         return depth <= GROUPING.MAX_NESTED_LEVEL + 2;
     }
 
-    function insertCreatedNode(node: chrome.bookmarks.BookmarkTreeNode): void {
-        const bm = node as BookmarkNode;
-        const insertIndex = node.index ?? 0;
-
-        if (node.parentId === bookmarksStore.rootId) {
-            if (bookmarksStore.bookmarks?.length) {
-                bookmarksStore.bookmarks.splice(insertIndex, 0, bm);
-            } else {
-                bookmarksStore.bookmarks = [bm];
-            }
-            return;
-        }
-
-        const parent = findNodeById((bookmarksStore.bookmarks ?? []) as BookmarkNode[], node.parentId ?? '');
-        if (!parent) return;
-
-        if (!parent.children) {
-            parent.children = [];
-        }
-        parent.children.splice(insertIndex, 0, bm);
-    }
-
     function removeBookmarkFromTree(id: string): void {
         const removeFromNodes = (nodes: BookmarkNode[]): BookmarkNode[] => nodes
             .filter((node) => node.id !== id)
@@ -223,7 +201,8 @@ export function useBookmarkEvents() {
 
         await buildRootFolder();
 
-        insertCreatedNode(bookmarkResponse);
+        await update();
+
         await applyStoredColor(event);
 
         emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.CREATED, id: event });

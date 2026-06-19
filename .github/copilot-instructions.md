@@ -4,7 +4,9 @@
 
 ## Defaults
 
-- **Agent**: The **chrome-extension-vue-expert** custom agent is specifically for **code changes** — **always** use it whenever a task involves writing, editing, refactoring, or debugging code in this repository. For non-code tasks (pure design audits, feature planning), pick the matching custom agent from `.github/agents/` (see _Custom Agents_ below). Only deviate if the user explicitly requests a different agent.
+- **Agent for coding**: **Always** use the **chrome-extension-vue-expert** custom agent for any task that involves writing, editing, refactoring, debugging, or otherwise modifying code in this repository — Vue components, Pinia stores, Vuetify usage, Chrome APIs, `background.js`, styles, build config, anything. Never write code with any other agent.
+- **Agent for code reviews**: **Always** use the **pr-reviewer** custom agent for any code review task — pull requests, branch diffs, staged changes, unstaged changes, or commit ranges. Never review code with `chrome-extension-vue-expert` or any other agent.
+- **Agent for non-code tasks**: For pure design audits or feature planning, pick the matching custom agent from `.github/agents/` (see _Custom Agents_ below). Only deviate from any of the above if the user explicitly requests a different agent.
 - **Model**: Use **Claude Opus 4.5** by default unless the user explicitly requests a different model.
 
 ---
@@ -30,7 +32,23 @@ The repository defines specialized custom agents in `.github/agents/`. Pick the 
 - "improve the UI" / "make this look better" / "style this element"
 - "design this component" / "review the design"
 
-**Do NOT use for:** pure visual/accessibility audits with no implementation (use `ui-design-specialist`), or pure planning/scoping deliverables for a new feature (use `frontend-feature-architect`).
+**Do NOT use for:** code reviews of PRs, branch diffs, or staged changes (use `pr-reviewer`), pure visual/accessibility audits with no implementation (use `ui-design-specialist`), or pure planning/scoping deliverables for a new feature (use `frontend-feature-architect`).
+
+### `pr-reviewer` (default for all code reviews)
+
+**File**: `.github/agents/pr-reviewer.agent.md`
+
+**Always use this agent for code reviews.** Any task that reviews, audits, or evaluates a pull request, branch diff, staged changes, unstaged changes, or commit range — must go through this agent. This agent is **review-only**: it never makes code changes and always asks before committing or pushing. After review it produces a priority-sorted issues table and asks which items to fix, then hands off implementation to `chrome-extension-vue-expert`.
+
+**Trigger examples:**
+- "review this PR" / "review PR #42"
+- "review my changes" / "review the diff"
+- "review my branch against main"
+- "audit my staged changes before I commit"
+- "is my PR ready to merge?"
+- "code review for this branch"
+
+**Do NOT use for:** implementing the fixes after review (hand off to `chrome-extension-vue-expert`), design-only audits (use `ui-design-specialist`), or feature planning (use `frontend-feature-architect`).
 
 ### `ui-design-specialist`
 
@@ -74,6 +92,7 @@ The repository defines specialized custom agents in `.github/agents/`. Pick the 
 | Task shape | Agent |
 |------------|-------|
 | **Any code change** in `src/`, `background.js`, or anywhere else in the repo | **`chrome-extension-vue-expert`** (always) |
+| **Any code review** — PR, branch diff, staged/unstaged changes, commit range | **`pr-reviewer`** (always) |
 | Pure visual / accessibility / UX audit with feedback as deliverable (no code) | `ui-design-specialist` |
 | Plan a new feature or rigorously evaluate feature completeness (no code) | `frontend-feature-architect` |
 | Anything else, or ambiguous | `chrome-extension-vue-expert` (default) |

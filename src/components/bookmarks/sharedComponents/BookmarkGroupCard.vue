@@ -75,7 +75,7 @@
 <script setup lang="ts">
     import { mdiUngroup } from '@mdi/js';
     import {
-        computed, ref, useTemplateRef, watch,
+        computed, onMounted, onUnmounted, ref, useTemplateRef, watch,
     } from 'vue';
     import { EMITS } from '@/constants';
     import type { BookmarkNode, DragEventInfo, FoldoutListItem } from '@/types/bookmark';
@@ -260,6 +260,18 @@
         },
         { immediate: true },
     );
+
+    function onImagesImportHandler(): void {
+        loadGroupImages();
+    }
+
+    onMounted(() => {
+        emitter.on(EMITS.IMAGES_IMPORT, onImagesImportHandler);
+    });
+
+    onUnmounted(() => {
+        emitter.off(EMITS.IMAGES_IMPORT, onImagesImportHandler);
+    });
 </script>
 
 <style scoped lang="scss">
