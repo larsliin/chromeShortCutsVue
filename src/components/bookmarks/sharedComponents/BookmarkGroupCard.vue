@@ -52,21 +52,10 @@
                     @update="onPopupDragUpdate($event)">
                     <template #item="{ element }">
                         <div class="group-grid-item">
-                            <span class="popup-handle">
-                                <a
-                                    class="group-grid-link"
-                                    :href="element.url || undefined"
-                                    :aria-label="element.title"
-                                    draggable="false"
-                                    @dragstart.prevent
-                                    @click="onOpenBookmark(element, $event)">
-                                    <BookmarkIcon
-                                        :color="element.color ?? undefined"
-                                        :folder="false"
-                                        :hide="!ready"
-                                        :image="imageMap[element.id] ?? null" />
-                                </a>
-                            </span>
+                            <BookmarkGroupPopupItem
+                                :bookmark="element"
+                                :image="imageMap[element.id] ?? null"
+                                :ready="ready" />
                         </div>
                     </template>
                 </draggable>
@@ -93,6 +82,7 @@
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
+    import BookmarkGroupPopupItem from '@/components/bookmarks/sharedComponents/BookmarkGroupPopupItem.vue';
     import draggable from 'vuedraggable';
     import emitter from '@cmp/eventBus';
     import { getGroupPreviewItems } from '@utils/bookmarkGroups';
@@ -165,62 +155,6 @@
             groupId: props.bookmark.id,
             rect: target?.getBoundingClientRect(),
         });
-    }
-
-    function onOpenBookmark(item: BookmarkNode, event: MouseEvent): void {
-        if (!item.url) {
-            event.preventDefault();
-            return;
-        }
-
-        event.preventDefault();
-
-        if (!bookmarksStore.statistics) {
-            bookmarksStore.statistics = [];
-        }
-
-        const bookmarkStats = (bookmarksStore.statistics ?? [])
-            .find((entry) => entry.url === item.url);
-
-        const bookmarkStatsIndex = (bookmarksStore.statistics ?? [])
-            .findIndex((entry) => Object.values(entry.id).includes(item.id));
-
-        const index = bookmarkStatsIndex === -1
-            ? bookmarksStore.statistics.length
-            : bookmarkStatsIndex;
-
-        const clicks = bookmarkStats?.clicks !== undefined
-            ? parseInt(String(bookmarkStats.clicks), 10) + 1
-            : 1;
-
-        const idArr = bookmarkStats
-            ? [...new Set([...Object.values(bookmarkStats.id), item.id])]
-            : [item.id];
-
-        bookmarksStore.statistics[index] = {
-            clicks,
-            id: idArr,
-            title: item.title,
-            timestamp: Date.now(),
-            url: item.url,
-        };
-
-        const sorted = bookmarksStore.statistics.sort((a, b) => {
-            if (b.clicks !== a.clicks) {
-                return b.clicks - a.clicks;
-            }
-
-            return b.timestamp - a.timestamp;
-        });
-
-        bookmarksStore.setSyncStorage({ statistics: sorted });
-
-        if (event.ctrlKey || event.metaKey) {
-            window.open(item.url, '_blank');
-            return;
-        }
-
-        window.location.href = item.url;
     }
 
     async function onUngroup(): Promise<void> {
@@ -452,7 +386,9 @@
             width: 100%;
         }
 
-        .bookmark-edit {
+        // Only hide the outer group card's foldout (Ungroup) in popup mode.
+        // Inner item foldouts live inside BookmarkGroupPopupItem and are scoped there.
+        > .bookmark-edit {
             display: none;
         }
 
@@ -461,21 +397,6 @@
             height: 100%;
             margin-top: 0;
             width: 100%;
-        }
-
-        .group-grid-link {
-            cursor: pointer;
-
-            &:hover :deep(.bookmark-image-container) {
-                transform: perspective(400px) rotateY(25deg) scale(1.02);
-                box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
-            }
-
-            &:active :deep(.bookmark-image-container) {
-                transform: perspective(400px) rotateY(-15deg) scale(.98);
-                box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
-                transform-origin: center right;
-            }
         }
 
         .group-grid {
@@ -520,12 +441,6 @@
 
             :deep(.bookmark-image-container) {
                 padding: 8%;
-            }
-
-            .popup-handle {
-                display: flex;
-                width: 100%;
-                height: 100%;
             }
         }
 
