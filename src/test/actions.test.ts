@@ -666,6 +666,76 @@ describe('migrateLegacyGroupFolders', () => {
 });
 
 // ---------------------------------------------------------------------------
+// reconcileGroupIdsFromTree
+// Detects group-like folders from the live root tree (folders that contain
+// only bookmark links) so pasted/copied groups get recognized by new IDs.
+// ---------------------------------------------------------------------------
+
+describe('reconcileGroupIdsFromTree', () => {
+    it('registers only group-like child folders under top-level folders', async () => {
+        const groupCandidate = makeFolder({
+            id: 'g1',
+            title: 'Group',
+            parentId: 'f1',
+            children: [
+                makeNode({ id: 'b1', parentId: 'g1' }),
+                makeNode({ id: 'b2', parentId: 'g1' }),
+            ],
+        });
+
+        const nestedFolderCandidate = makeFolder({
+            id: 'not-group',
+            title: 'Folder',
+            parentId: 'f1',
+            children: [
+                makeFolder({ id: 'sub', parentId: 'not-group', title: 'Sub' }),
+            ],
+        });
+
+        const rootChildren = [
+            makeFolder({
+                id: 'f1',
+                title: 'Top',
+                children: [
+                    makeNode({ id: 'top-link', parentId: 'f1' }),
+                    groupCandidate,
+                    nestedFolderCandidate,
+                    makeFolder({ id: 'empty-folder', parentId: 'f1', children: [] }),
+                ],
+            }),
+        ];
+
+        await store.reconcileGroupIdsFromTree(rootChildren);
+
+        expect(store.groupIds).toEqual({ g1: true });
+        expect(chromeMock.storage.sync.set).toHaveBeenCalledWith({ groupIds: { g1: true } });
+    });
+
+    it('removes stale group ids when no group-like folders remain', async () => {
+        store.groupIds = { stale: true };
+        chromeMock.storage.sync.remove.mockImplementation((_keys: string[], cb?: () => void) => {
+            if (cb) cb();
+        });
+
+        const rootChildren = [
+            makeFolder({
+                id: 'f1',
+                title: 'Top',
+                children: [
+                    makeNode({ id: 'b1', parentId: 'f1' }),
+                    makeFolder({ id: 'empty-folder', parentId: 'f1', children: [] }),
+                ],
+            }),
+        ];
+
+        await store.reconcileGroupIdsFromTree(rootChildren);
+
+        expect(store.groupIds).toEqual({});
+        expect(chromeMock.storage.sync.remove).toHaveBeenCalledWith(['groupIds'], expect.any(Function));
+    });
+});
+
+// ---------------------------------------------------------------------------
 // collapseEmptyGroups
 // Walks the in-memory tree and ungroups any group folder whose link children
 // have all been removed (e.g. after a bookmark is dragged out via the popup).

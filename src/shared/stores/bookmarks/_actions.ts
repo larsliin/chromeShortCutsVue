@@ -38,6 +38,54 @@ function forEachFolder(
     });
 }
 
+function isGroupCandidateFolder(node: chrome.bookmarks.BookmarkTreeNode): boolean {
+    if (node.url) {
+        return false;
+    }
+
+    const children = node.children ?? [];
+
+    if (children.length === 0 || children.length > GROUPING.MAX_ITEMS) {
+        return false;
+    }
+
+    return children.every((child) => !!child.url);
+}
+
+function collectGroupCandidateIds(
+    rootChildren: chrome.bookmarks.BookmarkTreeNode[],
+): Record<string, true> {
+    const next: Record<string, true> = {};
+
+    rootChildren.forEach((folder) => {
+        if (folder.url) {
+            return;
+        }
+
+        (folder.children ?? []).forEach((child) => {
+            if (isGroupCandidateFolder(child)) {
+                next[child.id] = true;
+            }
+        });
+    });
+
+    return next;
+}
+
+function areGroupIdMapsEqual(
+    left: Record<string, true>,
+    right: Record<string, true>,
+): boolean {
+    const leftKeys = Object.keys(left);
+    const rightKeys = Object.keys(right);
+
+    if (leftKeys.length !== rightKeys.length) {
+        return false;
+    }
+
+    return leftKeys.every((key) => right[key] === true);
+}
+
 export default {
     async getBookmarks(id: string): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
         return chromeApi.getBookmarkSubTree(id);
@@ -257,6 +305,23 @@ export default {
         const stored = await chromeApi.getSyncStorage(STORAGE_KEYS.GROUP_IDS) as
             Record<string, true> | null;
         this.groupIds = stored && typeof stored === 'object' ? { ...stored } : {};
+    },
+
+    async reconcileGroupIdsFromTree(
+        this: {
+            groupIds: Record<string, true>;
+            persistGroupIds: () => Promise<void>;
+        },
+        rootChildren: chrome.bookmarks.BookmarkTreeNode[],
+    ): Promise<void> {
+        const next = collectGroupCandidateIds(rootChildren);
+
+        if (areGroupIdMapsEqual(this.groupIds, next)) {
+            return;
+        }
+
+        this.groupIds = next;
+        await this.persistGroupIds();
     },
 
     async persistGroupIds(

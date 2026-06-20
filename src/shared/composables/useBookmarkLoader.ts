@@ -15,6 +15,7 @@ export function useBookmarkLoader() {
         const tree = await bookmarksStore.getColorizedBookmarks(rootId as string);
 
         const rootChildren = tree[0].children ?? [];
+        await bookmarksStore.reconcileGroupIdsFromTree(rootChildren);
         bookmarksStore.bookmarks = rootChildren as BookmarkNode[];
     }
 
@@ -72,6 +73,7 @@ export function useBookmarkLoader() {
             const tree = await bookmarksStore.getColorizedBookmarks(rootId as string);
             const rootChildren = tree[0]?.children ?? [];
 
+            await bookmarksStore.reconcileGroupIdsFromTree(rootChildren);
             bookmarksStore.bookmarks = rootChildren as BookmarkNode[];
 
             await bookmarksStore.cleanupGroupIds();
