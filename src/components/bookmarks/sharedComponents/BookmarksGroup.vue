@@ -196,9 +196,9 @@
 
         return {
             '--popup-overlay-opacity': isOpen ? '0.75' : '0',
+            '--popup-overlay-blur': isOpen ? (`var(--popup-overlay-blur-target, ${GROUPING.POPUP_OVERLAY_BLUR})`) : '0px',
         } as Record<string, string>;
     });
-
     function isRegularBookmark(item: BookmarkNode): boolean {
         return !isGroupFolder(item, bookmarksStore.groupIds);
     }
@@ -650,17 +650,36 @@
     }
 
     .group-popup-overlay {
+        --popup-overlay-blur-target: 6px;
         background: rgba(10, 12, 18, var(--popup-overlay-opacity, 0.75));
+        backdrop-filter: blur(var(--popup-overlay-blur, 0px));
+        -webkit-backdrop-filter: blur(var(--popup-overlay-blur, 0px));
         inset: 0;
         padding: clamp(16px, 4vw, 48px);
         position: fixed;
-        transition: background-color 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+        contain: paint;
+        transition: background-color 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+            backdrop-filter 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+            -webkit-backdrop-filter 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+        will-change: backdrop-filter;
         z-index: 1100;
+    }
+    @media (min-width: 1440px) {
+        .group-popup-overlay {
+            --popup-overlay-blur-target: 4.5px;
+        }
+    }
+    @media (min-width: 1920px) {
+        .group-popup-overlay {
+            --popup-overlay-blur-target: 3.5px;
+        }
     }
 
     .group-popup-wrapper {
         position: fixed;
-        transform: translate(-50%, -50%);
+        transform: translate3d(-50%, -50%, 0);
+        backface-visibility: hidden;
+        will-change: left, top, width, height, border-radius, box-shadow, opacity, transform;
         border-radius: var(--popup-card-radius, 14%);
         transition:
             left 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
@@ -669,7 +688,6 @@
             height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
             opacity 0.18s ease,
             box-shadow 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-            filter 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
             border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
         z-index: 1101;
 
@@ -677,13 +695,11 @@
         &.closing {
             border-radius: var(--popup-inline-radius, 11.11%);
             box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-            filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
         }
 
         &.open {
             border-radius: var(--popup-expanded-radius, 14%);
             box-shadow: 0 22px 70px rgba(0, 0, 0, 0.35);
-            filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.34));
         }
     }
 

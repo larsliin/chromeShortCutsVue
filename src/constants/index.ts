@@ -80,6 +80,7 @@ export const GROUPING = Object.freeze({
     RADIUS_SMALL: '5.36%',
     RADIUS_MEDIUM: '11.11%',
     RADIUS_LARGE: '12.96%',
+    POPUP_OVERLAY_BLUR: '6px',
 });
 
 export enum ICON_SIZE {
