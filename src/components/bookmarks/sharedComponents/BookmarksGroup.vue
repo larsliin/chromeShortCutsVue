@@ -183,7 +183,7 @@
             height: isOpen
                 ? `min(${popupTargetSize}px, calc(100vw - 32px), calc(100vh - 32px))`
                 : `${origin?.height ?? popupTargetSize}px`,
-            opacity: popupState.value === 'open' ? '1' : '0.98',
+            opacity: '1',
             '--popup-inline-radius': inlineRadius,
             '--popup-expanded-radius': expandedRadius,
             '--popup-card-radius': isOpen ? expandedRadius : inlineRadius,
@@ -195,8 +195,7 @@
         const isOpen = popupState.value === 'open';
 
         return {
-            '--popup-overlay-blur': isOpen ? '8px' : '0px',
-            '--popup-overlay-opacity': isOpen ? '0.56' : '0',
+            '--popup-overlay-opacity': isOpen ? '0.75' : '0',
         } as Record<string, string>;
     });
 
@@ -651,16 +650,11 @@
     }
 
     .group-popup-overlay {
-        background: rgba(10, 12, 18, var(--popup-overlay-opacity, 0.56));
-        backdrop-filter: blur(var(--popup-overlay-blur, 8px));
-        -webkit-backdrop-filter: blur(var(--popup-overlay-blur, 8px));
+        background: rgba(10, 12, 18, var(--popup-overlay-opacity, 0.75));
         inset: 0;
         padding: clamp(16px, 4vw, 48px);
         position: fixed;
-        transition:
-            backdrop-filter 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-            -webkit-backdrop-filter 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-            background-color 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+        transition: background-color 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
         z-index: 1100;
     }
 
@@ -674,19 +668,22 @@
             width 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
             height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
             opacity 0.18s ease,
-            box-shadow 0.28s ease,
+            box-shadow 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+            filter 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
             border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
         z-index: 1101;
 
         &.opening,
         &.closing {
             border-radius: var(--popup-inline-radius, 11.11%);
-            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+            filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
         }
 
         &.open {
             border-radius: var(--popup-expanded-radius, 14%);
             box-shadow: 0 22px 70px rgba(0, 0, 0, 0.35);
+            filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.34));
         }
     }
 
