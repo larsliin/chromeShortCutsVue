@@ -3,10 +3,14 @@
         <v-row>
             <v-col
                 cols="12">
-                <BookmarkIcon
-                    :loading="isIconLoading"
-                    :color="color ?? undefined"
-                    :image="base64Image" />
+                <span
+                    class="icon-preview"
+                    :class="effectiveSize">
+                    <BookmarkIcon
+                        :loading="isIconLoading"
+                        :color="color ?? undefined"
+                        :image="base64Image" />
+                </span>
             </v-col>
         </v-row>
         <v-row>
@@ -98,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-    import { ref, watch } from 'vue';
+    import { ref, watch, computed } from 'vue';
     import { mdiFormatColorFill, mdiFolderOpen, mdiCloudDownload, mdiClose } from '@mdi/js';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import { getDomainFromUrl, isValidURL, getBase64ImageFromUrl } from '@utils/urlUtils';
@@ -106,6 +110,7 @@
     import { EMITS, LOGO_GENERATOR } from '@/constants';
 
     const bookmarksStore = useBookmarksStore();
+    const effectiveSize = computed(() => `icon-${bookmarksStore.iconSize}`);
 
     interface Props {
         data?: { url?: string };
@@ -200,6 +205,43 @@
 <style scoped lang="scss">
     .inp-file {
         display: none;
+    }
+
+    .icon-preview {
+        display: inline-flex;
+    }
+
+    .icon-preview.icon-small {
+        :deep(.bookmark-image-container) {
+            width: 56px;
+            padding: 7.14%;
+            border-radius: 12.5%;
+            font-size: 34px;
+        }
+
+        :deep(.bookmark-image) {
+            border-radius: 8.93%;
+        }
+    }
+
+    .icon-preview.icon-medium {
+        :deep(.bookmark-image-container) {
+            width: 82px;
+            padding: 7.32%;
+        }
+    }
+
+    .icon-preview.icon-large {
+        :deep(.bookmark-image-container) {
+            width: 108px;
+            padding: 7.41%;
+            border-radius: 12.96%;
+            font-size: 66px;
+        }
+
+        :deep(.bookmark-image) {
+            border-radius: 9.26%;
+        }
     }
 
     .clearbit-error {

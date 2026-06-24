@@ -54,7 +54,7 @@
                         <div class="group-grid-item">
                             <BookmarkGroupPopupItem
                                 :bookmark="element"
-                                :image="imageMap[element.id] ?? null"
+                                :image="imageMap[element.id] ?? element.image ?? null"
                                 :ready="ready" />
                         </div>
                     </template>
@@ -185,7 +185,7 @@
     const popupDragEndDelayMs = 220;
 
     const imageMap = ref<Record<string, string>>({});
-    const ready = ref(false);
+    const ready = ref(!!props.popup);
 
     const groupAriaLabel = computed(() => `Open group with ${previewItems.value.length} bookmarks`);
 
@@ -292,13 +292,31 @@
     }
 
     async function loadGroupImages(): Promise<void> {
+        const immediateEntries = (props.bookmark.children ?? [])
+            .filter((item) => !!item.image)
+            .map((item) => [item.id, item.image as string] as const);
+
+        if (immediateEntries.length) {
+            imageMap.value = {
+                ...imageMap.value,
+                ...Object.fromEntries(immediateEntries),
+            };
+            ready.value = true;
+        }
+
         const imageEntries = await Promise.all(previewItems.value.map(async (item) => {
             const stored = await bookmarksStore.getLocalStorage(item.id);
             const image = (stored as { image?: string } | undefined)?.image;
+            if (image) {
+                item.image = image;
+            }
             return [item.id, image ?? ''] as const;
         }));
 
-        imageMap.value = Object.fromEntries(imageEntries.filter((entry) => !!entry[1]));
+        imageMap.value = {
+            ...imageMap.value,
+            ...Object.fromEntries(imageEntries.filter((entry) => !!entry[1])),
+        };
         ready.value = true;
     }
 
