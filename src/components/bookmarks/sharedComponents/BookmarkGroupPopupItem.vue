@@ -41,7 +41,7 @@
                         :id="bookmark.id"
                         :typeFolder="false"
                         @cancel="showConfirmDelete = false"
-                        @confirm="onDeleteConfirm($event)" />
+                        @confirm="onDeleteConfirm" />
                 </v-dialog>
             </v-row>
         </template>
