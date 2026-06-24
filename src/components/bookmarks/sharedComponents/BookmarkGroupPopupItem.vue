@@ -13,7 +13,7 @@
                 <BookmarkIcon
                     :color="color ?? undefined"
                     :folder="false"
-                    :hide="!ready"
+                    :allowFallbackIcon="ready"
                     :image="image" />
             </a>
         </span>

@@ -25,7 +25,7 @@
                         <BookmarkIcon
                             :color="item.color ?? undefined"
                             :folder="false"
-                            :hide="!ready"
+                            :allowFallbackIcon="ready"
                             :image="imageMap[item.id] ?? null" />
                     </span>
                 </span>

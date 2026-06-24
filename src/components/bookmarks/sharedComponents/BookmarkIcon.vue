@@ -3,8 +3,7 @@
         :style="{ backgroundColor: color }"
         :class="{ dimmed: folder, dark: bookmarksStore.enableDarkMode }">
         <span
-            class="visibility-toggle"
-            :class="{ hide }">
+            class="visibility-toggle">
             <v-icon v-if="folder"
                 :icon="mdiFolderOpen" />
             <template v-else-if="image">
@@ -12,7 +11,7 @@
                 <span class="bookmark-image"
                     :style="{ 'background-image': `url(${image})` }"></span>
             </template>
-            <BIconStarFill v-else />
+            <BIconStarFill v-else-if="allowFallbackIcon" />
             <span
                 v-if="loading">
                 <div class="lds-ring"
@@ -37,12 +36,16 @@
     interface Props {
         color?: string;
         folder?: boolean;
-        hide?: boolean;
         image?: string | null;
         loading?: boolean;
+        allowFallbackIcon?: boolean;
     }
 
-    withDefaults(defineProps<Props>(), { color: '', image: null });
+    withDefaults(defineProps<Props>(), {
+        color: '',
+        image: null,
+        allowFallbackIcon: true,
+    });
 </script>
 
 <style scoped lang="scss">
@@ -55,10 +58,6 @@
         position: relative;
         transition: opacity .25s;
         width: 100%;
-    }
-
-    .hide {
-        opacity: 0;
     }
 
     .lds-ring {

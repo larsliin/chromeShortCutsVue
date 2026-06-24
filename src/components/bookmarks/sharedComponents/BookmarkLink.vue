@@ -16,8 +16,8 @@
                 @click="onClick($event)">
                 <BookmarkIcon
                     :color="color ?? undefined"
-                    :hide="!ready && fadeInIcon"
                     :folder="!bookmark.url"
+                    :allowFallbackIcon="iconResolved"
                     :image="image" />
                 <span class="bookmark-title-container"
                     v-if="((hideEdit && !image) || !hideEdit)">{{ bookmark.title }}</span>
@@ -100,19 +100,17 @@
         size?: string;
         hideEdit?: boolean;
         draggable?: boolean;
-        fadeInIcon?: boolean;
     }
 
     const props = withDefaults(defineProps<Props>(), {
         tabIndex: '-1',
         size: '',
         draggable: true,
-        fadeInIcon: true,
     });
 
     const isFoldoutOpen = ref(false);
     const image = toRef(props.bookmark, 'image') as Ref<string | null | undefined>;
-    const ready = ref(false);
+    const iconResolved = ref(false);
     const list = ref<FoldoutListItem[]>([
         {
             title: 'Delete',
@@ -132,11 +130,9 @@
     async function updateImage() {
         const getImageResponse = await bookmarksStore.getLocalStorage(props.bookmark.id);
 
-        if (getImageResponse) {
-            image.value = (getImageResponse as { image?: string }).image ?? null;
-        }
+        image.value = (getImageResponse as { image?: string } | null)?.image ?? null;
 
-        ready.value = true;
+        iconResolved.value = true;
 
         emits(EMITS.UPDATE);
     }

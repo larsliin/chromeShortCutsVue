@@ -10,7 +10,6 @@
                             :tabIndex="``"
                             :draggable="false"
                             :bookmark="item"
-                            :fadeInIcon="false"
                             @update="onImageUpdate()" />
 
                     </div>
