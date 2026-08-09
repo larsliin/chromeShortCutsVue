@@ -1,6 +1,6 @@
 <template>
     <span class="bookmark relative inline-block"
-        :class="[attrs.class, { 'foldout-open': isFoldoutOpen, 'drag-active': bookmarksStore.dragStart }]">
+        :class="[attrs.class, { 'foldout-open': isFoldoutOpen, 'drag-active': bookmarksStore.dragStart, expanded }]">
         <span class="handle">
             <a
                 v-bind="props"
@@ -23,7 +23,7 @@
                     v-if="((hideEdit && !image) || !hideEdit)">{{ bookmark.title }}</span>
             </a>
         </span>
-        <template v-if="!hideEdit">
+        <template v-if="!hideEdit && expanded">
             <div class="tooltip">{{ bookmark.title }}</div>
             <div class="bookmark-edit">
                 <BookmarkFoldout
@@ -104,12 +104,17 @@
         size?: string;
         hideEdit?: boolean;
         draggable?: boolean;
+        // false in the collapsed group preview: renders the same markup as
+        // the open popup, but without the tooltip/edit-menu in the DOM at
+        // all, so they can never appear on hover while minified.
+        expanded?: boolean;
     }
 
     const props = withDefaults(defineProps<Props>(), {
         tabIndex: '-1',
         size: '',
         draggable: true,
+        expanded: true,
     });
 
     const attrs = useAttrs();
@@ -390,14 +395,54 @@
     // definite size all the way down from the grid cell.
     .bookmark.popup {
         width: 100%;
+        // the base .bookmark bottom margin (8px) adds up across 3 stacked
+        // rows and overflows the fixed-square grid; collapse it while
+        // minified and animate it back in as the popup opens.
+        margin-bottom: 0;
+        transition: margin-bottom 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+
+        &.expanded {
+            margin-bottom: 8px;
+        }
 
         .bookmark-link {
             margin-top: 0;
             width: 100%;
 
             .bookmark-title-container {
-                margin-top: 6px;
+                // collapsed by default (matches the group preview look).
+                // line-height: 0 forces the row to truly take no space —
+                // font-size: 0 alone can leave a stray sliver that breaks
+                // the group grid's 1:1 aspect ratio across 3 stacked rows.
+                margin-top: 0;
+                opacity: 0;
+                font-size: 0;
+                line-height: 0;
+                // row space (font-size/line-height/margin-top) grows in
+                // lockstep with the grid's own resize (no delay), so it
+                // never falls behind and overflows a still-small wrapper.
+                // Only opacity is delayed — it starts fading in once that
+                // resize (and growth above) has already finished.
+                transition: font-size 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                    line-height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                    margin-top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                    opacity 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
             }
+        }
+
+        &.expanded .bookmark-link .bookmark-title-container {
+            margin-top: 6px;
+            font-size: 10px;
+            line-height: 1.2;
+            opacity: 1;
+            // wait out the .group-popup-wrapper's own grow animation
+            // (280ms, see popupAnimationMs in BookmarksGroup.vue) before
+            // revealing the text — only opacity gets the delay, sizing
+            // already finished growing by then.
+            transition: font-size 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                line-height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                margin-top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                opacity 0.28s cubic-bezier(0.2, 0.85, 0.2, 1) 0.28s;
         }
 
         // smaller than the base tooltip so it fits the tighter popup cells.

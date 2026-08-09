@@ -82,6 +82,7 @@
                     class="group-popup-card"
                     :bookmark="activeGroup"
                     popup
+                    :expanded="popupState === 'open'"
                     @open="closeGroupPopup()"
                     @[EMITS.DRAG_START]="popupDragging = true"
                     @[EMITS.POPUP_DRAG_END]="popupDragging = false"

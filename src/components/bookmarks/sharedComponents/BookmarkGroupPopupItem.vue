@@ -1,13 +1,14 @@
 <template>
     <span
         class="popup-item"
-        :class="{ 'drag-active': bookmarksStore.dragStart }">
+        :class="{ 'drag-active': bookmarksStore.dragStart, static: !expanded }">
         <span class="popup-handle">
             <span class="group-grid-link">
                 <BookmarkLink
                     class="popup"
                     :bookmark="bookmark"
                     :image="image"
+                    :expanded="expanded"
                     size="smaller"
                     :draggable="false" />
             </span>
@@ -16,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-    import { toRef, type Ref } from 'vue';
+    import { toRef, toRefs, type Ref } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import type { BookmarkNode } from '@/types/bookmark';
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
@@ -24,14 +25,20 @@
     interface Props {
         bookmark: BookmarkNode;
         image?: string | null;
+        // false for the collapsed group preview: shows the same icon+title
+        // markup as the open popup, but non-interactive and "closed"-styled
+        // so expanding can morph smoothly instead of swapping layouts.
+        expanded?: boolean;
     }
 
     const props = withDefaults(defineProps<Props>(), {
         image: null,
+        expanded: true,
     });
 
     const bookmarksStore = useBookmarksStore();
     const image = toRef(props, 'image') as Ref<string | null | undefined>;
+    const { expanded } = toRefs(props);
 </script>
 
 <style scoped lang="scss">
@@ -40,6 +47,12 @@
         width: 100%;
         height: 100%;
         position: relative;
+
+        // the collapsed preview / mid-animation state isn't interactive —
+        // clicks should fall through to the group's own open trigger.
+        &.static {
+            pointer-events: none;
+        }
     }
 
     .popup-handle {
@@ -78,7 +91,10 @@
     }
 
     .popup-item {
-        &:hover {
+        // :not(.static) is a belt-and-suspenders guard on top of the
+        // pointer-events:none above — hover effects must never engage on
+        // the non-interactive collapsed/mid-animation items.
+        &:not(.static):hover {
             z-index: 1;
 
             :deep(.bookmark-edit) {

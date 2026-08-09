@@ -22,11 +22,11 @@
                         v-for="item in previewItems"
                         :key="item.id"
                         class="group-grid-item">
-                        <BookmarkIcon
-                            :color="item.color ?? undefined"
-                            :folder="false"
-                            :allowFallbackIcon="ready"
-                            :image="imageMap[item.id] ?? null" />
+                        <BookmarkGroupPopupItem
+                            :bookmark="item"
+                            :image="imageMap[item.id] ?? null"
+                            :ready="ready"
+                            :expanded="false" />
                     </span>
                 </span>
             </button>
@@ -37,8 +37,9 @@
                 :aria-label="groupAriaLabel">
                 <draggable
                     class="group-grid"
-                    :class="{ dark: bookmarksStore.enableDarkMode, dragging: popupDragging }"
+                    :class="{ dark: bookmarksStore.enableDarkMode, dragging: popupDragging, open: props.expanded }"
                     :animation="200"
+                    :disabled="!props.expanded"
                     :fallbackTolerance="10"
                     :force-fallback="true"
                     :ghost-class="'ghost'"
@@ -55,7 +56,8 @@
                             <BookmarkGroupPopupItem
                                 :bookmark="element"
                                 :image="imageMap[element.id] ?? element.image ?? null"
-                                :ready="ready" />
+                                :ready="ready"
+                                :expanded="props.expanded" />
                         </div>
                     </template>
                 </draggable>
@@ -100,7 +102,6 @@
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
     import BookmarkGroupRename from '@/components/forms/BookmarkGroupRename.vue';
-    import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import BookmarkGroupPopupItem from '@/components/bookmarks/sharedComponents/BookmarkGroupPopupItem.vue';
     import draggable from 'vuedraggable';
     import emitter from '@cmp/eventBus';
@@ -110,6 +111,11 @@
     interface Props {
         bookmark: BookmarkNode;
         popup?: boolean;
+        // Drives the popup's grid metrics/title/interactivity between the
+        // "closed-look" (matches the collapsed preview) and the full open
+        // look, so BookmarksGroup can animate the morph in step with its
+        // wrapper instead of swapping layouts instantly.
+        expanded?: boolean;
     }
 
     interface GroupOpenPayload {
@@ -125,7 +131,7 @@
 
     const EMPTY_BOOKMARKS: BookmarkNode[] = [];
 
-    const props = defineProps<Props>();
+    const props = withDefaults(defineProps<Props>(), { expanded: true });
 
     const emits = defineEmits<{
         open: [payload: GroupOpenPayload];
@@ -390,16 +396,25 @@
     .group-grid {
         width: 100%;
         aspect-ratio: 1;
+        // guards the 1:1 shape if row content (icon + collapsing title)
+        // ever slightly outgrows the aspect-ratio-derived height.
+        overflow: hidden;
         border-radius: 11.11%;
         background-color: var(--blue-lighter);
         box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.15);
         transform-origin: center right;
-        transition: transform 0.05s, box-shadow 0.05s;
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        grid-template-rows: repeat(3, minmax(0, 1fr));
+        // flex+wrap (not CSS grid) so the collapsed preview and open popup
+        // share one layout engine — padding/gap can then be smoothly
+        // transitioned between the two instead of swapping instantly.
+        display: flex;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        justify-content: flex-start;
         gap: 3%;
         padding: 8.89%;
+        transition: transform 0.05s, box-shadow 0.05s,
+            padding 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+            gap 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
 
         &.dark {
             background-color: var(--darkmode-200);
@@ -408,11 +423,17 @@
     }
 
     .group-grid-item {
-        width: 100%;
-        aspect-ratio: 1;
+        // 3 columns with 3% gap on a 100% wide row:
+        // 3w + 2 * 3% = 100% → w = (100% - 6%) / 3
+        width: calc((100% - 6%) / 3);
+        // let height follow the icon + title content instead of forcing a
+        // 1:1 cell — the title is always present (see BookmarkGroupPopupItem)
+        // so a fixed square would clip it once it expands.
+        aspect-ratio: auto;
         display: flex;
         align-items: stretch;
         justify-content: stretch;
+        transition: width 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
 
         .group-grid-link {
             display: flex;
@@ -424,7 +445,7 @@
         :deep(.bookmark-image-container) {
             height: 100%;
             width: 100%;
-            padding: 7%;
+            padding: 8%;
             border-radius: 17%;
         }
     }
@@ -439,6 +460,11 @@
             padding: 11%;
             border-radius: 5.36%;
             gap: 5%;
+        }
+
+        // gap above is 5%, not the 3% the base width formula assumes.
+        .group-grid-item {
+            width: calc((100% - 10%) / 3);
         }
     }
 
@@ -520,29 +546,29 @@
             border-radius: var(--popup-group-radius, 14%);
             box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
             background-color: color-mix(in srgb, var(--blue-lighter) 95%, transparent);
-            transition: border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+            transition: border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                padding 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                gap 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
 
             &.dark {
                 background-color: color-mix(in srgb, var(--darkmode-200) 95%, transparent);
             }
-            // popup padding is pinned here so it is consistent across all
-            // icon sizes — the per-size .bookmark.icon-* rules would
-            // otherwise produce too little padding for small icons.
-            // The card is a fixed square, so the 3 rows of icon+title must
-            // fit inside it without growing it: vertical padding stays small
-            // to leave headroom for the titles, while horizontal
-            // padding/gap is larger, which also shrinks each 1:1 icon just
-            // enough (via its column width) to make that headroom fit.
-            padding: 5% 14% 2%;
-            gap: 2% 6%;
-            // override the base grid layout with flex+wrap so SortableJS
-            // can detect swaps inside the popup. CSS Grid leaves empty
-            // cells when an item is removed mid-drag, which prevents
-            // SortableJS from registering a sort change.
-            display: flex;
-            flex-wrap: wrap;
-            align-content: flex-start;
-            justify-content: flex-start;
+
+            // .open (driven by the `expanded` prop) is the only thing that
+            // switches padding/gap to the full popup layout — until then this
+            // falls through to the same closed-look values as the collapsed
+            // preview/icon-size rules above, so opening the popup animates
+            // padding/gap smoothly instead of snapping to these values.
+            &.open {
+                // The card is a fixed square, so the 3 rows of icon+title
+                // must fit inside it without growing it: vertical padding
+                // stays small to leave headroom for the titles, while
+                // horizontal padding/gap is larger, which also shrinks each
+                // 1:1 icon just enough (via its column width) to make that
+                // headroom fit.
+                padding: 5% 14% 2%;
+                gap: 2% 6%;
+            }
 
             &.dragging {
                 .group-grid-link {
@@ -555,17 +581,10 @@
             }
         }
 
-        .group-grid-item {
+        .group-grid.open .group-grid-item {
             // 3 columns with 6% gap on a 100% wide row:
             // 3w + 2 * 6% = 100% → w = (100% - 12%) / 3
             width: calc((100% - 12%) / 3);
-            // let height follow the icon + title content instead of forcing
-            // a 1:1 cell, which left no room for the title below the icon.
-            aspect-ratio: auto;
-
-            :deep(.bookmark-image-container) {
-                padding: 8%;
-            }
         }
 
         &.icon-small,
