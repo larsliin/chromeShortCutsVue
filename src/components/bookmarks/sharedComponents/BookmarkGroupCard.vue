@@ -11,7 +11,7 @@
         <span class="handle">
             <button
                 v-if="!props.popup"
-                class="bookmark-link group-link"
+                class="group-body group-link"
                 type="button"
                 :aria-label="groupAriaLabel"
                 @click="onOpenGroup($event)">
@@ -33,7 +33,7 @@
             <span
                 v-else
                 ref="popupGridRef"
-                class="bookmark-link group-link"
+                class="group-body group-link"
                 :aria-label="groupAriaLabel">
                 <draggable
                     class="group-grid"
@@ -73,21 +73,21 @@
         <span
             v-if="!props.popup"
             class="bookmark-title-container">{{ displayTitle }}</span>
+        <Teleport to="body"
+            v-if="!props.popup && showRenameDialog">
+            <v-row justify="center">
+                <v-dialog
+                    v-model="showRenameDialog"
+                    persistent
+                    width="450">
+                    <BookmarkGroupRename
+                        :value="bookmark.title"
+                        @confirm="onRenameConfirm($event)"
+                        @cancel="showRenameDialog = false" />
+                </v-dialog>
+            </v-row>
+        </Teleport>
     </span>
-    <Teleport to="body"
-        v-if="!props.popup && showRenameDialog">
-        <v-row justify="center">
-            <v-dialog
-                v-model="showRenameDialog"
-                persistent
-                width="450">
-                <BookmarkGroupRename
-                    :value="bookmark.title"
-                    @confirm="onRenameConfirm($event)"
-                    @cancel="showRenameDialog = false" />
-            </v-dialog>
-        </v-row>
-    </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -360,7 +360,9 @@
         }
     }
 
-    .bookmark-link {
+    // Layout for the group's own open-trigger (button) / popup wrapper
+    // (span) — distinct from BookmarkLink's .bookmark-link anchor class.
+    .group-body {
         align-items: center;
         color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
         display: flex;
@@ -375,9 +377,14 @@
     .group-link {
         border: 0;
         background: transparent;
-        cursor: pointer;
         margin-top: 34px;
         padding: 0;
+    }
+
+    // only the closed-card trigger is clickable — the popup's span wrapper
+    // isn't, so it shouldn't show a pointer cursor.
+    button.group-link {
+        cursor: pointer;
     }
 
     .group-grid {
@@ -521,8 +528,13 @@
             // popup padding is pinned here so it is consistent across all
             // icon sizes — the per-size .bookmark.icon-* rules would
             // otherwise produce too little padding for small icons.
-            padding: 7%;
-            gap: 3%;
+            // The card is a fixed square, so the 3 rows of icon+title must
+            // fit inside it without growing it: vertical padding stays small
+            // to leave headroom for the titles, while horizontal
+            // padding/gap is larger, which also shrinks each 1:1 icon just
+            // enough (via its column width) to make that headroom fit.
+            padding: 5% 14% 2%;
+            gap: 2% 6%;
             // override the base grid layout with flex+wrap so SortableJS
             // can detect swaps inside the popup. CSS Grid leaves empty
             // cells when an item is removed mid-drag, which prevents
@@ -544,9 +556,12 @@
         }
 
         .group-grid-item {
-            // 3 columns with 3% gap on a 100% wide row:
-            // 3w + 2 * 3% = 100% → w = (100% - 6%) / 3
-            width: calc((100% - 6%) / 3);
+            // 3 columns with 6% gap on a 100% wide row:
+            // 3w + 2 * 6% = 100% → w = (100% - 12%) / 3
+            width: calc((100% - 12%) / 3);
+            // let height follow the icon + title content instead of forcing
+            // a 1:1 cell, which left no room for the title below the icon.
+            aspect-ratio: auto;
 
             :deep(.bookmark-image-container) {
                 padding: 8%;

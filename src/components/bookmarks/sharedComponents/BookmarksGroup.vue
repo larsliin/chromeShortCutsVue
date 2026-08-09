@@ -172,7 +172,7 @@
         const x = isOpen ? '50vw' : `${origin?.left ?? popupTargetSize / 2}px`;
         const y = isOpen ? '50vh' : `${origin?.top ?? popupTargetSize / 2}px`;
         const inlineRadius = getInlineGroupRadius();
-        const expandedRadius = '14%';
+        const expandedRadius = '8%';
 
         return {
             left: x,
@@ -700,6 +700,14 @@
         &.open {
             border-radius: var(--popup-expanded-radius, 14%);
             box-shadow: 0 22px 70px rgba(0, 0, 0, 0.35);
+        }
+
+        &.open :deep(.bookmark.popup):hover .group-link .group-grid,
+        &.open :deep(.bookmark.popup) .group-link:active .group-grid,
+        &.open :deep(.bookmark.popup):hover :deep(.bookmark-link:not(.folder) .bookmark-image-container),
+        &.open :deep(.bookmark.popup) :deep(.bookmark-link:active:not(.folder) .bookmark-image-container) {
+            transform: none !important;
+            box-shadow: none !important;
         }
     }
 

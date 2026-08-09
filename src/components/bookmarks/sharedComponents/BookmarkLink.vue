@@ -1,6 +1,6 @@
 <template>
     <span class="bookmark relative inline-block"
-        :class="{ 'foldout-open': isFoldoutOpen, 'drag-active': bookmarksStore.dragStart }">
+        :class="[attrs.class, { 'foldout-open': isFoldoutOpen, 'drag-active': bookmarksStore.dragStart }]">
         <span class="handle">
             <a
                 v-bind="props"
@@ -76,7 +76,7 @@
 <script setup lang="ts">
     import { mdiRename, mdiDeleteOutline, mdiFormatColorFill } from '@mdi/js';
     import {
-        ref, onMounted, onUnmounted, toRef, computed, type Ref,
+        ref, onMounted, onUnmounted, toRef, computed, useAttrs, type Ref,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
@@ -91,6 +91,10 @@
         from '@/components/forms/BookmarkColorEdit.vue';
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
     import { useOpenBookmark } from '@cmp/useOpenBookmark';
+
+    // Template has multiple root nodes (span + teleports), so fallthrough
+    // attrs must be applied manually instead of relying on auto-inheritance.
+    defineOptions({ inheritAttrs: false });
 
     const utils = useBookmarkOps();
 
@@ -108,8 +112,15 @@
         draggable: true,
     });
 
+    const attrs = useAttrs();
+
     const isFoldoutOpen = ref(false);
     const image = toRef(props.bookmark, 'image') as Ref<string | null | undefined>;
+
+    if (attrs.image) {
+        image.value = attrs.image as string;
+    }
+
     const iconResolved = ref(false);
     const list = ref<FoldoutListItem[]>([
         {
@@ -372,6 +383,30 @@
         white-space: nowrap;
     }
 
+    // Inside the group popup grid the icon must fill its grid cell instead of
+    // the fixed accordion-list width, and the large accordion top margin
+    // doesn't apply since the cell centers the icon itself. Width is set on
+    // both the root and the anchor so the percentage resolves against a
+    // definite size all the way down from the grid cell.
+    .bookmark.popup {
+        width: 100%;
+
+        .bookmark-link {
+            margin-top: 0;
+            width: 100%;
+
+            .bookmark-title-container {
+                margin-top: 6px;
+            }
+        }
+
+        // smaller than the base tooltip so it fits the tighter popup cells.
+        .tooltip {
+            font-size: 13px;
+            padding: 2px 12px;
+        }
+    }
+
     .bookmark-edit {
         visibility: hidden;
         position: absolute;
@@ -381,7 +416,7 @@
     }
 
     .bookmark {
-        &:hover,
+        &:not(.popup):hover,
         &.foldout-open {
             z-index: 1;
 
@@ -427,12 +462,12 @@
         }
     }
 
-    .bookmark:not(.drag-active):hover .bookmark-link:not(.folder) .bookmark-image-container {
+    .bookmark:not(.drag-active):not(.popup):hover > .handle > .bookmark-link:not(.folder) .bookmark-image-container {
         transform: perspective(400px) rotateY(25deg) scale(1.02);
         box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
     }
 
-    .bookmark:not(.drag-active) .bookmark-link:active:not(.folder) .bookmark-image-container {
+    .bookmark:not(.drag-active):not(.popup) > .handle > .bookmark-link:active:not(.folder) .bookmark-image-container {
         transform: perspective(400px) rotateY(-15deg) scale(.98);
         box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
         transform-origin: center right;
