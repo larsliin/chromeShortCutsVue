@@ -4,9 +4,8 @@ body {
     scrollbar-gutter: stable;
 }
 
-// Prevent Vuetify's scroll-lock from displacing the html element.
-// Without this, opening a dialog while scrolled applies position:fixed + top:-scrollYpx
-// to <html>, shifting all non-fixed elements and causing a white box artifact.
+// Prevent Vuetify scroll-lock from moving the document.
+// This avoids the white-box artifact from fixed-position scrolling.
 html.v-overlay-scroll-blocked {
     position: static !important;
     overflow-y: hidden !important;

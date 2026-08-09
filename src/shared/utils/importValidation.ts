@@ -1,9 +1,8 @@
 import type { ImportFileData } from '@/types/bookmark';
 import { hasLegacyGroupPrefix } from '@utils/bookmarkGroups';
 
-// Treat a folder as a group during import validation when the export marked
-// it with isGroup, or as a fallback when the legacy title prefix is present
-// (for backwards compatibility with older export files).
+// Treat a folder as a group when the export marked it as such.
+// Fall back to the legacy title prefix for older exports.
 function looksLikeGroupForImport(child: { isGroup?: boolean; title?: string; url?: string }): boolean {
     if (child.url) {
         return false;
@@ -11,10 +10,8 @@ function looksLikeGroupForImport(child: { isGroup?: boolean; title?: string; url
     return child.isGroup === true || hasLegacyGroupPrefix(child.title ?? '');
 }
 
-// Validates the JSON shape of an exported bookmarks file before import.
-// The file must declare type 'bookmarks' and carry a bookmarks array; every
-// non-empty folder needs at least one navigable bookmark anywhere in its
-// direct or grouped descendants.
+// Validate the exported bookmarks JSON before import.
+// The file must include at least one navigable bookmark.
 export function isImportBookmarksFileValid(args: ImportFileData): boolean {
     if (args.type !== 'bookmarks' || !Array.isArray(args.bookmarks)) {
         return false;

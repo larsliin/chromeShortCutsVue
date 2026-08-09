@@ -92,8 +92,7 @@
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
     import { useOpenBookmark } from '@cmp/useOpenBookmark';
 
-    // Template has multiple root nodes (span + teleports), so fallthrough
-    // attrs must be applied manually instead of relying on auto-inheritance.
+    // The template has multiple root nodes, so attrs must be applied manually.
     defineOptions({ inheritAttrs: false });
 
     const utils = useBookmarkOps();
@@ -104,9 +103,8 @@
         size?: string;
         hideEdit?: boolean;
         draggable?: boolean;
-        // false in the collapsed group preview: renders the same markup as
-        // the open popup, but without the tooltip/edit-menu in the DOM at
-        // all, so they can never appear on hover while minified.
+        // The collapsed preview renders the same markup without tooltip/edit UI.
+        // That keeps hover states from appearing while minified.
         expanded?: boolean;
     }
 
@@ -388,16 +386,12 @@
         white-space: nowrap;
     }
 
-    // Inside the group popup grid the icon must fill its grid cell instead of
-    // the fixed accordion-list width, and the large accordion top margin
-    // doesn't apply since the cell centers the icon itself. Width is set on
-    // both the root and the anchor so the percentage resolves against a
-    // definite size all the way down from the grid cell.
+    // In the popup grid, the icon fills its cell rather than the accordion width.
+    // Width needs to be set explicitly so the percentage resolves all the way down.
     .bookmark.popup {
         width: 100%;
-        // the base .bookmark bottom margin (8px) adds up across 3 stacked
-        // rows and overflows the fixed-square grid; collapse it while
-        // minified and animate it back in as the popup opens.
+        // The stacked bottom margin overflows the fixed-square grid.
+        // Collapse it while minified and restore it as the popup opens.
         margin-bottom: 0;
         transition: margin-bottom 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
 
@@ -410,19 +404,14 @@
             width: 100%;
 
             .bookmark-title-container {
-                // collapsed by default (matches the group preview look).
-                // line-height: 0 forces the row to truly take no space —
-                // font-size: 0 alone can leave a stray sliver that breaks
-                // the group grid's 1:1 aspect ratio across 3 stacked rows.
+                // Start collapsed to match the preview look.
+                // Line-height 0 ensures the row truly takes no space.
                 margin-top: 0;
                 opacity: 0;
                 font-size: 0;
                 line-height: 0;
-                // row space (font-size/line-height/margin-top) grows in
-                // lockstep with the grid's own resize (no delay), so it
-                // never falls behind and overflows a still-small wrapper.
-                // Only opacity is delayed — it starts fading in once that
-                // resize (and growth above) has already finished.
+                // Let title spacing grow with the grid resize.
+                // This prevents overflow while the popup is still opening.
                 transition: font-size 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
                     line-height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
                     margin-top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
@@ -431,14 +420,12 @@
         }
 
         &.expanded .bookmark-link .bookmark-title-container {
-            margin-top: 6px;
+            margin-top: 10px;
             font-size: 10px;
             line-height: 1.2;
             opacity: 1;
-            // wait out the .group-popup-wrapper's own grow animation
-            // (280ms, see popupAnimationMs in BookmarksGroup.vue) before
-            // revealing the text — only opacity gets the delay, sizing
-            // already finished growing by then.
+            // Wait for the popup grow animation before revealing text.
+            // Only opacity is delayed; size changes are immediate.
             transition: font-size 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
                 line-height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
                 margin-top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),

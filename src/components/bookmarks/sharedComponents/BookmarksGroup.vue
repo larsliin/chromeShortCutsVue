@@ -26,11 +26,11 @@
                         <BookmarkLink
                             v-if="isRegularBookmark(element)"
                             :bookmark="element"
-                            :key="element.id" />
+                            :key="`${element.id}-link`" />
                         <BookmarkGroupCard
                             v-else
                             :bookmark="element"
-                            :key="element.id"
+                            :key="`${element.id}-group`"
                             @open="onOpenGroup($event)" />
                     </li>
                 </template>
@@ -86,7 +86,7 @@
                     @open="closeGroupPopup()"
                     @[EMITS.DRAG_START]="popupDragging = true"
                     @[EMITS.POPUP_DRAG_END]="popupDragging = false"
-                    @[EMITS.DRAG_OUT_OF_GROUP]="onPopupDragOutOfGroup($event)" />
+                    @[EMITS.DRAG_OUT_OF_GROUP]="handlePopupDragOutOfGroup" />
             </div>
         </div>
     </Teleport>
@@ -403,6 +403,14 @@
         closeGroupPopup();
     }
 
+    function handlePopupDragOutOfGroup(payload: {
+        bookmarkId: string;
+        groupId: string;
+        groupParentId: string;
+    }): void {
+        onPopupDragOutOfGroup(payload);
+    }
+
     async function onPopupDragOutOfGroup(payload: {
         bookmarkId: string;
         groupId: string;
@@ -420,22 +428,16 @@
                 index: targetIndex,
             });
 
-            // Delegate empty-group cleanup to the shared store action so the
-            // popup-drag path mirrors the onRemoved pipeline exactly. This
-            // re-queries Chrome for every registered group's url children
-            // and removes any that have been emptied — including ours when
-            // the last bookmark was just dragged out.
+            // Delegate empty-group cleanup to the shared store action.
+            // This mirrors the onRemoved pipeline and removes emptied groups.
             await bookmarksStore.collapseEmptyGroups();
         } catch (_error) {
-            // Swallow — the group/parent may have been mutated by another
-            // event handler. The existence probe below decides what to do
-            // next based on Chrome's actual state, not on which await failed.
+            // Swallow the failure and rely on the Chrome probe below.
+            // The group may have already been mutated by another handler.
         }
 
-        // Probe Chrome directly (not the in-memory store) to know whether
-        // the group survived the move + collapse. Only close the popup when
-        // the group itself is gone — i.e. the last bookmark was dragged out.
-        // While other bookmarks remain, the group stays and so does the popup.
+        // Probe Chrome directly to see whether the group still exists.
+        // Only close the popup when the last bookmark was dragged out.
         const survivor = await bookmarksStore
             .getBookmarkByIdOrNull(payload.groupId)
             .catch(() => null);
@@ -461,15 +463,8 @@
         emits(EMITS.DELETE, { id: props.folder.id, index: bookmarkResponse.index });
     }
 
-    // when bookmark is moved to a different folder/parentId
-    //
-    // NOTE: the auto-group branches (canCreateGroup / addToGroup based on
-    // adjacent renderItems) were removed because @add fires BEFORE the
-    // chrome move resolves — at that point parentId on the dragged
-    // bookmark still references the SOURCE folder, so the comparisons
-    // could never become true. Group creation / add-to-group is already
-    // handled at drag end (onDragEnd) via dropIntent, which carries the
-    // real source/target context.
+    // Drag-add handling is done at drag end via dropIntent.
+    // The earlier auto-group branches were removed because @add fires before the move resolves.
     async function onDragAdd(event: DragEventInfo): Promise<void> {
         if (dropIntent.value || bookmarksStore.groupMode) {
             return;

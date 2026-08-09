@@ -1,6 +1,5 @@
-// Accordion state persistence and root folder management.
-// Handles building/finding the extension root folder and keeping
-// accordion open/closed state in sync with Chrome sync storage.
+// Manage accordion state and the extension root folder.
+// Keeps sync storage and the UI in step.
 import { useBookmarksStore } from '@stores/bookmarks';
 import { FOLDER, STORAGE_KEYS } from '@/constants';
 import type { BookmarkNode } from '@/types/bookmark';
@@ -18,9 +17,8 @@ export function useAccordionSync() {
         const response = await bookmarksStore.getBookmarks(bookmarksStore.bookmarksBarId as string);
         let rootFolder = findRootFolder(response[0].children as BookmarkNode[] | undefined);
 
-        // Re-check the bookmarks-bar subtree immediately before creating to
-        // close the TOCTOU window when concurrent onCreated events race
-        // (e.g. user pastes the root folder + children back at once).
+        // Re-check the bookmarks bar before creating the root folder.
+        // This closes a race between concurrent creation events.
         if (!rootFolder) {
             const recheck = await bookmarksStore
                 .getBookmarks(bookmarksStore.bookmarksBarId as string);

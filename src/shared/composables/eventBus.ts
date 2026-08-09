@@ -14,10 +14,8 @@ export type AppEventMap = {
     [EMITS.IMAGES_IMPORT]: void;
 };
 
-// Single shared event bus instance for the entire app.
-// Emit: emitter.emit(EMITS.XXX, payload)
-// Subscribe: emitter.on(EMITS.XXX, handler)  — call in onMounted
-// Unsubscribe: emitter.off(EMITS.XXX, handler) — call in onUnmounted
+// Shared event bus for the app.
+// Use it for cross-component notifications and cleanup.
 const emitter = mitt<AppEventMap>();
 
 export default emitter;

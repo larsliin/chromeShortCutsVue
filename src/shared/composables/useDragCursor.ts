@@ -31,9 +31,8 @@ export function useDragCursor() {
         }
     }
 
-    // Attach a capture-phase click swallower scoped to elements that match
-    // `matches`. Auto-removes after `durationMs` or on the first matching
-    // click — whichever comes first.
+    // Attach a capture-phase click swallower for matching elements.
+    // It auto-removes after the timeout or the first matching click.
     function swallowClicksFor(matches: (target: EventTarget | null) => boolean, durationMs: number): void {
         let timeoutId = 0;
 

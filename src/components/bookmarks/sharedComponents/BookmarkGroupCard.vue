@@ -111,10 +111,8 @@
     interface Props {
         bookmark: BookmarkNode;
         popup?: boolean;
-        // Drives the popup's grid metrics/title/interactivity between the
-        // "closed-look" (matches the collapsed preview) and the full open
-        // look, so BookmarksGroup can animate the morph in step with its
-        // wrapper instead of swapping layouts instantly.
+        // Drives the popup layout between collapsed and expanded states.
+        // This keeps the group animation in sync with its wrapper.
         expanded?: boolean;
     }
 
@@ -174,11 +172,8 @@
 
     const previewItems = computed(() => getGroupPreviewItems(props.bookmark));
 
-    // Bind directly to props.bookmark.children, mirroring how the outer
-    // BookmarksGroup binds :list="renderItems" where
-    // renderItems = computed(() => props.bookmarks ?? []).
-    // vuedraggable needs the same array reference between renders so its
-    // in-place mutations propagate via Vue reactivity.
+    // Bind directly to the bookmark children array so draggable updates stay reactive.
+    // This mirrors the outer BookmarksGroup list binding.
     const popupRenderItems = computed(() => props.bookmark.children ?? EMPTY_BOOKMARKS);
 
     const popupDragGroup = { name: 'popup-bookmarks', pull: true, put: true };
@@ -272,9 +267,8 @@
         } finally {
             draggedPopupBookmarkId.value = null;
             emits(EMITS.POPUP_DRAG_END);
-            // keep popupDragging true through the SortableJS animation so
-            // the .dragging class continues suppressing hover transforms while
-            // items slide into their new positions
+            // Keep popupDragging true during the SortableJS animation.
+            // This preserves the drag class while items settle into place.
             if (popupDragEndTimeoutId.value !== null) {
                 window.clearTimeout(popupDragEndTimeoutId.value);
             }
@@ -403,9 +397,8 @@
         background-color: var(--blue-lighter);
         box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.15);
         transform-origin: center right;
-        // flex+wrap (not CSS grid) so the collapsed preview and open popup
-        // share one layout engine — padding/gap can then be smoothly
-        // transitioned between the two instead of swapping instantly.
+        // Use flex wrap so the preview and popup share one layout engine.
+        // This keeps padding and gap transitions smooth.
         display: flex;
         flex-wrap: wrap;
         align-content: flex-start;
@@ -426,37 +419,21 @@
         // 3 columns with 3% gap on a 100% wide row:
         // 3w + 2 * 3% = 100% → w = (100% - 6%) / 3
         width: calc((100% - 6%) / 3);
-        // let height follow the icon + title content instead of forcing a
-        // 1:1 cell — the title is always present (see BookmarkGroupPopupItem)
-        // so a fixed square would clip it once it expands.
+        // Let the height follow the icon/title content instead of forcing a square.
+        // The title stays visible, so a fixed square can clip when the card expands.
         aspect-ratio: auto;
         display: flex;
         align-items: stretch;
         justify-content: stretch;
         transition: width 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
-
-        .group-grid-link {
-            display: flex;
-            width: 100%;
-            height: 100%;
-            text-decoration: none;
-        }
-
-        :deep(.bookmark-image-container) {
-            height: 100%;
-            width: 100%;
-            padding: 8%;
-            border-radius: 17%;
-        }
     }
 
     .bookmark.icon-small {
         width: 56px;
 
         .group-grid {
-            // small icons need a higher percentage to produce a
-            // visually comparable absolute padding to medium/large
-            // (~6 px on a 56 px grid).
+            // Small icons need a higher padding percentage to match larger icons.
+            // This keeps their visual spacing comparable on a 56px grid.
             padding: 11%;
             border-radius: 5.36%;
             gap: 5%;
@@ -554,18 +531,11 @@
                 background-color: color-mix(in srgb, var(--darkmode-200) 95%, transparent);
             }
 
-            // .open (driven by the `expanded` prop) is the only thing that
-            // switches padding/gap to the full popup layout — until then this
-            // falls through to the same closed-look values as the collapsed
-            // preview/icon-size rules above, so opening the popup animates
-            // padding/gap smoothly instead of snapping to these values.
+            // .open switches padding and gap to the full popup layout.
+            // This keeps the card animation smooth instead of snapping to final values.
             &.open {
-                // The card is a fixed square, so the 3 rows of icon+title
-                // must fit inside it without growing it: vertical padding
-                // stays small to leave headroom for the titles, while
-                // horizontal padding/gap is larger, which also shrinks each
-                // 1:1 icon just enough (via its column width) to make that
-                // headroom fit.
+                // The card stays fixed-size, so its rows need compact vertical spacing.
+                // Larger horizontal padding keeps the icons and titles fitting without growth.
                 padding: 5% 14% 2%;
                 gap: 2% 6%;
             }

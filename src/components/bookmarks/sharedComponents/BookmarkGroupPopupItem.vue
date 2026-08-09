@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-    import { toRef, toRefs, type Ref } from 'vue';
+    import { toRefs } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import type { BookmarkNode } from '@/types/bookmark';
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
@@ -25,9 +25,8 @@
     interface Props {
         bookmark: BookmarkNode;
         image?: string | null;
-        // false for the collapsed group preview: shows the same icon+title
-        // markup as the open popup, but non-interactive and "closed"-styled
-        // so expanding can morph smoothly instead of swapping layouts.
+        // The collapsed preview uses the same markup but stays non-interactive.
+        // This lets the popup expand with a smooth morph.
         expanded?: boolean;
     }
 
@@ -37,8 +36,7 @@
     });
 
     const bookmarksStore = useBookmarksStore();
-    const image = toRef(props, 'image') as Ref<string | null | undefined>;
-    const { expanded } = toRefs(props);
+    const { image, expanded } = toRefs(props);
 </script>
 
 <style scoped lang="scss">
@@ -53,47 +51,8 @@
         &.static {
             pointer-events: none;
         }
-    }
 
-    .popup-handle {
-        display: flex;
-        width: 100%;
-        height: 100%;
-    }
-
-    .group-grid-link {
-        display: flex;
-        width: 100%;
-        height: 100%;
-        text-decoration: none;
-        cursor: pointer;
-
-        :deep(.bookmark-link) {
-            margin-top: 0;
-        }
-
-        &:active :deep(.bookmark-image-container) {
-            transform: perspective(400px) rotateY(-15deg) scale(.98);
-            box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
-            transform-origin: center right;
-        }
-    }
-
-    :deep(.v-btn--icon.v-btn--density-default) {
-        width: 28px;
-        height: 28px;
-    }
-
-    // Give the dot-menu activator a dark surface so the white dots
-    // stay legible against light bookmark icons inside the popup.
-    :deep(.button) {
-        background-color: rgba(var(--darkmode-rgb-100), 0.6);
-    }
-
-    .popup-item {
-        // :not(.static) is a belt-and-suspenders guard on top of the
-        // pointer-events:none above — hover effects must never engage on
-        // the non-interactive collapsed/mid-animation items.
+        // Guard hover effects so collapsed and mid-animation items stay inert.
         &:not(.static):hover {
             z-index: 1;
 
@@ -136,9 +95,45 @@
         }
     }
 
+    .popup-handle {
+        display: flex;
+        width: 100%;
+        height: 100%;
+    }
+
+    .group-grid-link {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        text-decoration: none;
+        cursor: pointer;
+
+        :deep(.bookmark-link) {
+            margin-top: 0;
+        }
+
+        &:active :deep(.bookmark-image-container) {
+            transform: perspective(400px) rotateY(-15deg) scale(.98);
+            box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
+            transform-origin: center right;
+        }
+    }
+
+    :deep(.v-btn--icon.v-btn--density-default) {
+        width: 28px;
+        height: 28px;
+    }
+
+    // Give the dot-menu activator a dark surface so the white dots
+    // stay legible against light bookmark icons inside the popup.
+    :deep(.button) {
+        background-color: rgba(var(--darkmode-rgb-100), 0.6);
+    }
+
     :deep(.bookmark-image-container) {
         height: 100%;
         width: 100%;
         padding: 8%;
+        border-radius: 17%;
     }
 </style>

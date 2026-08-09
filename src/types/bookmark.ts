@@ -2,9 +2,7 @@ export interface BookmarkNode extends chrome.bookmarks.BookmarkTreeNode {
     color?: string;
     image?: string | null;
     children?: BookmarkNode[];
-    // Set by the exporter to mark a folder as a bookmark group so the importer
-    // can register the newly created folder ID in the groupIds map without
-    // relying on the legacy title prefix.
+    // Mark folders as groups so the importer can register them without the legacy prefix.
     isGroup?: boolean;
 }
 

@@ -76,9 +76,8 @@
 
     const expansionPanels = ref();
 
-    // store in local synced-storage the open accordion items
-    // because sorting may have changed, we use the item
-    // index instead of the accordion model
+    // Store open accordion items in synced storage.
+    // We persist the index instead of the accordion model.
     async function onUpdate() {
         await nextTick();
 

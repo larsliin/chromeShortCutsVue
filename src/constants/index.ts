@@ -61,19 +61,16 @@ export const STORAGE_KEYS = Object.freeze({
 });
 
 export const GROUPING = Object.freeze({
-    // Legacy prefix used by older versions to identify group folders by their
-    // Chrome bookmark title. Kept only for one-time migration of pre-existing
-    // groups and as a fallback when importing legacy export files. Runtime
-    // group identification now uses the STORAGE_KEYS.GROUP_IDS sync map.
+    // Legacy prefix for older group folders.
+    // Kept for migration and legacy import fallback.
     LEGACY_FOLDER_PREFIX: '__mst_group__:',
     DEFAULT_NAME: 'Group',
     MAX_ITEMS: 9,
     PREVIEW_COLUMNS: 3,
     PREVIEW_ITEMS: 9,
     MAX_NESTED_LEVEL: 1,
-    // Depth offset for the root + top-level bookmarks-bar folder when
-    // measuring a node's depth via findDepth. Added to MAX_NESTED_LEVEL
-    // to derive the maximum allowed depth value.
+    // Depth offset for the root and top-level bookmarks bar.
+    // Used when calculating the max allowed nesting depth.
     ROOT_DEPTH_OFFSET: 2,
     // Border radii applied to the group card thumbnail per icon size.
     // Mirror the SCSS values in BookmarkGroupCard.vue.

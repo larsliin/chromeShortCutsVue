@@ -21,10 +21,8 @@ interface ComputeDropIntentArgs {
     groupIds: Record<string, true>;
 }
 
-// Pure derivation of a drag-and-drop intent. Returns the intent that the
-// current drag (dragged → target) should trigger, or null when the gesture
-// should fall through to a regular reorder / move. Behaviour mirrors
-// BookmarksGroup.vue::onDragMove + computeDropIntentFor 1:1.
+// Derive the drag-and-drop intent for the current gesture.
+// Return null when the action should fall through to a normal move.
 export function computeDropIntent({
     draggedId,
     targetId,

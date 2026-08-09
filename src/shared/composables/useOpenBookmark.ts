@@ -1,6 +1,5 @@
-// Shared statistics + click-open logic used by both BookmarkLink and
-// BookmarkGroupPopupItem. Records a click in bookmarksStore.statistics,
-// persists the sorted list to sync storage, and navigates.
+// Shared click-open logic used by bookmark UI components.
+// It records stats, persists them, and opens the bookmark.
 import { useBookmarksStore } from '@stores/bookmarks';
 import type { BookmarkNode, BookmarkStat } from '@/types/bookmark';
 

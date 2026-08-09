@@ -1,9 +1,8 @@
 import { GROUPING } from '@/constants';
 import type { BookmarkNode } from '@/types/bookmark';
 
-// A node is a bookmark group when it has no URL (is a folder) AND its ID is
-// registered in the groupIds map (loaded from chrome.storage.sync). Identity
-// is now by folder ID — group folders can carry any user-chosen title.
+// A bookmark group is a folder whose ID is registered in groupIds.
+// Group identity is now by folder ID, not title.
 export function isGroupFolder(
     bookmark: BookmarkNode | chrome.bookmarks.BookmarkTreeNode,
     groupIds: Record<string, true> | null | undefined,

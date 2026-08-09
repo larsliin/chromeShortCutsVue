@@ -14,9 +14,7 @@ import {
 // ---------------------------------------------------------------------------
 
 /**
- * Wait for the app to finish initialising (add-button visible = init complete).
- * .toolbar has height:0 by design so we target the first button inside it.
- * 20 s covers the cold-start of a fresh Chrome profile on first run.
+ * Wait for the app to finish loading. The toolbar button is the readiness signal.
  */
 async function waitForAppReady(page: import('@playwright/test').Page) {
     await expect(page.locator('.toolbar-add-button')).toBeVisible({ timeout: 20_000 });

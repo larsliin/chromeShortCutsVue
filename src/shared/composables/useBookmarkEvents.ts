@@ -191,11 +191,8 @@ export function useBookmarkEvents() {
         bm.title = bookmarkResponse.title;
     }
 
-    // Single-flight bootstrap promise. When the root folder ("My Shortcuts Tab")
-    // is pasted/recreated, Chrome fires onCreated for the folder and every child
-    // in parallel — without this guard, each handler would race buildRootFolder()
-    // and reloadBookmarks(), potentially creating duplicate root folders or
-    // leaving the UI populated from an early/empty snapshot.
+    // Single-flight bootstrap guard for root-folder recreation.
+    // This prevents duplicate root folders during bursty Chrome events.
     let bootstrapPromise: Promise<void> | null = null;
 
     async function runBootstrap(): Promise<void> {
@@ -225,9 +222,8 @@ export function useBookmarkEvents() {
     async function onCreated(event: string): Promise<void> {
         if (bookmarksStore.isImporting) return;
 
-        // While a bootstrap is in flight (root pasted back, children racing),
-        // funnel every onCreated through the same promise so we do exactly one
-        // buildRootFolder + reloadBookmarks for the whole burst.
+        // While bootstrap is running, funnel onCreated events through one pass.
+        // That avoids repeated root-folder rebuilds during a burst.
         if (bookmarksStore.rootId === null || bootstrapPromise) {
             try {
                 await runBootstrap();
@@ -237,11 +233,8 @@ export function useBookmarkEvents() {
 
             if (!bookmarksStore.rootId) return;
 
-            // The bootstrap's reloadBookmarks() snapshot may have been taken
-            // before Chrome finished materializing every child in a paste burst.
-            // Re-snapshot per-event so late-arriving children are captured. We
-            // intentionally skip isNewBookmarkInScope here: we just rebuilt the
-            // tree from scratch, so trust Chrome's current state.
+            // Re-snapshot after a paste burst so late-arriving children are captured.
+            // We trust Chrome's current state after the rebuild.
             await update();
 
             await applyStoredColor(event);

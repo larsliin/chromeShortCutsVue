@@ -1,6 +1,5 @@
-// Pure Chrome API wrappers — no store state dependencies.
-// Each function wraps exactly one Chrome API call, checks lastError,
-// and returns a Promise. Import with: import * as chromeApi from '@cmp/chromeApi'
+// Pure Chrome API wrappers with no store dependency.
+// Each helper wraps one API call and checks lastError.
 
 // ─── Bookmarks ────────────────────────────────────────────────────────────────
 

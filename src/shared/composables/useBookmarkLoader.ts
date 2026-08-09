@@ -19,9 +19,8 @@ export function useBookmarkLoader() {
         bookmarksStore.bookmarks = rootChildren as BookmarkNode[];
     }
 
-    // Skip refreshes while a drag is in progress — swapping bookmarksStore.bookmarks
-    // mid-drag swaps vuedraggable's source array and causes visual glitches. Flag a
-    // pending refresh so the final Chrome state is captured once the drag ends.
+    // Skip refreshes during drag so vuedraggable does not lose its source array.
+    // A pending refresh runs once the drag completes.
     async function update(): Promise<void> {
         if (bookmarksStore.dragStart) {
             pendingRefresh = true;

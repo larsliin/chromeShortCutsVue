@@ -365,12 +365,8 @@
     const colorsFoldersMap: Record<string, string> = {};
     const colorsBookmarksMap: Record<string, string> = {};
 
-    // Persist imported colors to sync storage AND reload the bookmark tree
-    // using the same loader that runs on page refresh. This ensures groupIds
-    // and persisted colors are loaded BEFORE bookmarks are assigned, so
-    // BookmarkGroupCard sees populated children and correct groupIds on first
-    // mount after import — which is what was causing the missing in-group
-    // preview icons until a manual refresh.
+    // Persist imported colors and reload the bookmark tree.
+    // This ensures group IDs and colors are available before first render.
     async function updateBookmarksStore(): Promise<void> {
         const persistPromises: Promise<unknown>[] = [];
 
@@ -496,9 +492,8 @@
                             colorsBookmarksMap[created.id] = child.color;
                         }
                     } else if (isImportedGroup(child)) {
-                        // Group folder - create the group folder first, then its children.
-                        // Prefer the imported title; fall back to the default name when
-                        // missing, empty, or still carrying the legacy prefix.
+                        // Create the group folder first, then its children.
+                        // Use the imported title or fall back to the default name.
                         const importedTitle = (child.title ?? '').trim();
                         const cleanTitle = (importedTitle.length === 0
                             || hasLegacyGroupPrefix(importedTitle))

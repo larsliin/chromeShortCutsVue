@@ -19,15 +19,8 @@ export const vuetify = createVuetify({ components, directives });
 // ---------------------------------------------------------------------------
 
 /**
- * Runs a composable inside a minimal Vue app so that lifecycle hooks
- * (onMounted, onUnmounted) and inject() work correctly.
- *
- * Based on the Vue.js Testing Guide:
- * https://vuejs.org/guide/scaling-up/testing#testing-composables
- *
- * Usage:
- *   const [result, app] = withSetup(() => useMyComposable())
- *   afterEach(() => app.unmount())  // triggers onUnmounted cleanup
+ * Runs a composable in a minimal Vue app so lifecycle hooks and inject() work.
+ * Use it for composables that need mounted/unmounted support.
  */
 export function withSetup<T>(
     composable: () => T,
@@ -59,18 +52,8 @@ export function withSetup<T>(
 // ---------------------------------------------------------------------------
 
 /**
- * Mount a Vue component with Vuetify + a pre-configured testing Pinia.
- * Pass this as the standard mounting helper in all component tests so that
- * plugin boilerplate stays out of individual test files.
- *
- * @param component    Vue SFC or component definition to mount
- * @param options      Vue Test Utils MountingOptions (props, slots, stubs, etc.)
- * @param piniaState   Optional initial Pinia state, keyed by store name.
- *                     Defaults to `{}` (empty state; store initial values apply).
- *
- * Example:
- *   mountWithPlugins(MyComponent, { props: { label: 'Click me' } })
- *   mountWithPlugins(MyComponent, {}, { bookmarksStore: { rootId: 'abc' } })
+ * Mount a component with Vuetify and a testing Pinia.
+ * Use this helper instead of repeating plugin setup in component tests.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mountWithPlugins(component: Component, options: Record<string, any> = {}) {

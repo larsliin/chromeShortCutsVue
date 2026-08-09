@@ -252,10 +252,8 @@ export default {
         this: { groupIds: Record<string, true>; unregisterGroupId: (id: string) => Promise<void> },
         groupFolderId: string,
     ): Promise<void> {
-        // chrome.bookmarks.get (used by getBookmarkById) does not populate
-        // `children`, so we need getSubTree to read the group's contents
-        // before moving them out. Without this, the move loop runs over an
-        // empty list and removeBookmarkTree below deletes every bookmark.
+        // chrome.bookmarks.get does not populate children.
+        // We need getSubTree before moving group contents out.
         const subTree = await chromeApi.getBookmarkSubTree(groupFolderId);
         const groupFolder = subTree?.[0];
 
@@ -269,11 +267,8 @@ export default {
             return;
         }
 
-        // Re-insert each child sequentially at the group folder's original
-        // index plus the child's offset. Chrome's move(index) inserts BEFORE the
-        // target index, so sequential inserts at (origIndex + 0), (origIndex + 1),
-        // ... lay the children out in order at the position the group folder
-        // occupied. parentId is asserted above to be defined.
+        // Re-insert each child at the original group index plus its offset.
+        // Chrome inserts before the target index, so this preserves the order.
         const groupChildren = (groupFolder.children ?? []).filter((child) => !!child.url);
 
         await groupChildren.reduce<Promise<void>>((chain, child, index) => chain
@@ -358,10 +353,8 @@ export default {
         await this.persistGroupIds();
     },
 
-    // One-time migration: any folder whose Chrome title starts with the
-    // legacy __mst_group__: prefix is registered in the new groupIds map and
-    // renamed to GROUPING.DEFAULT_NAME so the underlying Chrome bookmark
-    // becomes human-readable in Chrome's native bookmark manager.
+    // One-time migration: legacy group folders are registered and renamed.
+    // This makes them readable in Chrome's bookmark manager.
     async migrateLegacyGroupFolders(
         this: {
             rootId: string | null;
