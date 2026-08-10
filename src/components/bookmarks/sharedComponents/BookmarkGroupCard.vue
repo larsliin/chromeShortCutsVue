@@ -82,6 +82,9 @@
         <span
             class="bookmark-title-container"
             :class="{ 'popup-title': props.popup, expanded: props.popup && props.expanded }">{{ displayTitle }}</span>
+        <BookmarkTooltip
+            v-if="!props.popup"
+            :text="displayTitle" />
         <Teleport to="body"
             v-if="!props.popup && showRenameDialog">
             <v-row justify="center">
@@ -110,6 +113,7 @@
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
     import BookmarkGroupRename from '@/components/forms/BookmarkGroupRename.vue';
     import BookmarkGroupPopupItem from '@/components/bookmarks/sharedComponents/BookmarkGroupPopupItem.vue';
+    import BookmarkTooltip from '@/components/bookmarks/sharedComponents/BookmarkTooltip.vue';
     import draggable from 'vuedraggable';
     import emitter from '@cmp/eventBus';
     import { useDragCursor } from '@cmp/useDragCursor';
@@ -661,6 +665,15 @@
 
             .bookmark-edit {
                 visibility: visible;
+            }
+        }
+
+        &:not(.popup):hover,
+        &:not(.popup).foldout-open {
+            .tooltip {
+                opacity: 1;
+                transition: opacity 0s;
+                transition-delay: 400ms;
             }
         }
     }

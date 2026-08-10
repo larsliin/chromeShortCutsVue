@@ -24,7 +24,7 @@
             </a>
         </span>
         <template v-if="!hideEdit && expanded">
-            <div class="tooltip">{{ bookmark.title }}</div>
+            <BookmarkTooltip :text="bookmark.title" />
             <div class="bookmark-edit">
                 <BookmarkFoldout
                     :darkModeBorder="true"
@@ -89,6 +89,7 @@
         from '@/components/fields/BookmarkFoldout.vue';
     import BookmarkColorEdit
         from '@/components/forms/BookmarkColorEdit.vue';
+    import BookmarkTooltip from '@/components/bookmarks/sharedComponents/BookmarkTooltip.vue';
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
     import { useOpenBookmark } from '@cmp/useOpenBookmark';
 
@@ -461,36 +462,6 @@
             .bookmark-edit {
                 visibility: visible;
             }
-        }
-    }
-
-    .tooltip {
-        background: rgb(var(--v-theme-surface-variant));
-        border-radius: 4px;
-        bottom: 0;
-        color: rgb(var(--v-theme-on-surface-variant));
-        font-size: 14px;
-        left: 50%;
-        max-width: 200px;
-        opacity: 0;
-        overflow: hidden;
-        padding: 5px 16px;
-        pointer-events: none;
-        position: absolute;
-        text-overflow: ellipsis;
-        transform: translate(-50%, 8px);
-        white-space: nowrap;
-
-        @media (min-width: 768px) {
-            max-width: 230px;
-        }
-
-        @media (min-width: 1024px) {
-            max-width: 300px;
-        }
-
-        @media (min-width: 1200px) {
-            max-width: 500px;
         }
     }
 
