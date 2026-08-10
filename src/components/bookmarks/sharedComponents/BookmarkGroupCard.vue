@@ -646,14 +646,14 @@
             max-width: none;
         }
 
-        // Base breakpoint (< 1440px): add a bit more room below the last row.
+        // Base breakpoint (< 1440px): keep extra breathing room without undersizing icons.
         .group-grid.open {
-            padding: 5% 16%;
+            padding: 5% 15%;
         }
 
         @media (min-width: 1440px) {
             .group-grid.open {
-                padding: 5% 15%;
+                padding: 5% 14%;
             }
         }
 

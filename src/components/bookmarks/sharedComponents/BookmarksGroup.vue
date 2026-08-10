@@ -672,7 +672,7 @@
     }
 
     .group-popup-overlay {
-        --popup-target-size: 360px;
+        --popup-target-size: 375px;
         --popup-overlay-blur-target: 6px;
         background: rgba(10, 12, 18, var(--popup-overlay-opacity, 0.75));
         backdrop-filter: blur(var(--popup-overlay-blur, 0px));
@@ -689,7 +689,7 @@
     }
     @media (min-width: 1440px) {
         .group-popup-overlay {
-            --popup-target-size: 420px;
+            --popup-target-size: 435px;
             --popup-overlay-blur-target: 4.5px;
         }
     }
