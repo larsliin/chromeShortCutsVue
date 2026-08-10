@@ -141,7 +141,7 @@
     const draggedBookmarkId = ref<string | null>(null);
     const dropIntent = ref<{ type: 'create' | 'add-to-group'; targetId: string } | null>(null);
     const popupOrigin = ref<{ left: number; top: number; width: number; height: number } | null>(null);
-    const popupTargetSize = 440;
+    const popupFallbackSize = 360;
     const popupAnimationMs = 280;
     const popupSwallowClickMs = 300;
 
@@ -174,8 +174,8 @@
     const popupStyle = computed(() => {
         const origin = popupOrigin.value;
         const isOpen = popupState.value === 'open';
-        const x = isOpen ? '50vw' : `${origin?.left ?? popupTargetSize / 2}px`;
-        const y = isOpen ? '50vh' : `${origin?.top ?? popupTargetSize / 2}px`;
+        const x = isOpen ? '50vw' : `${origin?.left ?? popupFallbackSize / 2}px`;
+        const y = isOpen ? '50vh' : `${origin?.top ?? popupFallbackSize / 2}px`;
         const inlineRadius = getInlineGroupRadius();
         const expandedRadius = '8%';
 
@@ -183,11 +183,11 @@
             left: x,
             top: y,
             width: isOpen
-                ? `min(${popupTargetSize}px, calc(100vw - 32px), calc(100vh - 32px))`
-                : `${origin?.width ?? popupTargetSize}px`,
+                ? 'min(var(--popup-target-size, 360px), calc(100vw - 32px), calc(100vh - 32px))'
+                : `${origin?.width ?? popupFallbackSize}px`,
             height: isOpen
-                ? `min(${popupTargetSize}px, calc(100vw - 32px), calc(100vh - 32px))`
-                : `${origin?.height ?? popupTargetSize}px`,
+                ? 'min(var(--popup-target-size, 360px), calc(100vw - 32px), calc(100vh - 32px))'
+                : `${origin?.height ?? popupFallbackSize}px`,
             opacity: '1',
             '--popup-inline-radius': inlineRadius,
             '--popup-expanded-radius': expandedRadius,
@@ -672,6 +672,7 @@
     }
 
     .group-popup-overlay {
+        --popup-target-size: 380px;
         --popup-overlay-blur-target: 6px;
         background: rgba(10, 12, 18, var(--popup-overlay-opacity, 0.75));
         backdrop-filter: blur(var(--popup-overlay-blur, 0px));
@@ -688,11 +689,13 @@
     }
     @media (min-width: 1440px) {
         .group-popup-overlay {
+            --popup-target-size: 440px;
             --popup-overlay-blur-target: 4.5px;
         }
     }
     @media (min-width: 1920px) {
         .group-popup-overlay {
+            --popup-target-size: 500px;
             --popup-overlay-blur-target: 3.5px;
         }
     }

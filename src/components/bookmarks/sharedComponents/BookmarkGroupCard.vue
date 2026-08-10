@@ -645,6 +645,18 @@
             width: 100%;
             max-width: none;
         }
+
+        // Base breakpoint (< 1440px): add a bit more room below the last row.
+        .group-grid.open {
+            padding: 5% 15%;
+        }
+
+        @media (min-width: 1440px) {
+            .group-grid.open {
+                padding-left: 13%;
+                padding-right: 13%;
+            }
+        }
     }
 
     .bookmark {
