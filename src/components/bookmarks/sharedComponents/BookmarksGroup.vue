@@ -689,7 +689,7 @@
     }
     @media (min-width: 1440px) {
         .group-popup-overlay {
-            --popup-target-size: 440px;
+            --popup-target-size: 420px;
             --popup-overlay-blur-target: 4.5px;
         }
     }

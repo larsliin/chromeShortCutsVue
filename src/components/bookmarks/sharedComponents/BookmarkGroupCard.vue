@@ -653,8 +653,13 @@
 
         @media (min-width: 1440px) {
             .group-grid.open {
-                padding-left: 13%;
-                padding-right: 13%;
+                padding: 5% 15%;
+            }
+        }
+
+        @media (min-width: 1920px) {
+            .group-grid.open {
+                padding: 5% 13% 2%;
             }
         }
     }
