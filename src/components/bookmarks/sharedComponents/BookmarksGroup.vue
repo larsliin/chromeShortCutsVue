@@ -94,7 +94,7 @@
 
 <script setup lang="ts">
     import {
-        computed, nextTick, onUnmounted, ref,
+        computed, nextTick, onMounted, onUnmounted, ref,
     } from 'vue';
     import { useDragCursor } from '@cmp/useDragCursor';
     import type { BookmarkNode, DragEventInfo } from '@/types/bookmark';
@@ -151,6 +151,17 @@
     // transition once settled keeps window resizes from sliding the popup.
     const popupTransitioning = ref(true);
     const popupTransitionTimeoutId = ref<number | null>(null);
+
+    function setPopupOriginFromRect(rect?: DOMRect | null): void {
+        popupOrigin.value = rect
+            ? {
+                left: rect.left + (rect.width / 2),
+                top: rect.top + (rect.height / 2),
+                width: rect.width,
+                height: rect.height,
+            }
+            : null;
+    }
 
     function getInlineGroupRadius(): string {
         if (bookmarksStore.iconSize === 'small') {
@@ -209,14 +220,7 @@
     }
 
     async function onOpenGroup(payload: { groupId: string; rect?: DOMRect }): Promise<void> {
-        popupOrigin.value = payload.rect
-            ? {
-                left: payload.rect.left + (payload.rect.width / 2),
-                top: payload.rect.top + (payload.rect.height / 2),
-                width: payload.rect.width,
-                height: payload.rect.height,
-            }
-            : null;
+        setPopupOriginFromRect(payload.rect ?? null);
 
         activeGroupId.value = payload.groupId;
         showGroupPopup.value = true;
@@ -244,6 +248,8 @@
             return;
         }
 
+        syncPopupOriginWithActiveGroup();
+
         if (popupTransitionTimeoutId.value !== null) {
             window.clearTimeout(popupTransitionTimeoutId.value);
             popupTransitionTimeoutId.value = null;
@@ -263,6 +269,34 @@
             popupState.value = 'opening';
             closePopupTimeoutId.value = null;
         }, popupAnimationMs);
+    }
+
+    function syncPopupOriginWithActiveGroup(): void {
+        if (!showGroupPopup.value || !activeGroupId.value) {
+            return;
+        }
+
+        const listItem = document.querySelector(
+            `[data-bookmark-id="${activeGroupId.value}"]`,
+        ) as HTMLElement | null;
+
+        if (!listItem) {
+            return;
+        }
+
+        // Match the same visual anchor as the open-click payload (group card body)
+        // so close animations keep a square aspect ratio after resizes.
+        const originElement = listItem.querySelector('.group-body.group-link') as HTMLElement | null;
+
+        if (!originElement) {
+            return;
+        }
+
+        setPopupOriginFromRect(originElement.getBoundingClientRect());
+    }
+
+    function onWindowResize(): void {
+        syncPopupOriginWithActiveGroup();
     }
 
     function resetDropIntent(): void {
@@ -575,7 +609,13 @@
         }
     }
 
+    onMounted(() => {
+        window.addEventListener('resize', onWindowResize, { passive: true });
+    });
+
     onUnmounted(() => {
+        window.removeEventListener('resize', onWindowResize);
+
         if (closePopupTimeoutId.value !== null) {
             window.clearTimeout(closePopupTimeoutId.value);
             closePopupTimeoutId.value = null;
