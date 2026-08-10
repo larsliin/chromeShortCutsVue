@@ -672,7 +672,7 @@
     }
 
     .group-popup-overlay {
-        --popup-overlay-blur-target: 6px;
+        --popup-overlay-blur-target: 4px;
         background: rgba(10, 12, 18, var(--popup-overlay-opacity, 0.75));
         backdrop-filter: blur(var(--popup-overlay-blur, 0px));
         -webkit-backdrop-filter: blur(var(--popup-overlay-blur, 0px));
@@ -688,12 +688,12 @@
     }
     @media (min-width: 1440px) {
         .group-popup-overlay {
-            --popup-overlay-blur-target: 4.5px;
+            --popup-overlay-blur-target: 3px;
         }
     }
     @media (min-width: 1920px) {
         .group-popup-overlay {
-            --popup-overlay-blur-target: 3.5px;
+            --popup-overlay-blur-target: 3px;
         }
     }
 
