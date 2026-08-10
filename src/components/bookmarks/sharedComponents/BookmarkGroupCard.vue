@@ -648,7 +648,7 @@
 
         // Base breakpoint (< 1440px): add a bit more room below the last row.
         .group-grid.open {
-            padding: 5% 15%;
+            padding: 5% 16%;
         }
 
         @media (min-width: 1440px) {

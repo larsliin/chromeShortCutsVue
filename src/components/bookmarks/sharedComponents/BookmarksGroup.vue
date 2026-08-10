@@ -672,7 +672,7 @@
     }
 
     .group-popup-overlay {
-        --popup-target-size: 380px;
+        --popup-target-size: 360px;
         --popup-overlay-blur-target: 6px;
         background: rgba(10, 12, 18, var(--popup-overlay-opacity, 0.75));
         backdrop-filter: blur(var(--popup-overlay-blur, 0px));
