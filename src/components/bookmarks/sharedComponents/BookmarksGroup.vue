@@ -141,7 +141,7 @@
     const draggedBookmarkId = ref<string | null>(null);
     const dropIntent = ref<{ type: 'create' | 'add-to-group'; targetId: string } | null>(null);
     const popupOrigin = ref<{ left: number; top: number; width: number; height: number } | null>(null);
-    const popupTargetSize = 360;
+    const popupTargetSize = 440;
     const popupAnimationMs = 280;
     const popupSwallowClickMs = 300;
 

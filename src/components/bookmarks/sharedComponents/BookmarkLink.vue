@@ -350,7 +350,7 @@
         }
 
         &.smaller {
-            width: 50px;
+            width: 58px;
 
             .bookmark-image-container {
                 border-radius: 12%;
@@ -422,7 +422,7 @@
 
         &.expanded .bookmark-link .bookmark-title-container {
             margin-top: 10px;
-            font-size: 10px;
+            font-size: 12px;
             line-height: 1.2;
             opacity: 1;
             // Wait for the popup grow animation before revealing text.
@@ -435,7 +435,7 @@
 
         // smaller than the base tooltip so it fits the tighter popup cells.
         .tooltip {
-            font-size: 13px;
+            font-size: 15px;
             padding: 2px 12px;
         }
     }

@@ -596,8 +596,8 @@
             &.open {
                 // The card stays fixed-size, so its rows need compact vertical spacing.
                 // Larger horizontal padding keeps the icons and titles fitting without growth.
-                padding: 5% 14% 2%;
-                gap: 2% 6%;
+                padding: 5% 13% 2%;
+                gap: 2% 5%;
             }
 
             &.dragging {
@@ -612,9 +612,9 @@
         }
 
         .group-grid.open .group-grid-item {
-            // 3 columns with 6% gap on a 100% wide row:
-            // 3w + 2 * 6% = 100% → w = (100% - 12%) / 3
-            width: calc((100% - 12%) / 3);
+            // 3 columns with 5% gap on a 100% wide row:
+            // 3w + 2 * 5% = 100% → w = (100% - 10%) / 3
+            width: calc((100% - 10%) / 3);
         }
 
         // The card fills its wrapper, so the label sits just below it
