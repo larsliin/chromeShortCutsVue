@@ -35,6 +35,13 @@
                 ref="popupGridRef"
                 class="group-body group-link"
                 :aria-label="groupAriaLabel">
+                <v-btn
+                    class="popup-close"
+                    :class="{ dark: bookmarksStore.enableDarkMode, expanded: props.expanded }"
+                    :icon="mdiClose"
+                    density="comfortable"
+                    aria-label="Close group popup"
+                    @click.stop="onClosePopup()" />
                 <draggable
                     class="group-grid"
                     :class="{ dark: bookmarksStore.enableDarkMode, dragging: popupDragging, open: props.expanded }"
@@ -73,8 +80,8 @@
                 @delete="onUngroup()" />
         </div>
         <span
-            v-if="!props.popup"
-            class="bookmark-title-container">{{ displayTitle }}</span>
+            class="bookmark-title-container"
+            :class="{ 'popup-title': props.popup, expanded: props.popup && props.expanded }">{{ displayTitle }}</span>
         <Teleport to="body"
             v-if="!props.popup && showRenameDialog">
             <v-row justify="center">
@@ -93,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-    import { mdiRename, mdiUngroup } from '@mdi/js';
+    import { mdiClose, mdiRename, mdiUngroup } from '@mdi/js';
     import {
         computed, onMounted, onUnmounted, ref, useTemplateRef, watch,
     } from 'vue';
@@ -133,6 +140,7 @@
 
     const emits = defineEmits<{
         open: [payload: GroupOpenPayload];
+        close: [];
         dragOutOfGroup: [payload: DragOutOfGroupPayload];
         dragStart: [];
         popupDragEnd: [];
@@ -201,6 +209,10 @@
             groupId: props.bookmark.id,
             rect: target?.getBoundingClientRect(),
         });
+    }
+
+    function onClosePopup(): void {
+        emits('close');
     }
 
     async function onUngroup(): Promise<void> {
@@ -499,10 +511,14 @@
         width: 100%;
         max-width: none;
 
+        --popup-close-size: 32px;
+
         .handle {
             display: block;
             height: 100%;
             width: 100%;
+            position: relative;
+            overflow: visible;
         }
 
         // Only hide the outer group card's foldout (Ungroup) in popup mode.
@@ -516,6 +532,46 @@
             height: 100%;
             margin-top: 0;
             width: 100%;
+        }
+
+        .popup-close.v-btn {
+            // Matches .group-grid's background so the button reads as part of the card.
+            background-color: color-mix(in srgb, var(--blue-lighter) 95%, transparent);
+            box-shadow: none;
+            position: absolute;
+            right: calc(var(--popup-close-size) * -0.25);
+            top: calc(var(--popup-close-size) * -0.25);
+            height: var(--popup-close-size);
+            width: var(--popup-close-size);
+            z-index: 6;
+            opacity: 0;
+            pointer-events: none;
+            // Close fades out faster than the 0.28s popup scale so it clears before the shrink finishes.
+            transition: transform 0.14s ease, opacity 0.15s ease;
+
+            &.expanded {
+                opacity: 1;
+                pointer-events: auto;
+                // Fades in alongside the popup's own 0.28s scale-up, after a short delay.
+                transition: transform 0.14s ease, opacity 0.22s ease 0.06s;
+            }
+
+            &.dark {
+                background-color: color-mix(in srgb, var(--darkmode-200) 95%, transparent);
+            }
+
+            :deep(.v-icon) {
+                color: rgba(var(--v-theme-on-surface), 1);
+            }
+
+            // Disable Vuetify's default hover/focus overlay darkening.
+            :deep(.v-btn__overlay) {
+                opacity: 0 !important;
+            }
+
+            &:active {
+                transform: scale(0.96);
+            }
         }
 
         .group-grid {
@@ -555,6 +611,28 @@
             // 3 columns with 6% gap on a 100% wide row:
             // 3w + 2 * 6% = 100% → w = (100% - 12%) / 3
             width: calc((100% - 12%) / 3);
+        }
+
+        // The card fills its wrapper, so the label sits just below it
+        // instead of being hidden like the non-popup preview title.
+        // Starts matching the minified label's size/position exactly so
+        // swapping to the popup instance doesn't jump, then grows on expand.
+        > .bookmark-title-container.popup-title {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 15px;
+            color: rgba(255, 255, 255, 0.92);
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+            z-index: 5;
+            transition: margin-top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                font-size 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+
+            &.expanded {
+                margin-top: 12px;
+                font-size: 13px;
+            }
         }
 
         &.icon-small,

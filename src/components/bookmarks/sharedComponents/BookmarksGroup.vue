@@ -76,14 +76,14 @@
             @mousedown.self="onOverlayClickSelf()">
             <div
                 class="group-popup-wrapper"
-                :class="popupState"
+                :class="[popupState, { 'popup-transition': popupTransitioning }]"
                 :style="popupStyle">
                 <BookmarkGroupCard
                     class="group-popup-card"
                     :bookmark="activeGroup"
                     popup
                     :expanded="popupState === 'open'"
-                    @open="closeGroupPopup()"
+                    @close="closeGroupPopup()"
                     @[EMITS.DRAG_START]="popupDragging = true"
                     @[EMITS.POPUP_DRAG_END]="popupDragging = false"
                     @[EMITS.DRAG_OUT_OF_GROUP]="handlePopupDragOutOfGroup" />
@@ -147,6 +147,10 @@
 
     const dragCursor = useDragCursor();
     const closePopupTimeoutId = ref<number | null>(null);
+    // Only animate while the popup is actually opening/closing — disabling the
+    // transition once settled keeps window resizes from sliding the popup.
+    const popupTransitioning = ref(true);
+    const popupTransitionTimeoutId = ref<number | null>(null);
 
     function getInlineGroupRadius(): string {
         if (bookmarksStore.iconSize === 'small') {
@@ -218,9 +222,20 @@
         showGroupPopup.value = true;
         popupState.value = 'opening';
 
+        if (popupTransitionTimeoutId.value !== null) {
+            window.clearTimeout(popupTransitionTimeoutId.value);
+            popupTransitionTimeoutId.value = null;
+        }
+        popupTransitioning.value = true;
+
         await nextTick();
         requestAnimationFrame(() => {
             popupState.value = 'open';
+
+            popupTransitionTimeoutId.value = window.setTimeout(() => {
+                popupTransitioning.value = false;
+                popupTransitionTimeoutId.value = null;
+            }, popupAnimationMs);
         });
     }
 
@@ -228,6 +243,12 @@
         if (!showGroupPopup.value) {
             return;
         }
+
+        if (popupTransitionTimeoutId.value !== null) {
+            window.clearTimeout(popupTransitionTimeoutId.value);
+            popupTransitionTimeoutId.value = null;
+        }
+        popupTransitioning.value = true;
 
         popupState.value = 'closing';
 
@@ -559,6 +580,11 @@
             window.clearTimeout(closePopupTimeoutId.value);
             closePopupTimeoutId.value = null;
         }
+
+        if (popupTransitionTimeoutId.value !== null) {
+            window.clearTimeout(popupTransitionTimeoutId.value);
+            popupTransitionTimeoutId.value = null;
+        }
     });
 </script>
 <style>
@@ -677,15 +703,20 @@
         backface-visibility: hidden;
         will-change: left, top, width, height, border-radius, box-shadow, opacity, transform;
         border-radius: var(--popup-card-radius, 14%);
-        transition:
-            left 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-            top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-            width 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-            height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-            opacity 0.18s ease,
-            box-shadow 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-            border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
         z-index: 1101;
+
+        // Only animate while actually opening/closing. Removing the transition
+        // once settled stops window resizes from sliding the popup around.
+        &.popup-transition {
+            transition:
+                left 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                width 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                opacity 0.18s ease,
+                box-shadow 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+        }
 
         &.opening,
         &.closing {
@@ -710,7 +741,8 @@
     :deep(.group-popup-card) {
         border-radius: var(--popup-card-radius, 14%);
         margin: 0;
-        overflow: hidden;
+        // .group-grid clips its own content with a matching radius, so the
+        // card root stays visible — letting the close button overlay the corner.
         transition: border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
         width: 100%;
         height: 100%;
