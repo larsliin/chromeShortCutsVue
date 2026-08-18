@@ -7,6 +7,56 @@ import {
     isGroupFolder,
 } from '@utils/bookmarkGroups';
 
+// Single-flight guard so overlapping ungroup calls never remove the same group folder twice.
+// Maps groupFolderId → Promise. Concurrent calls on the same id return the pending promise.
+const ungroupInFlight = new Map<string, Promise<void>>();
+
+// Wraps a Chrome operation with stale-node fallback.
+// If Chrome reports the node is missing (async race condition), prunes it from the local tree.
+async function executeWithStaleNodeFallback<T>(
+    operation: () => Promise<T>,
+    nodeId: string,
+    bookmarks: BookmarkNode[] | null,
+    onStale: (id: string, tree: BookmarkNode[] | null) => BookmarkNode[] | null,
+): Promise<T> {
+    try {
+        return await operation();
+    } catch (error) {
+        if (!isMissingBookmarkError(error)) {
+            throw error;
+        }
+        // Stale node: Chrome already dropped it, so prune the local tree.
+        return onStale(nodeId, bookmarks) as T;
+    }
+}
+
+// Chrome rejects with this message when the node was already removed elsewhere.
+// Note: Message format may vary across Chrome versions/locales; this is a best-effort check.
+function isMissingBookmarkError(error: unknown): boolean {
+    const msg = (error as Error)?.message ?? '';
+    return /can't find bookmark|not found|doesn't exist/i.test(msg);
+}
+
+// Recursively removes a node by id from the tree.
+// Optimized to early-exit branches that don't contain the target id,
+// avoiding unnecessary object copies for unaffected subtrees.
+function removeNodeById(nodes: BookmarkNode[], id: string): BookmarkNode[] {
+    return nodes
+        .filter((node) => node.id !== id)
+        .map((node) => {
+            if (!node.children?.length) {
+                return node;
+            }
+            // Only clone if children actually changed.
+            const newChildren = removeNodeById(node.children, id);
+            // Early exit: if no children were removed, return original node.
+            if (newChildren.length === node.children.length) {
+                return node;
+            }
+            return { ...node, children: newChildren };
+        });
+}
+
 function applyBookmarkColors(
     nodes: BookmarkNode[],
     bookmarkColors: Record<string, string>,
@@ -38,15 +88,25 @@ function forEachFolder(
     });
 }
 
-function isGroupCandidateFolder(node: chrome.bookmarks.BookmarkTreeNode): boolean {
+function isGroupCandidateFolder(
+    node: chrome.bookmarks.BookmarkTreeNode,
+    existingIds: Record<string, true>,
+): boolean {
     if (node.url) {
         return false;
     }
 
     const children = node.children ?? [];
 
-    if (children.length === 0 || children.length > GROUPING.MAX_ITEMS) {
+    if (children.length > GROUPING.MAX_ITEMS) {
         return false;
+    }
+
+    // An emptied group keeps its registration so it stays a group
+    // and remains a valid drop target for re-filling (UX consistency).
+    // Stale/orphaned empty groups are cleaned up only when ungrouping is explicitly called.
+    if (children.length === 0) {
+        return existingIds[node.id] === true;
     }
 
     return children.every((child) => !!child.url);
@@ -54,6 +114,7 @@ function isGroupCandidateFolder(node: chrome.bookmarks.BookmarkTreeNode): boolea
 
 function collectGroupCandidateIds(
     rootChildren: chrome.bookmarks.BookmarkTreeNode[],
+    existingIds: Record<string, true>,
 ): Record<string, true> {
     const next: Record<string, true> = {};
 
@@ -63,7 +124,7 @@ function collectGroupCandidateIds(
         }
 
         (folder.children ?? []).forEach((child) => {
-            if (isGroupCandidateFolder(child)) {
+            if (isGroupCandidateFolder(child, existingIds)) {
                 next[child.id] = true;
             }
         });
@@ -249,36 +310,71 @@ export default {
     },
 
     async ungroupBookmarkGroup(
-        this: { groupIds: Record<string, true>; unregisterGroupId: (id: string) => Promise<void> },
+        this: {
+            bookmarks: BookmarkNode[] | null;
+            groupIds: Record<string, true>;
+            unregisterGroupId: (id: string) => Promise<void>;
+        },
         groupFolderId: string,
     ): Promise<void> {
-        // chrome.bookmarks.get does not populate children.
-        // We need getSubTree before moving group contents out.
-        const subTree = await chromeApi.getBookmarkSubTree(groupFolderId);
-        const groupFolder = subTree?.[0];
+        const pending = ungroupInFlight.get(groupFolderId);
 
-        if (!groupFolder || !isGroupFolder(groupFolder as BookmarkNode, this.groupIds)) {
-            return;
+        if (pending) {
+            return pending;
         }
 
-        const { parentId } = groupFolder;
+        const run = (async (): Promise<void> => {
+            // chrome.bookmarks.get does not populate children.
+            // We need getSubTree before moving group contents out.
+            const subTree = await chromeApi.getBookmarkSubTree(groupFolderId).catch(() => null);
+            const groupFolder = subTree?.[0];
 
-        if (!parentId) {
-            return;
+            if (!groupFolder) {
+                // Stale node: Chrome already dropped it, so only the tree needs pruning.
+                this.bookmarks = removeNodeById(this.bookmarks ?? [], groupFolderId);
+                await this.unregisterGroupId(groupFolderId);
+                return;
+            }
+
+            if (!isGroupFolder(groupFolder as BookmarkNode, this.groupIds)) {
+                return;
+            }
+
+            const { parentId } = groupFolder;
+
+            if (!parentId) {
+                return;
+            }
+
+            // Re-insert each child at the original group index plus its offset.
+            // Chrome inserts before the target index, so this preserves the order.
+            const groupChildren = (groupFolder.children ?? []).filter((child) => !!child.url);
+
+            await groupChildren.reduce<Promise<void>>((chain, child, index) => chain
+                .then(() => chromeApi.moveBookmark(child.id, {
+                    parentId,
+                    index: (groupFolder.index ?? 0) + index,
+                })), Promise.resolve());
+
+            // The folder may already be gone when Chrome events overlap.
+            await executeWithStaleNodeFallback(
+                () => chromeApi.removeBookmarkTree(groupFolderId),
+                groupFolderId,
+                this.bookmarks,
+                () => null, // Pruning already happened if node was stale.
+            );
+            await this.unregisterGroupId(groupFolderId);
+        })();
+
+        ungroupInFlight.set(groupFolderId, run);
+
+        try {
+            await run;
+        } finally {
+            ungroupInFlight.delete(groupFolderId);
         }
 
-        // Re-insert each child at the original group index plus its offset.
-        // Chrome inserts before the target index, so this preserves the order.
-        const groupChildren = (groupFolder.children ?? []).filter((child) => !!child.url);
-
-        await groupChildren.reduce<Promise<void>>((chain, child, index) => chain
-            .then(() => chromeApi.moveBookmark(child.id, {
-                parentId,
-                index: (groupFolder.index ?? 0) + index,
-            })), Promise.resolve());
-
-        await chromeApi.removeBookmarkTree(groupFolderId);
-        await this.unregisterGroupId(groupFolderId);
+        return undefined;
     },
 
     async renameBookmarkGroup(
@@ -309,7 +405,7 @@ export default {
         },
         rootChildren: chrome.bookmarks.BookmarkTreeNode[],
     ): Promise<void> {
-        const next = collectGroupCandidateIds(rootChildren);
+        const next = collectGroupCandidateIds(rootChildren, this.groupIds);
 
         if (areGroupIdMapsEqual(this.groupIds, next)) {
             return;
@@ -426,39 +522,31 @@ export default {
         await this.persistGroupIds();
     },
 
-    async collapseEmptyGroups(
-        this: {
-            bookmarks: BookmarkNode[] | null;
-            groupIds: Record<string, true>;
-            ungroupBookmarkGroup: (id: string) => Promise<void>;
-        },
-    ): Promise<void> {
-        const groupChildren = (this.bookmarks ?? [])
-            .flatMap((folder) => folder.children ?? [])
-            .filter((child) => isGroupFolder(child, this.groupIds));
-
-        const groupStates = await Promise.all(groupChildren.map(async (groupChild) => {
-            const subTree = await chromeApi.getBookmarkSubTree(groupChild.id);
-            const groupFromApi = subTree?.[0];
-            const linksInsideGroup = (groupFromApi?.children ?? []).filter((item) => !!item.url);
-
-            return {
-                groupId: groupChild.id,
-                shouldUngroup: linksInsideGroup.length === 0,
-            };
-        }));
-
-        await Promise.all(groupStates
-            .filter((groupState) => groupState.shouldUngroup)
-            .map((groupState) => this.ungroupBookmarkGroup(groupState.groupId)));
+    async removeBookmark(this: { bookmarks: BookmarkNode[] | null }, id: string): Promise<string> {
+        return executeWithStaleNodeFallback(
+            () => chromeApi.removeBookmark(id),
+            id,
+            this.bookmarks,
+            (nodeId, tree) => {
+                this.bookmarks = removeNodeById(tree ?? [], nodeId);
+                return nodeId;
+            },
+        );
     },
 
-    async removeBookmark(id: string): Promise<string> {
-        return chromeApi.removeBookmark(id);
-    },
-
-    async removeBookmarkFolder(id: string): Promise<string> {
-        return chromeApi.removeBookmarkTree(id);
+    async removeBookmarkFolder(
+        this: { bookmarks: BookmarkNode[] | null },
+        id: string,
+    ): Promise<string> {
+        return executeWithStaleNodeFallback(
+            () => chromeApi.removeBookmarkTree(id),
+            id,
+            this.bookmarks,
+            (nodeId, tree) => {
+                this.bookmarks = removeNodeById(tree ?? [], nodeId);
+                return nodeId;
+            },
+        );
     },
 
     async getTree(): Promise<chrome.bookmarks.BookmarkTreeNode[]> {

@@ -6,6 +6,7 @@
                 'foldout-open': isFoldoutOpen,
                 popup: props.popup,
                 'drag-active': bookmarksStore.dragStart,
+                'group-mode': bookmarksStore.groupMode,
             },
         ]">
         <span class="handle">
@@ -18,6 +19,11 @@
                 <span
                     class="group-grid"
                     :class="{ dark: bookmarksStore.enableDarkMode }">
+                    <span
+                        v-if="!previewItems.length"
+                        class="group-grid-empty">
+                        <v-icon :icon="mdiFolderOpen" />
+                    </span>
                     <span
                         v-for="item in previewItems"
                         :key="item.id"
@@ -67,6 +73,13 @@
                                 :expanded="props.expanded" />
                         </div>
                     </template>
+                    <template #footer>
+                        <span
+                            v-if="!popupRenderItems.length"
+                            class="group-grid-empty">
+                            <v-icon :icon="mdiFolderOpen" />
+                        </span>
+                    </template>
                 </draggable>
             </span>
         </span>
@@ -77,7 +90,7 @@
                 :size="'x-small'"
                 @toggle="onToggle($event)"
                 @rename="showRenameDialog = true"
-                @delete="onUngroup()" />
+                @delete="onDeleteGroup()" />
         </div>
         <span
             class="bookmark-title-container"
@@ -103,7 +116,9 @@
 </template>
 
 <script setup lang="ts">
-    import { mdiClose, mdiRename, mdiUngroup } from '@mdi/js';
+    import {
+        mdiClose, mdiDeleteOutline, mdiFolderOpen, mdiRename, mdiUngroup,
+    } from '@mdi/js';
     import {
         computed, onMounted, onUnmounted, ref, useTemplateRef, watch,
     } from 'vue';
@@ -155,15 +170,15 @@
     const isFoldoutOpen = ref(false);
     const effectiveSize = computed(() => `icon-${bookmarksStore.iconSize}`);
 
-    const list = ref<FoldoutListItem[]>([
+    const list = computed<FoldoutListItem[]>(() => [
         {
             title: 'Rename Group',
             icon: mdiRename,
             event: EMITS.RENAME,
         },
         {
-            title: 'Ungroup',
-            icon: mdiUngroup,
+            title: props.bookmark.children?.length ? 'Ungroup' : 'Delete empty group',
+            icon: props.bookmark.children?.length ? mdiUngroup : mdiDeleteOutline,
             event: EMITS.DELETE,
         },
     ]);
@@ -219,8 +234,13 @@
         emits('close');
     }
 
-    async function onUngroup(): Promise<void> {
-        await bookmarksStore.ungroupBookmarkGroup(props.bookmark.id);
+    async function onDeleteGroup(): Promise<void> {
+        if (props.bookmark.children?.length) {
+            await bookmarksStore.ungroupBookmarkGroup(props.bookmark.id);
+            return;
+        }
+
+        await bookmarksStore.removeBookmarkFolder(props.bookmark.id);
     }
 
     function onPopupDragStart(event?: Partial<DragEventInfo> & { item?: HTMLElement; from?: HTMLElement }): void {
@@ -444,6 +464,21 @@
         transition: width 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
     }
 
+    .group-grid-empty {
+        align-items: center;
+        color: var(--grey-dark);
+        display: flex;
+        height: 100%;
+        justify-content: center;
+        opacity: .6;
+        width: 100%;
+
+        :deep(.v-icon) {
+            height: 85%;
+            width: 85%;
+        }
+    }
+
     .bookmark.icon-small {
         width: 56px;
 
@@ -488,7 +523,7 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         width: 100%;
-        color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
+        color: var(--grey-dark);
     }
 
     .bookmark.icon-small .bookmark-title-container {
@@ -581,7 +616,6 @@
         .group-grid {
             height: 100%;
             border-radius: var(--popup-group-radius, 14%);
-            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
             background-color: color-mix(in srgb, var(--blue-lighter) 95%, transparent);
             transition: border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
                 padding 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
@@ -627,7 +661,7 @@
             left: 50%;
             transform: translateX(-50%);
             margin-top: 15px;
-            color: rgba(255, 255, 255, 0.92);
+            color: var(--grey-dark);
             text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
             z-index: 5;
             transition: margin-top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
@@ -665,12 +699,12 @@
     }
 
     .bookmark {
-        &:not(.popup):not(.drag-active):hover .group-link .group-grid {
+        &:not(.popup):not(.drag-active):not(.group-mode):hover .group-link .group-grid {
             transform: perspective(400px) rotateY(25deg) scale(1.02);
             box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
         }
 
-        &:not(.popup):not(.drag-active) .group-link:active .group-grid {
+        &:not(.popup):not(.drag-active):not(.group-mode) .group-link:active .group-grid {
             transform: perspective(400px) rotateY(-15deg) scale(.98);
             box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
             transform-origin: center right;

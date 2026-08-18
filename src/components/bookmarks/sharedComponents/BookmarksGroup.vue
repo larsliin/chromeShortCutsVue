@@ -6,6 +6,7 @@
                 :class="{ dragging }"
                 :fallbackTolerance="10"
                 :force-fallback="true"
+                :filter="'.group-item'"
                 :ghost-class="'ghost'"
                 :group="'bookmarks'"
                 :handle="'.handle'"
@@ -22,7 +23,14 @@
                 <template #item="{ element }">
                     <li
                         :data-bookmark-id="element.id"
-                        :class="[getDragTargetClass(element), { 'popup-origin-hidden': shouldHidePopupOrigin(element) }]">
+                        :class="[
+                            getDragTargetClass(element),
+                            {
+                                'group-item': bookmarksStore.groupMode
+                                    && isGroupFolder(element, bookmarksStore.groupIds),
+                                'popup-origin-hidden': shouldHidePopupOrigin(element),
+                            },
+                        ]">
                         <BookmarkLink
                             v-if="isRegularBookmark(element)"
                             :bookmark="element"
@@ -271,6 +279,39 @@
         }, popupAnimationMs);
     }
 
+    async function closeGroupPopupAfterReflow(): Promise<void> {
+        await nextTick();
+        await new Promise<void>((resolve) => {
+            requestAnimationFrame(() => resolve());
+        });
+        closeGroupPopup();
+    }
+
+    function waitForBookmarkMoveRefresh(bookmarkId: string): {
+        promise: Promise<void>;
+        cancel: () => void;
+    } {
+        let cancel!: () => void;
+        const promise = new Promise<void>((resolve) => {
+            const onBookmarksUpdated = (event: { type: string; id: string }): void => {
+                if (event.type !== 'moved' || event.id !== bookmarkId) {
+                    return;
+                }
+
+                emitter.off(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdated);
+                resolve();
+            };
+
+            emitter.on(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdated);
+            cancel = () => {
+                emitter.off(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdated);
+                resolve();
+            };
+        });
+
+        return { promise, cancel };
+    }
+
     function syncPopupOriginWithActiveGroup(): void {
         if (!showGroupPopup.value || !activeGroupId.value) {
             return;
@@ -472,6 +513,7 @@
         groupParentId: string;
     }): Promise<void> {
         popupDragging.value = false;
+        const moveRefresh = waitForBookmarkMoveRefresh(payload.bookmarkId);
 
         try {
             const parentSubtree = await bookmarksStore.getBookmarks(payload.groupParentId);
@@ -482,24 +524,25 @@
                 parentId: payload.groupParentId,
                 index: targetIndex,
             });
-
-            // Delegate empty-group cleanup to the shared store action.
-            // This mirrors the onRemoved pipeline and removes emptied groups.
-            await bookmarksStore.collapseEmptyGroups();
         } catch (_error) {
             // Swallow the failure and rely on the Chrome probe below.
             // The group may have already been mutated by another handler.
         }
 
-        // Probe Chrome directly to see whether the group still exists.
-        // Only close the popup when the last bookmark was dragged out.
-        const survivor = await bookmarksStore
-            .getBookmarkByIdOrNull(payload.groupId)
+        // Probe Chrome directly so the popup closes once the group runs empty.
+        // The group folder itself is kept so it can be refilled later.
+        const groupSubtree = await bookmarksStore
+            .getBookmarks(payload.groupId)
             .catch(() => null);
+        const remaining = (groupSubtree?.[0]?.children ?? []).filter((item) => !!item.url);
 
-        if (!survivor) {
-            closeGroupPopup();
+        if (!remaining.length) {
+            await moveRefresh.promise;
+            await closeGroupPopupAfterReflow();
+            return;
         }
+
+        moveRefresh.cancel();
     }
 
     async function onDeleteConfirm(_event?: unknown): Promise<void> {
@@ -769,7 +812,7 @@
 
         &.open {
             border-radius: var(--popup-expanded-radius, 14%);
-            box-shadow: 0 22px 70px rgba(0, 0, 0, 0.35);
+            box-shadow: none; // Removed drop shadow for flat design on expanded popup
         }
 
         &.open :deep(.bookmark.popup):hover .group-link .group-grid,

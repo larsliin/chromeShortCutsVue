@@ -378,6 +378,7 @@
     }
 
     .bookmark-title-container {
+        color: var(--grey-dark);
         display: inline-block;
         margin: 15px 0 0;
         max-width: 100%;
@@ -425,12 +426,11 @@
             font-size: 12px;
             line-height: 1.2;
             opacity: 1;
-            // Wait for the popup grow animation before revealing text.
-            // Only opacity is delayed; size changes are immediate.
+            // Fades in immediately alongside the popup grow animation (0.28s duration, no delay).
             transition: font-size 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
                 line-height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
                 margin-top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-                opacity 0.28s cubic-bezier(0.2, 0.85, 0.2, 1) 0.28s;
+                opacity 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
         }
 
         // smaller than the base tooltip so it fits the tighter popup cells.

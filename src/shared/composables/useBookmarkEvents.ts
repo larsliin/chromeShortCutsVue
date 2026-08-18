@@ -280,8 +280,6 @@ export function useBookmarkEvents() {
             id: event,
             children: removedChildren,
         });
-
-        await bookmarksStore.collapseEmptyGroups();
     }
 
     async function onChanged(event: string): Promise<void> {
