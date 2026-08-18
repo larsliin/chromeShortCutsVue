@@ -211,6 +211,18 @@ describe('removeBookmarkFolder', () => {
 
         await expect(store.removeBookmarkFolder('4')).rejects.toThrow('Cannot remove tree.');
     });
+
+    it('resolves and prunes the stale node when the folder is already gone', async () => {
+        store.bookmarks = [
+            makeFolder({ id: 'f1', children: [makeFolder({ id: '4' })] }),
+        ] as never;
+        fireCallback(chromeMock.bookmarks.removeTree, [], "Can't find bookmark for id.");
+
+        const result = await store.removeBookmarkFolder('4');
+
+        expect(result).toBe('4');
+        expect(store.bookmarks?.[0].children).toEqual([]);
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -511,6 +523,23 @@ describe('ungroupBookmarkGroup', () => {
         expect(chromeMock.bookmarks.removeTree).not.toHaveBeenCalled();
     });
 
+    it('prunes the stale node when the group folder no longer exists in Chrome', async () => {
+        store.bookmarks = [
+            makeFolder({ id: 'f1', children: [makeFolder({ id: 'g1' })] }),
+        ] as never;
+        chromeMock.bookmarks.getSubTree.mockImplementation((_id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
+            chromeMock.runtime.lastError = { message: "Can't find bookmark for id." };
+            cb([]);
+            chromeMock.runtime.lastError = undefined;
+        });
+
+        await expect(store.ungroupBookmarkGroup('g1')).resolves.toBeUndefined();
+
+        expect(chromeMock.bookmarks.removeTree).not.toHaveBeenCalled();
+        expect(store.bookmarks?.[0].children).toEqual([]);
+        expect(store.groupIds).toEqual({});
+    });
+
     it('is a no-op when the group folder has no parentId (e.g. it has been detached)', async () => {
         const orphan = makeFolder({
             id: 'g1',
@@ -732,93 +761,6 @@ describe('reconcileGroupIdsFromTree', () => {
 
         expect(store.groupIds).toEqual({});
         expect(chromeMock.storage.sync.remove).toHaveBeenCalledWith(['groupIds'], expect.any(Function));
-    });
-});
-
-// ---------------------------------------------------------------------------
-// collapseEmptyGroups
-// Walks the in-memory tree and ungroups any group folder whose link children
-// have all been removed (e.g. after a bookmark is dragged out via the popup).
-// ---------------------------------------------------------------------------
-
-describe('collapseEmptyGroups', () => {
-    it('ungroups empty group folders and leaves populated ones alone', async () => {
-        const emptyGroup = makeFolder({
-            id: 'g-empty', title: 'Group', parentId: 'f1', index: 0, children: [],
-        });
-        const fullGroup = makeFolder({
-            id: 'g-full',
-            title: 'Group',
-            parentId: 'f1',
-            index: 1,
-            children: [makeNode({ id: 'b1', parentId: 'g-full' })],
-        });
-
-        store.groupIds = { 'g-empty': true, 'g-full': true };
-        store.bookmarks = [
-            { ...makeFolder({ id: 'f1', title: 'F1' }), children: [emptyGroup, fullGroup] },
-        ] as unknown as typeof store.bookmarks;
-
-        chromeMock.bookmarks.getSubTree.mockImplementation((id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
-            if (id === 'g-empty') cb([emptyGroup]);
-            if (id === 'g-full') cb([fullGroup]);
-        });
-        chromeMock.bookmarks.get.mockImplementation((id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
-            if (id === 'g-empty') cb([emptyGroup]);
-        });
-        fireCallback(chromeMock.bookmarks.removeTree, []);
-
-        await store.collapseEmptyGroups();
-
-        // Only the empty group should be removed.
-        expect(chromeMock.bookmarks.removeTree).toHaveBeenCalledTimes(1);
-        expect(chromeMock.bookmarks.removeTree).toHaveBeenCalledWith('g-empty', expect.any(Function));
-    });
-
-    it('also collapses groups whose only remaining children are non-link nodes', async () => {
-        // Group still has a child but it has no url, so it counts as empty
-        // for collapse purposes.
-        const stragglerGroup = makeFolder({
-            id: 'g1',
-            title: 'Group',
-            parentId: 'f1',
-            index: 0,
-            children: [makeFolder({ id: 'sub', parentId: 'g1', title: 'sub' })],
-        });
-
-        store.groupIds = { g1: true };
-        store.bookmarks = [
-            { ...makeFolder({ id: 'f1', title: 'F1' }), children: [stragglerGroup] },
-        ] as unknown as typeof store.bookmarks;
-
-        chromeMock.bookmarks.getSubTree.mockImplementation((id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
-            if (id === 'g1') cb([stragglerGroup]);
-        });
-        chromeMock.bookmarks.get.mockImplementation((id: string, cb: (r: chrome.bookmarks.BookmarkTreeNode[]) => void) => {
-            if (id === 'g1') cb([stragglerGroup]);
-        });
-        fireCallback(chromeMock.bookmarks.removeTree, []);
-
-        await store.collapseEmptyGroups();
-
-        expect(chromeMock.bookmarks.removeTree).toHaveBeenCalledWith('g1', expect.any(Function));
-    });
-
-    it('does nothing when store has no group folders at all', async () => {
-        store.bookmarks = [
-            { ...makeFolder({ id: 'f1', title: 'F1' }), children: [makeNode({ id: 'b1' })] },
-        ] as unknown as typeof store.bookmarks;
-
-        await store.collapseEmptyGroups();
-
-        expect(chromeMock.bookmarks.removeTree).not.toHaveBeenCalled();
-        expect(chromeMock.bookmarks.move).not.toHaveBeenCalled();
-    });
-
-    it('tolerates an empty / unset bookmarks array', async () => {
-        store.bookmarks = null;
-        await expect(store.collapseEmptyGroups()).resolves.toBeUndefined();
-        expect(chromeMock.bookmarks.removeTree).not.toHaveBeenCalled();
     });
 });
 

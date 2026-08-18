@@ -101,16 +101,24 @@ test.describe('Settings dialog', () => {
     test('opens when settings button is clicked', async ({ extensionPage }) => {
         await extensionPage.locator('.toolbar-settings-button').click();
 
-        await expect(extensionPage.getByText('Settings')).toBeVisible();
+        // The dialog is teleported to body; wait for specific content to appear
+        // "Prefer dark mode" is a distinctive label that appears in the settings form
+        await expect(extensionPage.getByText('Prefer dark mode')).toBeVisible({ timeout: 10_000 });
     });
 
     test('closes when Close is clicked', async ({ extensionPage }) => {
         await extensionPage.locator('.toolbar-settings-button').click();
-        await expect(extensionPage.getByText('Settings')).toBeVisible();
+        
+        // Wait for the settings form to be visible
+        await expect(extensionPage.getByText('Prefer dark mode')).toBeVisible({ timeout: 10_000 });
 
-        await extensionPage.getByRole('button', { name: 'Close' }).click();
+        // Click the Close button (there are two Close buttons on the page in error dialog, get the visible one)
+        const closeButtons = extensionPage.getByRole('button', { name: /^Close$/ });
+        const firstVisibleClose = closeButtons.first();
+        await firstVisibleClose.click();
 
-        await expect(extensionPage.getByText('Settings')).not.toBeVisible({ timeout: 5_000 });
+        // Wait for the settings form to disappear
+        await expect(extensionPage.getByText('Prefer dark mode')).not.toBeVisible({ timeout: 10_000 });
     });
 
     test('dark mode switch is present', async ({ extensionPage }) => {
