@@ -13,7 +13,18 @@
 - Use the pr-reviewer agent for PRs, diffs, and review tasks.
 - Use ui-design-specialist for design-only feedback and frontend-feature-architect for planning or completeness reviews.
 - Use Claude Opus 4.5 by default unless the user requests a different model.
-- You are not allowed to commit or push unless you are explicitly asked to do so by the user.
+
+## Git
+
+- If multiple files have been edited, first ask: "Should the files be committed as one commit or in related commits?"
+- Never run `git commit` or `git push` (or any equivalent) on your own, even when you have permission to execute commands without confirmation. Always ask the user first and wait for an explicit "yes" before committing or pushing. This applies to every branch, every change, and every situation, no exceptions.
+- Do not ask the user to provide or approve a commit message. Infer a concise, appropriate commit message from the changes.
+- When asking for permission or gathering additional information needed for the commit:
+	- Use the `vscode_askQuestions` tool to present options and collect structured user input.
+	- Offer predefined options for commit grouping, target branch, or push destination when applicable.
+	- Clearly describe what will happen and why you need confirmation.
+	- Wait for the user's response before proceeding with the git operation.
+- After a commit is successfully created, the next action must be a `vscode_askQuestions` call asking whether to push the commit(s). Do not end the turn with a status-only message or run `git push` before receiving the user's answer. Use predefined yes/no options to make this as simple as possible, and only push after an explicit yes.
 
 ## Project context
 

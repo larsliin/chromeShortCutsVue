@@ -96,12 +96,12 @@ The project uses two testing layers to ensure reliability:
 | **getBookmarkById / getBookmarkByIdOrNull** | Returns a single bookmark by id; the OrNull variant resolves with `null` instead of rejecting when the id is missing |
 | **createBookmark / updateBookmark** | CRUD wrappers around `chrome.bookmarks.create` and `update` |
 | **moveBookmark / reorderBookmark** | Move bookmarks between folders or within a folder, asserting the Chrome destination payload |
+| **removeBookmark / removeBookmarkFolder** | Removes a bookmark or a folder tree, propagating Chrome errors; a "can't find bookmark" error resolves instead and prunes the stale node from the in-memory tree |
 | **createBookmarkGroup** | Group-creation lifecycle: link-vs-folder constraints, same-id guard, mismatched-parent rejection, nested-group rejection |
 | **addBookmarkToGroup** | MAX_ITEMS cap, target-is-not-group rejection, dragged-is-folder rejection, no-op when already in the same group |
-| **ungroupBookmarkGroup** | Re-inserts group's link children at the original index then removes the group folder; unregisters the id from the `groupIds` map; no-op when target is not a registered group, missing parentId, or has non-link children |
+| **ungroupBookmarkGroup** | Re-inserts group's link children at the original index then removes the group folder; unregisters the id from the `groupIds` map; no-op when target is not a registered group, missing parentId, or has non-link children; prunes the in-memory node when the folder is already gone from Chrome |
 | **renameBookmarkGroup** | Updates the Chrome folder title for a registered group id; trims input and falls back to the default name when empty; no-op (returns `null`) when the id is not in `groupIds` |
 | **migrateLegacyGroupFolders** | One-time migration: registers any folder whose title starts with the legacy `__mst_group__:` prefix in the `groupIds` map and renames it to the default name; no-op when no legacy folders are present or `rootId` is unset |
-| **collapseEmptyGroups** | Walks the in-memory tree and ungroups any group folder whose link children have all been removed, leaving populated groups alone; tolerates empty/null bookmarks |
 | **Storage wrappers** | Local and sync storage get/set/delete pass-throughs forward errors from `chrome.runtime.lastError` |
 
 #### `bookmarkGroups.util.test.ts` — Group Utility Tests
