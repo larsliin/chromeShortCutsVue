@@ -80,6 +80,7 @@
     import emitter from '@cmp/eventBus';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
+    import { flattenBookmarkLinks } from '@utils/bookmarkGroups';
 
     const utils = useBookmarkOps();
 
@@ -97,7 +98,7 @@
 
     const props = defineProps<Props>();
 
-    const bookmarkCount = computed(() => props.bookmark.children?.length ?? 0);
+    const bookmarkCount = computed(() => flattenBookmarkLinks([props.bookmark]).length);
 
     // https://pictogrammers.com/library/mdi
     const list = ref([
