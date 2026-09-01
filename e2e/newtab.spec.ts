@@ -108,7 +108,7 @@ test.describe('Settings dialog', () => {
 
     test('closes when Close is clicked', async ({ extensionPage }) => {
         await extensionPage.locator('.toolbar-settings-button').click();
-        
+
         // Wait for the settings form to be visible
         await expect(extensionPage.getByText('Prefer dark mode')).toBeVisible({ timeout: 10_000 });
 
