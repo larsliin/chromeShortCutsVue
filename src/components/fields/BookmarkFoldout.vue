@@ -4,6 +4,7 @@
             'dark-mode-border': darkModeBorder, dark: bookmarksStore.enableDarkMode,
         }"
         location="end bottom"
+        :offset="[-6, -6]"
         origin="start top"
         v-model="toggle">
         <template v-slot:activator="{ props }">
