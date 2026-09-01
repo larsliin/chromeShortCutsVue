@@ -8,7 +8,11 @@
                 'drag-active': bookmarksStore.dragStart,
                 'group-mode': bookmarksStore.groupMode,
             },
-        ]">
+        ]"
+        :style="{
+            '--bookmark-surface-bg': bookmarksStore.enableDarkMode ? 'var(--darkmode-200)' : 'var(--blue-lighter)',
+            '--popup-menu-icon-color': bookmarksStore.enableDarkMode ? 'white' : 'black',
+        }">
         <span class="handle">
             <button
                 v-if="!props.popup"
@@ -92,6 +96,7 @@
                 @rename="showRenameDialog = true"
                 @delete="onDeleteGroup()" />
         </div>
+        <span class="menu-badge" aria-hidden="true"></span>
         <span
             class="bookmark-title-container"
             :class="{ 'popup-title': props.popup, expanded: props.popup && props.expanded }">{{ displayTitle }}</span>
@@ -383,6 +388,8 @@
 </script>
 
 <style scoped lang="scss">
+    @use "../../../scss/menuBadge" as *;
+
     .bookmark {
         display: inline-block;
         margin: 0 0 8px;
@@ -403,7 +410,7 @@
         color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
         display: flex;
         flex-direction: column;
-        margin-top: 34px;
+        margin-top: 0;
         outline-color: #01a1f6;
         outline-offset: 14px;
         text-decoration: none;
@@ -413,8 +420,10 @@
     .group-link {
         border: 0;
         background: transparent;
-        margin-top: 34px;
+        margin-top: 0;
         padding: 0;
+        position: relative;
+        z-index: 1;
     }
 
     // only the closed-card trigger is clickable — the popup's span wrapper
@@ -431,8 +440,9 @@
         overflow: hidden;
         border-radius: 11.11%;
         background-color: var(--blue-lighter);
-        box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.15);
         transform-origin: center right;
+        // Prevents the icon's drop shadow from darkening the badge poking out of the corner.
+        box-shadow: none !important;
         // Use flex wrap so the preview and popup share one layout engine.
         // This keeps padding and gap transitions smooth.
         display: flex;
@@ -447,7 +457,6 @@
 
         &.dark {
             background-color: var(--darkmode-200);
-            box-shadow: none;
         }
     }
 
@@ -481,6 +490,8 @@
 
     .bookmark.icon-small {
         width: 56px;
+        // Smaller icons get a proportionally smaller badge/button.
+        --menu-badge-size: 20px;
 
         .group-grid {
             // Small icons need a higher padding percentage to match larger icons.
@@ -538,17 +549,12 @@
         font-size: 12px;
     }
 
-    .bookmark-edit {
-        visibility: hidden;
-        position: absolute;
-        right: 0;
-        top: 0;
-        opacity: .5;
-    }
+    @include bookmark-edit-badge;
 
     .bookmark.popup {
         width: 100%;
         max-width: none;
+        --menu-badge-size: 28px;
 
         --popup-close-size: 32px;
 
@@ -562,7 +568,8 @@
 
         // Only hide the outer group card's foldout (Ungroup) in popup mode.
         // Inner item foldouts live inside BookmarkGroupPopupItem and are scoped there.
-        > .bookmark-edit {
+        > .bookmark-edit,
+        > .menu-badge {
             display: none;
         }
 
@@ -701,12 +708,10 @@
     .bookmark {
         &:not(.popup):not(.drag-active):not(.group-mode):hover .group-link .group-grid {
             transform: perspective(400px) rotateY(25deg) scale(1.02);
-            box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
         }
 
         &:not(.popup):not(.drag-active):not(.group-mode) .group-link:active .group-grid {
             transform: perspective(400px) rotateY(-15deg) scale(.98);
-            box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
             transform-origin: center right;
         }
 
@@ -714,7 +719,8 @@
         &.foldout-open {
             z-index: 1;
 
-            .bookmark-edit {
+            .bookmark-edit,
+            .menu-badge {
                 visibility: visible;
             }
         }

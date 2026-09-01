@@ -1,5 +1,7 @@
 <template>
-    <div class="folder">
+    <div
+        class="folder"
+        :class="{ 'icon-small': bookmarksStore.iconSize === 'small' }">
         <div class="folder-inner" v-if="bookmarks">
             <draggable
                 :animation="200"
@@ -681,6 +683,10 @@
     .folder {
         flex: 0 0 100%;
 
+        &.icon-small ul {
+            gap: 5px 15px;
+        }
+
         &-inner {
             display: flex;
             justify-content: center;
@@ -705,6 +711,7 @@
             max-width: 1024px;
             padding: 0;
             width: 100%;
+            gap: 10px 15px;
 
             &:empty {
                 position: absolute;
@@ -718,7 +725,6 @@
 
             li {
                 padding: 0;
-                margin: 0 10px;
                 display: inline;
                 position: relative;
 
@@ -726,7 +732,9 @@
                 &.drag-target-add {
                     :deep(.bookmark-image-container),
                     :deep(.group-grid) {
-                        box-shadow: 0 0 0 3px rgba(var(--v-theme-primary), .75);
+                        // !important needed to win over the badge feature's own
+                        // blanket box-shadow removal on these same elements.
+                        box-shadow: 0 0 0 3px rgba(var(--v-theme-primary), .75) !important;
                         transform: scale(1.03);
                         transition: box-shadow .08s ease, transform .08s ease;
                     }

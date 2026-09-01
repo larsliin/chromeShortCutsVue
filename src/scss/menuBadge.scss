@@ -1,0 +1,30 @@
+// Shared layout for the corner "menu badge" that sits behind the edit/foldout
+// button on bookmark and group icons. Used by BookmarkLink and BookmarkGroupCard.
+@mixin menu-badge-position {
+    // Centers on the icon's corner so the badge is always ~50% under the icon,
+    // regardless of --menu-badge-size.
+    right: calc(var(--menu-badge-size, 28px) / -2 - 1px);
+    top: calc(var(--menu-badge-size, 28px) / -2 - 1px);
+}
+
+@mixin bookmark-edit-badge($badge-bg-fallback: var(--blue-lighter)) {
+    .bookmark-edit {
+        visibility: hidden;
+        position: absolute;
+        @include menu-badge-position;
+        z-index: 2;
+    }
+
+    // Colored badge sits behind the icon corner; the button on top stays transparent.
+    .menu-badge {
+        display: block;
+        position: absolute;
+        @include menu-badge-position;
+        width: var(--menu-badge-size, 28px);
+        height: var(--menu-badge-size, 28px);
+        border-radius: 50%;
+        background: var(--bookmark-surface-bg, #{$badge-bg-fallback});
+        z-index: 0;
+        visibility: hidden;
+    }
+}

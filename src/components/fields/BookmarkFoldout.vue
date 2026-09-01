@@ -123,10 +123,18 @@
     }
 
     .button {
-        background-color: transparent;
-        box-shadow: none;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        color: var(--popup-menu-icon-color, currentColor);
         position: relative;
+        width: var(--menu-badge-size, 28px);
+        height: var(--menu-badge-size, 28px);
         z-index: 5;
+    }
+
+    // Keeps the badge behind it fully visible through the button's fill.
+    :deep(.v-btn__overlay) {
+        opacity: 0 !important;
     }
 
     .item-button {

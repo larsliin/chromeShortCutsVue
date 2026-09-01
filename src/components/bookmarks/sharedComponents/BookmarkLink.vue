@@ -1,6 +1,10 @@
 <template>
     <span class="bookmark relative inline-block"
-        :class="[attrs.class, { 'foldout-open': isFoldoutOpen, 'drag-active': bookmarksStore.dragStart, expanded }]">
+        :class="[attrs.class, effectiveSize, { 'foldout-open': isFoldoutOpen, 'drag-active': bookmarksStore.dragStart, expanded }]"
+        :style="{
+            '--bookmark-surface-bg': color || (bookmarksStore.enableDarkMode ? 'var(--darkmode-300)' : '#fff'),
+            '--popup-menu-icon-color': popupMenuIconColor,
+        }">
         <span class="handle">
             <a
                 v-bind="props"
@@ -25,6 +29,7 @@
         </span>
         <template v-if="!hideEdit && expanded">
             <BookmarkTooltip :text="bookmark.title" />
+            <span class="menu-badge" aria-hidden="true"></span>
             <div class="bookmark-edit">
                 <BookmarkFoldout
                     :darkModeBorder="true"
@@ -92,6 +97,7 @@
     import BookmarkTooltip from '@/components/bookmarks/sharedComponents/BookmarkTooltip.vue';
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
     import { useOpenBookmark } from '@cmp/useOpenBookmark';
+    import { getContrastColor } from '@utils/colorUtils';
 
     // The template has multiple root nodes, so attrs must be applied manually.
     defineOptions({ inheritAttrs: false });
@@ -164,6 +170,14 @@
     }
 
     const color = toRef(props.bookmark, 'color') as Ref<string | null | undefined>;
+
+    // Popup badge sits behind the icon, so its dots need to read against the same surface color.
+    const popupMenuIconColor = computed(() => {
+        if (color.value) {
+            return getContrastColor(color.value);
+        }
+        return bookmarksStore.enableDarkMode ? 'white' : 'black';
+    });
 
     async function updateColor() {
         const getColorResponse = await bookmarksStore.getSyncStorage('bookmarkColors');
@@ -268,6 +282,7 @@
 
 </script>
 <style scoped lang="scss">
+    @use "../../../scss/menuBadge" as *;
 
     .bookmark {
         display: inline-block;
@@ -284,15 +299,15 @@
         color: rgba(var(--v-theme-on-surface),var(--v-high-emphasis-opacity));
         display: flex;
         flex-direction: column;
-        margin-top: 34px;
+        margin-top: 0;
         outline-color: #01a1f6;
         outline-offset: 14px;
+        position: relative;
         text-decoration: none;
         width: 90px;
+        z-index: 1;
 
         &.hide-edit {
-            margin-top: 4px;
-
             .bookmark-title-container {
                 margin-top: 4px;
             }
@@ -370,11 +385,8 @@
 
     .bookmark-image-container {
         transform-origin: center right;
-    }
-
-    :deep(.v-btn--icon.v-btn--density-default) {
-        width: 28px;
-        height: 28px;
+        // Prevents the icon's drop shadow from darkening the badge poking out of the corner.
+        box-shadow: none !important;
     }
 
     .bookmark-title-container {
@@ -440,12 +452,11 @@
         }
     }
 
-    .bookmark-edit {
-        visibility: hidden;
-        position: absolute;
-        right: 0;
-        top: 0;
-        opacity: .5;
+    @include bookmark-edit-badge(#fff);
+
+    // Smaller icons get a proportionally smaller badge/button.
+    .bookmark.icon-small {
+        --menu-badge-size: 20px;
     }
 
     .bookmark {
@@ -459,7 +470,8 @@
                 transition-delay: 400ms;
             }
 
-            .bookmark-edit {
+            .bookmark-edit,
+            .menu-badge {
                 visibility: visible;
             }
         }
@@ -467,12 +479,10 @@
 
     .bookmark:not(.drag-active):not(.popup):hover > .handle > .bookmark-link:not(.folder) .bookmark-image-container {
         transform: perspective(400px) rotateY(25deg) scale(1.02);
-        box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
     }
 
     .bookmark:not(.drag-active):not(.popup) > .handle > .bookmark-link:active:not(.folder) .bookmark-image-container {
         transform: perspective(400px) rotateY(-15deg) scale(.98);
-        box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
         transform-origin: center right;
     }
 

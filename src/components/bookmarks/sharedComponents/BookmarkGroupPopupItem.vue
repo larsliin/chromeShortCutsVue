@@ -61,6 +61,10 @@
                 z-index: 2;
             }
 
+            :deep(.menu-badge) {
+                visibility: visible;
+            }
+
             .group-grid-link :deep(.tooltip) {
                 opacity: 1;
                 transition: opacity 0s;
@@ -71,7 +75,6 @@
             // is over the edit button (which sits outside .group-grid-link).
             .group-grid-link :deep(.bookmark-image-container) {
                 transform: perspective(400px) rotateY(25deg) scale(1.02);
-                box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
             }
         }
 
@@ -80,17 +83,19 @@
                 visibility: hidden;
             }
 
+            :deep(.menu-badge) {
+                visibility: hidden;
+            }
+
             .group-grid-link {
                 &:hover :deep(.bookmark-image-container),
                 &:active :deep(.bookmark-image-container) {
                     transform: none;
-                    box-shadow: none;
                 }
             }
 
             &:hover .group-grid-link :deep(.bookmark-image-container) {
                 transform: none;
-                box-shadow: none;
             }
         }
     }
@@ -114,29 +119,12 @@
 
         &:active :deep(.bookmark-image-container) {
             transform: perspective(400px) rotateY(-15deg) scale(.98);
-            box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
             transform-origin: center right;
         }
     }
 
-    :deep(.v-btn--icon.v-btn--density-default) {
-        width: 28px;
-        height: 28px;
-    }
-
-    :deep(.bookmark.popup .bookmark-edit) {
-        opacity: 1;
-        left: auto;
-        right: -15px;
-        top: -15px;
-    }
-
-    // Give the dot-menu activator a dark surface so the white dots
-    // stay legible against light bookmark icons inside the popup.
-    :deep(.bookmark.popup .button) {
-        background-color: var(--darkmode-300);;
-    }
-
+    // Popup grid cells are much smaller than the default tile, so the icon needs
+    // to fill its cell instead of using the fixed default sizes.
     :deep(.bookmark-image-container) {
         height: 100%;
         width: 100%;
