@@ -11,7 +11,8 @@
                 class="button"
                 :size="size"
                 :icon="mdiDotsVertical"
-                v-bind="props" />
+                v-bind="props"
+                :ripple="false" />
         </template>
         <v-list
             class="list">
@@ -126,15 +127,27 @@
         background-color: transparent !important;
         box-shadow: none !important;
         color: var(--popup-menu-icon-color, currentColor);
+        outline-color: #01a1f6;
+        outline-offset: 2px;
         position: relative;
         width: var(--menu-badge-size, 28px);
         height: var(--menu-badge-size, 28px);
         z-index: 5;
+
+        &:focus-visible {
+            outline: 2px solid #01a1f6 !important;
+            box-shadow: none !important;
+        }
     }
 
-    // Keeps the badge behind it fully visible through the button's fill.
-    :deep(.v-btn__overlay) {
+    // Vuetify renders the button root, so scope this global selector by its local class.
+    :global(.v-btn.button > .v-btn__overlay) {
+        display: none !important;
         opacity: 0 !important;
+    }
+
+    :global(.v-btn.button .v-ripple__container) {
+        display: none !important;
     }
 
     .item-button {

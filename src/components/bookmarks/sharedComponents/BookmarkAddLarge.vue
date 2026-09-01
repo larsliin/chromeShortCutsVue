@@ -2,6 +2,9 @@
     <div class="outer"
         v-if="!bookmarksStore.hasBookmarks && !bookmarksStore.bookmarkSearch"
         :class="{ dark: bookmarksStore.enableDarkMode }"
+        role="button"
+        tabindex="0"
+        aria-label="Add bookmark"
         @keyup.enter="onClick()"
         @click="onClick()">
         <v-icon
@@ -45,6 +48,12 @@
         &:hover {
             cursor: pointer;
             opacity: .15;
+        }
+
+        &:focus-visible {
+            opacity: .15;
+            outline: solid 2px #01a1f6;
+            outline-offset: 4px;
         }
     }
 

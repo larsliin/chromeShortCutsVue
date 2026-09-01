@@ -105,7 +105,6 @@
     const utils = useBookmarkOps();
 
     interface Props {
-        tabIndex?: string;
         bookmark: BookmarkNode;
         size?: string;
         hideEdit?: boolean;
@@ -116,11 +115,13 @@
     }
 
     const props = withDefaults(defineProps<Props>(), {
-        tabIndex: '-1',
         size: '',
         draggable: true,
         expanded: true,
     });
+
+    // Collapsed previews are non-interactive, so keep them out of the tab order.
+    const tabIndex = computed(() => (props.expanded ? '0' : '-1'));
 
     const attrs = useAttrs();
 
@@ -301,11 +302,16 @@
         flex-direction: column;
         margin-top: 0;
         outline-color: #01a1f6;
-        outline-offset: 14px;
+        outline-offset: 7px;
         position: relative;
         text-decoration: none;
         width: 90px;
         z-index: 1;
+
+        &:focus-visible {
+            outline-style: solid;
+            outline-width: 2px;
+        }
 
         &.hide-edit {
             .bookmark-title-container {
@@ -461,6 +467,7 @@
 
     .bookmark {
         &:not(.popup):hover,
+        &:not(.popup):focus-within,
         &.foldout-open {
             z-index: 1;
 

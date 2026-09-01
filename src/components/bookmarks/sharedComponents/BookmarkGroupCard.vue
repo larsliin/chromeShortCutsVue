@@ -412,9 +412,14 @@
         flex-direction: column;
         margin-top: 0;
         outline-color: #01a1f6;
-        outline-offset: 14px;
+        outline-offset: 7px;
         text-decoration: none;
         width: 100%;
+
+        &:focus-visible {
+            outline-style: solid;
+            outline-width: 2px;
+        }
     }
 
     .group-link {
@@ -716,6 +721,7 @@
         }
 
         &:hover,
+        &:focus-within,
         &.foldout-open {
             z-index: 1;
 
@@ -726,6 +732,7 @@
         }
 
         &:not(.popup):hover,
+        &:not(.popup):focus-within,
         &:not(.popup).foldout-open {
             .tooltip {
                 opacity: 1;
