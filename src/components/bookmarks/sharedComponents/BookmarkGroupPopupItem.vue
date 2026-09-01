@@ -124,10 +124,17 @@
         height: 28px;
     }
 
+    :deep(.bookmark.popup .bookmark-edit) {
+        opacity: 1;
+        left: auto;
+        right: -15px;
+        top: -15px;
+    }
+
     // Give the dot-menu activator a dark surface so the white dots
     // stay legible against light bookmark icons inside the popup.
-    :deep(.button) {
-        background-color: rgba(var(--darkmode-rgb-100), 0.6);
+    :deep(.bookmark.popup .button) {
+        background-color: var(--darkmode-300);;
     }
 
     :deep(.bookmark-image-container) {
