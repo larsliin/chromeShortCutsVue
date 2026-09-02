@@ -685,6 +685,7 @@
 
         &.icon-small ul {
             gap: 5px 15px;
+            margin-top: 8px;
         }
 
         &-inner {
@@ -706,8 +707,7 @@
             flex-wrap: wrap;
             justify-content: center;
             list-style: none;
-            margin: 0 auto;
-            margin: 0;
+            margin: 16px auto 0;
             max-width: 1024px;
             padding: 0;
             width: 100%;

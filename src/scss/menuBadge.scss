@@ -13,6 +13,10 @@
         position: absolute;
         @include menu-badge-position;
         z-index: 2;
+        // Flex avoids the inline baseline gap that pushed the button below the badge.
+        display: flex;
+        width: var(--menu-badge-size, 28px);
+        height: var(--menu-badge-size, 28px);
     }
 
     // Colored badge sits behind the icon corner; the button on top stays transparent.
