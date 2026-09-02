@@ -623,6 +623,16 @@
             &:active {
                 transform: scale(0.96);
             }
+
+            &:focus-visible {
+                outline: 2px solid #01a1f6 !important;
+                box-shadow: none !important;
+                outline-offset: 2px;
+                
+                &::after {
+                    content: none;
+                }
+            }
         }
 
         .group-grid {

@@ -135,11 +135,11 @@
         height: var(--menu-badge-size, 28px);
         z-index: 5;
 
-
         &:focus-visible {
             outline: 2px solid #01a1f6 !important;
             box-shadow: none !important;
-            &::after { 
+            
+            &::after {
                 content: none;
             }
         }

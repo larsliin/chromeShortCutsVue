@@ -78,6 +78,7 @@ export const GROUPING = Object.freeze({
     RADIUS_MEDIUM: '11.11%',
     RADIUS_LARGE: '12.96%',
     POPUP_OVERLAY_BLUR: '6px',
+    FOCUSABLE_SELECTOR: 'a[href], button, [tabindex]:not([tabindex="-1"])',
 });
 
 export enum ICON_SIZE {

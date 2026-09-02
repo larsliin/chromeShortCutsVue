@@ -77,12 +77,14 @@
     <Teleport to="body"
         v-if="showGroupPopup && activeGroup">
         <div
+            ref="popupOverlayRef"
             class="group-popup-overlay"
             :style="popupOverlayStyle"
             role="dialog"
-            tabindex="0"
+            tabindex="-1"
             aria-modal="true"
             @keydown.esc="onOverlayEscape()"
+            @keydown.tab="onOverlayTab($event)"
             @mousedown.self="onOverlayClickSelf()">
             <div
                 class="group-popup-wrapper"
@@ -156,6 +158,8 @@
     const popupSwallowClickMs = 300;
 
     const dragCursor = useDragCursor();
+    const popupOverlayRef = ref<HTMLElement | null>(null);
+    const popupReturnFocusEl = ref<HTMLElement | null>(null);
     const closePopupTimeoutId = ref<number | null>(null);
     // Only animate while the popup is actually opening/closing — disabling the
     // transition once settled keeps window resizes from sliding the popup.
@@ -232,6 +236,7 @@
     async function onOpenGroup(payload: { groupId: string; rect?: DOMRect }): Promise<void> {
         setPopupOriginFromRect(payload.rect ?? null);
 
+        popupReturnFocusEl.value = document.activeElement as HTMLElement | null;
         activeGroupId.value = payload.groupId;
         showGroupPopup.value = true;
         popupState.value = 'opening';
@@ -243,6 +248,8 @@
         popupTransitioning.value = true;
 
         await nextTick();
+        setBackgroundInert(true);
+        popupOverlayRef.value?.focus();
         requestAnimationFrame(() => {
             popupState.value = 'open';
 
@@ -278,6 +285,9 @@
             popupOrigin.value = null;
             popupState.value = 'opening';
             closePopupTimeoutId.value = null;
+            setBackgroundInert(false);
+            popupReturnFocusEl.value?.focus();
+            popupReturnFocusEl.value = null;
         }, popupAnimationMs);
     }
 
@@ -493,6 +503,60 @@
         closeGroupPopup();
     }
 
+    // The popup is teleported outside #app, so making the app inert keeps the
+    // bookmarks behind the backdrop out of the tab order.
+    function setBackgroundInert(inert: boolean): void {
+        const appRoot = document.getElementById('app');
+
+        if (!appRoot) {
+            return;
+        }
+
+        if (inert) {
+            appRoot.setAttribute('inert', '');
+        } else {
+            appRoot.removeAttribute('inert');
+        }
+    }
+
+    function getPopupFocusables(): HTMLElement[] {
+        const overlay = popupOverlayRef.value;
+
+        if (!overlay) {
+            return [];
+        }
+
+        return Array.from(
+            overlay.querySelectorAll<HTMLElement>(GROUPING.FOCUSABLE_SELECTOR),
+        ).filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+    }
+
+    function onOverlayTab(event: KeyboardEvent): void {
+        const focusables = getPopupFocusables();
+
+        if (!focusables.length) {
+            event.preventDefault();
+            popupOverlayRef.value?.focus();
+            return;
+        }
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        const outsideTrap = !active || !popupOverlayRef.value?.contains(active);
+
+        if (event.shiftKey && (active === first || outsideTrap)) {
+            event.preventDefault();
+            last.focus();
+            return;
+        }
+
+        if (!event.shiftKey && (active === last || outsideTrap)) {
+            event.preventDefault();
+            first.focus();
+        }
+    }
+
     function onOverlayClickSelf(): void {
         if (popupDragging.value) {
             return;
@@ -660,6 +724,7 @@
 
     onUnmounted(() => {
         window.removeEventListener('resize', onWindowResize);
+        setBackgroundInert(false);
 
         if (closePopupTimeoutId.value !== null) {
             window.clearTimeout(closePopupTimeoutId.value);
