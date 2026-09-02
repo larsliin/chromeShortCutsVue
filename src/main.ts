@@ -35,6 +35,7 @@ const vuetify = createVuetify({
                     info: '#2196F3',
                     success: '#4CAF50',
                     warning: '#FB8C00',
+                    'bookmark-surface': '#e0e6ea',
                 },
             },
             dark: {
@@ -44,6 +45,7 @@ const vuetify = createVuetify({
                     primary: '#91BED4',
                     anchor: '#f00',
                     secondary: '#f00',
+                    'bookmark-surface': '#575757',
                 },
             },
         },

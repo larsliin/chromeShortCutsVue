@@ -14,8 +14,7 @@
             <BIconStarFill v-else-if="allowFallbackIcon" />
             <span
                 v-if="loading">
-                <div class="lds-ring"
-                    :class="{ dark: bookmarksStore.enableDarkMode }">
+                <div class="lds-ring">
                     <div></div>
                     <div></div>
                     <div></div>
@@ -61,7 +60,7 @@
     }
 
     .lds-ring {
-        background-color: rgba(255, 255, 255, 0.8);
+        background-color: rgba(var(--v-theme-bookmark-surface), 0.8);
         display: inline-block;
         height: 100%;
         left: 0;
@@ -69,10 +68,6 @@
         top: 0;
         width: 100%;
         z-index: 1;
-
-        &.dark {
-            background-color: rgba(var(--darkmode-rgb-300), .8)
-        }
     }
 
     .lds-ring div {
@@ -125,7 +120,7 @@
     .bookmark-image-container {
         align-items: center;
         aspect-ratio: 1;
-        background-color: #fff;
+        background-color: rgb(var(--v-theme-bookmark-surface));
         border-radius: 11.11%;
         box-shadow: 0px 0 20px 0px rgba(0, 0, 0, 0.15);
         color: var(--yellow);
@@ -140,7 +135,6 @@
         width: 90px;
 
         &.dark {
-            background-color: var(--darkmode-300);
             box-shadow: none;
         }
 

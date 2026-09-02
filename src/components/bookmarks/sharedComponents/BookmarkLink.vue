@@ -2,7 +2,7 @@
     <span class="bookmark relative inline-block"
         :class="[attrs.class, effectiveSize, { 'foldout-open': isFoldoutOpen, 'drag-active': bookmarksStore.dragStart, expanded }]"
         :style="{
-            '--bookmark-surface-bg': color || (bookmarksStore.enableDarkMode ? 'var(--darkmode-300)' : '#fff'),
+            '--bookmark-surface-bg': color || 'rgb(var(--v-theme-bookmark-surface))',
             '--popup-menu-icon-color': popupMenuIconColor,
         }">
         <span class="handle">
@@ -458,7 +458,7 @@
         }
     }
 
-    @include bookmark-edit-badge(#fff);
+    @include bookmark-edit-badge(rgb(var(--v-theme-bookmark-surface)));
 
     // Smaller icons get a proportionally smaller badge/button.
     .bookmark.icon-small {
