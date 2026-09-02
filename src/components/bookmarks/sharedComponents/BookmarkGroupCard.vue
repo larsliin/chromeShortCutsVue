@@ -628,7 +628,7 @@
                 outline: 2px solid #01a1f6 !important;
                 box-shadow: none !important;
                 outline-offset: 2px;
-                
+
                 &::after {
                     content: none;
                 }
@@ -707,13 +707,13 @@
             padding: 5% 15%;
         }
 
-        @media (min-width: 1440px) {
+        @media (min-width: 960px) {
             .group-grid.open {
                 padding: 5% 14%;
             }
         }
 
-        @media (min-width: 1920px) {
+        @media (min-width: 1440px) {
             .group-grid.open {
                 padding: 5% 13% 2%;
             }
