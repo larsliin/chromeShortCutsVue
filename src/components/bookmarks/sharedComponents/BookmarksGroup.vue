@@ -737,11 +737,20 @@
         }
     });
 </script>
-<style>
-    .cursor-pointer,
-    .cursor-pointer a,
-    .cursor-pointer button {
-        cursor: grabbing !important;
+<style lang="scss">
+    // Set on <body> for the duration of a drag by useDragCursor.
+    .cursor-pointer {
+        &,
+        a,
+        button {
+            cursor: grabbing !important;
+        }
+
+        // Sortable's clone never gets Vue's .drag-active, so hide badges globally.
+        .bookmark-edit,
+        .menu-badge {
+            visibility: hidden !important;
+        }
     }
 </style>
 <style scoped lang="scss">

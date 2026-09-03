@@ -731,7 +731,7 @@
         }
 
         &:hover,
-        &:focus-within,
+        &:has(:focus-visible),
         &.foldout-open {
             z-index: 1;
 
@@ -742,7 +742,7 @@
         }
 
         &:not(.popup):hover,
-        &:not(.popup):focus-within,
+        &:not(.popup):has(:focus-visible),
         &:not(.popup).foldout-open {
             .tooltip {
                 opacity: 1;
