@@ -843,13 +843,13 @@
         will-change: backdrop-filter;
         z-index: 1100;
     }
-    @media (min-width: 1440px) {
+    @media (min-width: 960px) {
         .group-popup-overlay {
             --popup-target-size: 435px;
             --popup-overlay-blur-target: 4.5px;
         }
     }
-    @media (min-width: 1920px) {
+    @media (min-width: 1440px) {
         .group-popup-overlay {
             --popup-target-size: 500px;
             --popup-overlay-blur-target: 3.5px;
