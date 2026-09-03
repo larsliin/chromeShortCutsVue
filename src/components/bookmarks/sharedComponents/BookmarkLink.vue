@@ -468,9 +468,9 @@
     }
 
     .bookmark {
-        &:not(.popup):hover,
-        &:not(.popup):has(:focus-visible),
-        &.foldout-open {
+        &:not(.drag-active):not(.popup):hover,
+        &:not(.drag-active):not(.popup):has(:focus-visible),
+        &:not(.drag-active):not(.popup).foldout-open {
             z-index: 1;
 
             .bookmark-link .bookmark-image-container {

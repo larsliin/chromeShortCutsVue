@@ -730,9 +730,9 @@
             transform-origin: center right;
         }
 
-        &:hover,
-        &:has(:focus-visible),
-        &.foldout-open {
+        &:not(.drag-active):not(.popup):hover,
+        &:not(.drag-active):not(.popup):has(:focus-visible),
+        &:not(.drag-active):not(.popup).foldout-open {
             z-index: 1;
 
             .group-link .group-grid {
