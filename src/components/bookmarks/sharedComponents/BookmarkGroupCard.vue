@@ -445,6 +445,7 @@
         // ever slightly outgrows the aspect-ratio-derived height.
         overflow: hidden;
         border-radius: 11.11%;
+        border-top-right-radius: 0;
         background-color: var(--blue-lighter);
         transform-origin: center right;
         // Prevents the icon's drop shadow from darkening the badge poking out of the corner.
@@ -591,8 +592,8 @@
             background-color: color-mix(in srgb, var(--blue-lighter) 95%, transparent);
             box-shadow: none;
             position: absolute;
-            right: calc(var(--popup-close-size) * -0.25);
-            top: calc(var(--popup-close-size) * -0.25);
+            right: calc(var(--popup-close-size) * -0.5);
+            top: calc(var(--popup-close-size) * -0.5);
             height: var(--popup-close-size);
             width: var(--popup-close-size);
             z-index: 6;
@@ -636,6 +637,7 @@
         .group-grid {
             height: 100%;
             border-radius: var(--popup-group-radius, 14%);
+            border-top-right-radius: 0;
             background-color: color-mix(in srgb, var(--blue-lighter) 95%, transparent);
             transition: border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
                 padding 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
@@ -732,6 +734,10 @@
         &:has(:focus-visible),
         &.foldout-open {
             z-index: 1;
+
+            .group-link .group-grid {
+                border-top-right-radius: 0;
+            }
 
             .bookmark-edit,
             .menu-badge {

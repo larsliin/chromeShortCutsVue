@@ -473,6 +473,10 @@
         &.foldout-open {
             z-index: 1;
 
+            .bookmark-link .bookmark-image-container {
+                border-top-right-radius: 0;
+            }
+
             .tooltip {
                 opacity: 1;
                 transition: opacity 0s;
