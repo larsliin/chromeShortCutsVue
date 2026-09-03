@@ -51,6 +51,7 @@
                     :icon="mdiClose"
                     density="comfortable"
                     aria-label="Close group popup"
+                    :ripple="false"
                     @click.stop="onClosePopup()" />
                 <draggable
                     class="group-grid"
@@ -561,7 +562,7 @@
         max-width: none;
         --menu-badge-size: 28px;
 
-        --popup-close-size: 32px;
+        --popup-close-size: 36px;
 
         .handle {
             display: block;
@@ -617,11 +618,8 @@
 
             // Disable Vuetify's default hover/focus overlay darkening.
             :deep(.v-btn__overlay) {
+                display: none !important;
                 opacity: 0 !important;
-            }
-
-            &:active {
-                transform: scale(0.96);
             }
 
             &:focus-visible {
