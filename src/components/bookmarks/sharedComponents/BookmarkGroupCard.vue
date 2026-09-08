@@ -637,7 +637,6 @@
         .group-grid {
             height: 100%;
             border-radius: var(--popup-group-radius, 14%);
-            border-top-right-radius: 0;
             background-color: color-mix(in srgb, var(--blue-lighter) 95%, transparent);
             transition: border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
                 padding 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
@@ -650,6 +649,8 @@
             // .open switches padding and gap to the full popup layout.
             // This keeps the card animation smooth instead of snapping to final values.
             &.open {
+                // Squared off so the close button can sit flush in the corner.
+                border-top-right-radius: 0;
                 // The card stays fixed-size, so its rows need compact vertical spacing.
                 // Larger horizontal padding keeps the icons and titles fitting without growth.
                 padding: 5% 13% 2%;
