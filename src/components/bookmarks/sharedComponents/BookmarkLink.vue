@@ -478,18 +478,21 @@
         &:not(.drag-active):not(.popup).foldout-open {
             z-index: 1;
 
-            .bookmark-link .bookmark-image-container {
+            // Direct-child combinators: this must never reach the nested BookmarkLink
+            // instances a group renders for its preview icons — only this bookmark's
+            // own elements should react to its own hover/focus state.
+            > .handle > .bookmark-link .bookmark-image-container {
                 border-top-right-radius: 0;
             }
 
-            .tooltip {
+            > .tooltip {
                 opacity: 1;
                 transition: opacity 0s;
                 transition-delay: 400ms;
             }
 
-            .bookmark-edit,
-            .menu-badge {
+            > .bookmark-edit,
+            > .menu-badge {
                 visibility: visible;
             }
         }
