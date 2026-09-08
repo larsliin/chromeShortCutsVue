@@ -599,8 +599,9 @@
             z-index: 6;
             opacity: 0;
             pointer-events: none;
-            // Close fades out faster than the 0.28s popup scale so it clears before the shrink finishes.
-            transition: transform 0.14s ease, opacity 0.15s ease;
+            // No transition here: hides instantly the moment closing starts,
+            // instead of lingering visible while the popup shrinks.
+            transition: transform 0.14s ease;
 
             &.expanded {
                 opacity: 1;
