@@ -379,10 +379,6 @@
                 border-radius: 12%;
                 padding: 8%;
                 width: 100%;
-
-                :deep(svg) {
-                    width: 32px
-                }
             }
 
             .bookmark-title-container {
@@ -424,6 +420,15 @@
         .bookmark-link {
             margin-top: 0;
             width: 100%;
+            // Stretching to 100% breaks the icon-size classes' fixed px font-size
+            // (tuned for their own fixed anchor width), so re-derive it as a
+            // percentage of this link's actual rendered width instead. All three
+            // icon-size tiers use ~61% (34/56, 50/82, 66/108), so one rule covers them.
+            container-type: inline-size;
+
+            .bookmark-image-container {
+                font-size: 61cqw;
+            }
 
             .bookmark-title-container {
                 // Start collapsed to match the preview look.

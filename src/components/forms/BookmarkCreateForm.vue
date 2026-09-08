@@ -183,7 +183,10 @@
     const foldersIdArr = ref();
 
     const id = ref();
-    const parentId = ref();
+    // The top-level folder that actually contains the bookmark, resolved through
+    // its group folder when the bookmark is grouped. Used to detect a real folder
+    // change so saving without touching the folder select never ungroups it.
+    const originalTopFolderId = ref<string | null>(null);
 
     const base64Image = ref();
     const form = ref();
@@ -199,7 +202,7 @@
             await bookmarksStore.moveBookmark(id.value as string, { parentId: newFolderId });
         } else {
             const folders: Record<string, string>[] = foldersIdArr.value ?? [];
-            const isSameFolder = !!folders.find((item) => item[folderStr] === parentId.value);
+            const isSameFolder = !!folders.find((item) => item[folderStr] === originalTopFolderId.value);
 
             if (!isSameFolder) {
                 const target = folders.find((item) => Object.prototype.hasOwnProperty.call(item, folderStr));
@@ -361,7 +364,6 @@
 
         if (props.data) {
             id.value = props.data.id ?? null;
-            parentId.value = props.data.parentId ?? null;
             titleTxt.value = props.data.title ?? '';
             urlTxt.value = props.data.url ?? '';
 
@@ -379,8 +381,13 @@
         }
 
         if (!slctDisabled && props.data?.parentId) {
-            const parentIndex = folderChildren.findIndex((e) => e.id === props.data?.parentId);
-            folderSlct.value = bookmarksStore.bookmarks?.[parentIndex]?.title ?? null;
+            // A grouped bookmark's immediate parent is its group folder, not a
+            // top-level folder. Walk one level down to find the top-level folder
+            // that owns either the bookmark directly or its group folder.
+            const topLevelFolder = folderChildren.find((folder) => folder.id === props.data?.parentId
+                || folder.children?.some((child) => child.id === props.data?.parentId));
+            originalTopFolderId.value = topLevelFolder?.id ?? null;
+            folderSlct.value = topLevelFolder?.title ?? null;
         }
 
         if (props.folderPreSelected && !props.data) {

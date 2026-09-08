@@ -9,7 +9,6 @@
                     :bookmark="bookmark"
                     :image="image"
                     :expanded="expanded"
-                    size="smaller"
                     :draggable="false" />
             </span>
         </span>
