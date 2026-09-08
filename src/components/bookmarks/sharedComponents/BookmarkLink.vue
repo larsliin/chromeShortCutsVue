@@ -50,7 +50,7 @@
                     v-model="showConfirmDelete"
                     persistent
                     width="450">
-                    <BookmarkConfirmDelete
+                    <BookmarkConfirmAction
                         :title="props.bookmark.title"
                         :id="bookmark.id"
                         :typeFolder="!bookmark.url"
@@ -87,8 +87,8 @@
     import { EMITS } from '@/constants';
     import emitter from '@cmp/eventBus';
     import type { BookmarkNode, FoldoutListItem } from '@/types/bookmark';
-    import BookmarkConfirmDelete
-        from '@/components/forms/BookmarkConfirmDelete.vue';
+    import BookmarkConfirmAction
+        from '@/components/forms/BookmarkConfirmAction.vue';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import BookmarkFoldout
         from '@/components/fields/BookmarkFoldout.vue';

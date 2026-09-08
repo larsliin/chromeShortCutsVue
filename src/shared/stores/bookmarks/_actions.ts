@@ -17,7 +17,7 @@ async function executeWithStaleNodeFallback<T>(
     operation: () => Promise<T>,
     nodeId: string,
     bookmarks: BookmarkNode[] | null,
-    onStale: (id: string, tree: BookmarkNode[] | null) => BookmarkNode[] | null,
+    onStale: (id: string, tree: BookmarkNode[] | null) => T,
 ): Promise<T> {
     try {
         return await operation();
@@ -26,7 +26,7 @@ async function executeWithStaleNodeFallback<T>(
             throw error;
         }
         // Stale node: Chrome already dropped it, so prune the local tree.
-        return onStale(nodeId, bookmarks) as T;
+        return onStale(nodeId, bookmarks);
     }
 }
 
@@ -361,7 +361,7 @@ export default {
                 () => chromeApi.removeBookmarkTree(groupFolderId),
                 groupFolderId,
                 this.bookmarks,
-                () => null, // Pruning already happened if node was stale.
+                () => groupFolderId, // Pruning already happened if node was stale.
             );
             await this.unregisterGroupId(groupFolderId);
         })();
@@ -375,6 +375,25 @@ export default {
         }
 
         return undefined;
+    },
+
+    async deleteBookmarkGroup(
+        this: {
+            bookmarks: BookmarkNode[] | null;
+            unregisterGroupId: (id: string) => Promise<void>;
+        },
+        groupFolderId: string,
+    ): Promise<void> {
+        await executeWithStaleNodeFallback(
+            () => chromeApi.removeBookmarkTree(groupFolderId),
+            groupFolderId,
+            this.bookmarks,
+            (nodeId, tree) => {
+                this.bookmarks = removeNodeById(tree ?? [], nodeId);
+                return nodeId;
+            },
+        );
+        await this.unregisterGroupId(groupFolderId);
     },
 
     async renameBookmarkGroup(

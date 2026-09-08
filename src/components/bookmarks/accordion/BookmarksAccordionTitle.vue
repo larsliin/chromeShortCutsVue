@@ -41,7 +41,7 @@
                     v-model="showConfirmDelete"
                     persistent
                     width="450">
-                    <BookmarkConfirmDelete
+                    <BookmarkConfirmAction
                         typeFolder
                         :title="model"
                         :id="bookmark.id"
@@ -71,8 +71,8 @@
         mdiRename, mdiDragHorizontal, mdiDeleteOutline, mdiStar, mdiFormatColorFill,
     } from '@mdi/js';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import BookmarkConfirmDelete
-        from '@/components/forms/BookmarkConfirmDelete.vue';
+    import BookmarkConfirmAction
+        from '@/components/forms/BookmarkConfirmAction.vue';
     import BookmarkColorEdit
         from '@/components/forms/BookmarkColorEdit.vue';
 

@@ -95,7 +95,8 @@
                 :size="'x-small'"
                 @toggle="onToggle($event)"
                 @rename="showRenameDialog = true"
-                @delete="onDeleteGroup()" />
+                @delete="onDeleteGroup()"
+                @deleteAll="showDeleteAllConfirm = true" />
         </div>
         <span class="menu-badge" aria-hidden="true"></span>
         <span
@@ -105,7 +106,7 @@
             v-if="!props.popup"
             :text="displayTitle" />
         <Teleport to="body"
-            v-if="!props.popup && showRenameDialog">
+            v-if="!props.popup && (showRenameDialog || showUngroupConfirm || showDeleteAllConfirm)">
             <v-row justify="center">
                 <v-dialog
                     v-model="showRenameDialog"
@@ -115,6 +116,28 @@
                         :value="bookmark.title"
                         @confirm="onRenameConfirm($event)"
                         @cancel="showRenameDialog = false" />
+                </v-dialog>
+                <v-dialog
+                    v-model="showUngroupConfirm"
+                    persistent
+                    width="450">
+                    <BookmarkConfirmAction
+                        ungroup
+                        :title="displayTitle"
+                        :id="bookmark.id"
+                        @cancel="showUngroupConfirm = false"
+                        @confirm="onUngroupConfirm()" />
+                </v-dialog>
+                <v-dialog
+                    v-model="showDeleteAllConfirm"
+                    persistent
+                    width="450">
+                    <BookmarkConfirmAction
+                        typeFolder
+                        :title="displayTitle"
+                        :id="bookmark.id"
+                        @cancel="showDeleteAllConfirm = false"
+                        @confirm="onDeleteAllConfirm()" />
                 </v-dialog>
             </v-row>
         </Teleport>
@@ -133,6 +156,7 @@
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
     import BookmarkGroupRename from '@/components/forms/BookmarkGroupRename.vue';
+    import BookmarkConfirmAction from '@/components/forms/BookmarkConfirmAction.vue';
     import BookmarkGroupPopupItem from '@/components/bookmarks/sharedComponents/BookmarkGroupPopupItem.vue';
     import BookmarkTooltip from '@/components/bookmarks/sharedComponents/BookmarkTooltip.vue';
     import draggable from 'vuedraggable';
@@ -176,20 +200,34 @@
     const isFoldoutOpen = ref(false);
     const effectiveSize = computed(() => `icon-${bookmarksStore.iconSize}`);
 
-    const list = computed<FoldoutListItem[]>(() => [
-        {
-            title: 'Rename Group',
-            icon: mdiRename,
-            event: EMITS.RENAME,
-        },
-        {
-            title: props.bookmark.children?.length ? 'Ungroup' : 'Delete empty group',
-            icon: props.bookmark.children?.length ? mdiUngroup : mdiDeleteOutline,
-            event: EMITS.DELETE,
-        },
-    ]);
+    const list = computed<FoldoutListItem[]>(() => {
+        const items: FoldoutListItem[] = [
+            {
+                title: 'Rename Group',
+                icon: mdiRename,
+                event: EMITS.RENAME,
+            },
+            {
+                title: props.bookmark.children?.length ? 'Ungroup' : 'Delete empty group',
+                icon: props.bookmark.children?.length ? mdiUngroup : mdiDeleteOutline,
+                event: EMITS.DELETE,
+            },
+        ];
+
+        if (props.bookmark.children?.length) {
+            items.push({
+                title: 'Delete Group',
+                icon: mdiDeleteOutline,
+                event: EMITS.DELETE_ALL,
+            });
+        }
+
+        return items;
+    });
 
     const showRenameDialog = ref(false);
+    const showUngroupConfirm = ref(false);
+    const showDeleteAllConfirm = ref(false);
 
     const displayTitle = computed(() => {
         const t = (props.bookmark.title ?? '').trim();
@@ -242,11 +280,21 @@
 
     async function onDeleteGroup(): Promise<void> {
         if (props.bookmark.children?.length) {
-            await bookmarksStore.ungroupBookmarkGroup(props.bookmark.id);
+            showUngroupConfirm.value = true;
             return;
         }
 
         await bookmarksStore.removeBookmarkFolder(props.bookmark.id);
+    }
+
+    async function onUngroupConfirm(): Promise<void> {
+        showUngroupConfirm.value = false;
+        await bookmarksStore.ungroupBookmarkGroup(props.bookmark.id);
+    }
+
+    async function onDeleteAllConfirm(): Promise<void> {
+        showDeleteAllConfirm.value = false;
+        await bookmarksStore.deleteBookmarkGroup(props.bookmark.id);
     }
 
     function onPopupDragStart(event?: Partial<DragEventInfo> & { item?: HTMLElement; from?: HTMLElement }): void {

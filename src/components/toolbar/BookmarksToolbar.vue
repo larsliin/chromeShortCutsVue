@@ -130,7 +130,7 @@
                     v-model="showConfirmDelete"
                     persistent
                     width="450">
-                    <BookmarkConfirmDelete
+                    <BookmarkConfirmAction
                         :title="deleteConfirmTitle"
                         :id="deleteConfirmId"
                         :typeFolder="deleteConfirmIsFolder"
@@ -158,8 +158,8 @@
     import { EMITS, TIMEOUTS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { getDomainFromUrl } from '@utils/urlUtils';
-    import BookmarkConfirmDelete
-        from '@/components/forms/BookmarkConfirmDelete.vue';
+    import BookmarkConfirmAction
+        from '@/components/forms/BookmarkConfirmAction.vue';
     import BookmarksFilter from '@/components/fields/BookmarksFilter.vue';
 
     const dialogSettings = ref(false);

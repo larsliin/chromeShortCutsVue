@@ -64,7 +64,7 @@
                     v-model="showConfirmDelete"
                     persistent
                     width="450">
-                    <BookmarkConfirmDelete
+                    <BookmarkConfirmAction
                         typeFolder
                         :title="folder.title"
                         :id="folder.id"
@@ -118,8 +118,8 @@
     import emitter from '@cmp/eventBus';
 
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
-    import BookmarkConfirmDelete
-        from '@/components/forms/BookmarkConfirmDelete.vue';
+    import BookmarkConfirmAction
+        from '@/components/forms/BookmarkConfirmAction.vue';
     import {
         findNodeById,
         isBookmarkLink,

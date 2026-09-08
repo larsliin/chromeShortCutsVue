@@ -54,6 +54,7 @@
 
     const emits = defineEmits([
         EMITS.DELETE,
+        EMITS.DELETE_ALL,
         EMITS.RENAME,
         EMITS.TOGGLE,
         EMITS.OPEN_COLOR_EDITOR,
@@ -81,6 +82,9 @@
             break;
         case EMITS.DELETE:
             emits(EMITS.DELETE);
+            break;
+        case EMITS.DELETE_ALL:
+            emits(EMITS.DELETE_ALL);
             break;
         case EMITS.EDIT:
             emits(EMITS.EDIT);

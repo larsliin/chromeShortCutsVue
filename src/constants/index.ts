@@ -22,6 +22,7 @@ export enum EMITS {
     CONFIRM = 'confirm',
     BEFORE_DELETE = 'beforeDelete',
     DELETE = 'delete',
+    DELETE_ALL = 'deleteAll',
     DRAG_START = 'dragStart',
     DRAG_OUT_OF_GROUP = 'dragOutOfGroup',
     EDIT = 'edit',
