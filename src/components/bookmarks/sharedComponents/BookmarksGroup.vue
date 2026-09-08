@@ -156,6 +156,10 @@
     const popupFallbackSize = 360;
     const popupAnimationMs = 280;
     const popupSwallowClickMs = 300;
+    // Tracked in JS (instead of vw/vh) so the popup's centered position can be
+    // rounded to a whole pixel — translate(-50%) of a fractional box blurs text.
+    const viewportWidth = ref(window.innerWidth);
+    const viewportHeight = ref(window.innerHeight);
 
     const dragCursor = useDragCursor();
     const popupOverlayRef = ref<HTMLElement | null>(null);
@@ -175,6 +179,17 @@
                 height: rect.height,
             }
             : null;
+    }
+
+    // Mirrors the .group-popup-overlay media query breakpoints (960px/1440px).
+    function getPopupTargetSize(width: number): number {
+        if (width >= 1440) {
+            return 500;
+        }
+        if (width >= 960) {
+            return 435;
+        }
+        return 375;
     }
 
     function getInlineGroupRadius(): string {
@@ -199,20 +214,37 @@
     const popupStyle = computed(() => {
         const origin = popupOrigin.value;
         const isOpen = popupState.value === 'open';
-        const x = isOpen ? '50vw' : `${origin?.left ?? popupFallbackSize / 2}px`;
-        const y = isOpen ? '50vh' : `${origin?.top ?? popupFallbackSize / 2}px`;
         const inlineRadius = getInlineGroupRadius();
         const expandedRadius = '8%';
 
+        // Compute the top-left corner directly, all rounded to whole pixels.
+        // This replaces left/top-at-center + transform: translate(-50%, -50%),
+        // which blurred text whenever the box's runtime size was fractional.
+        let left: number;
+        let top: number;
+        let width: number;
+        let height: number;
+
+        if (isOpen) {
+            const maxWidth = viewportWidth.value - 32;
+            const maxHeight = viewportHeight.value - 32;
+            const size = Math.round(Math.min(getPopupTargetSize(viewportWidth.value), maxWidth, maxHeight));
+            width = size;
+            height = size;
+            left = Math.round((viewportWidth.value - size) / 2);
+            top = Math.round((viewportHeight.value - size) / 2);
+        } else {
+            width = Math.round(origin?.width ?? popupFallbackSize);
+            height = Math.round(origin?.height ?? popupFallbackSize);
+            left = Math.round((origin?.left ?? popupFallbackSize / 2) - (width / 2));
+            top = Math.round((origin?.top ?? popupFallbackSize / 2) - (height / 2));
+        }
+
         return {
-            left: x,
-            top: y,
-            width: isOpen
-                ? 'min(var(--popup-target-size, 360px), calc(100vw - 32px), calc(100vh - 32px))'
-                : `${origin?.width ?? popupFallbackSize}px`,
-            height: isOpen
-                ? 'min(var(--popup-target-size, 360px), calc(100vw - 32px), calc(100vh - 32px))'
-                : `${origin?.height ?? popupFallbackSize}px`,
+            left: `${left}px`,
+            top: `${top}px`,
+            width: `${width}px`,
+            height: `${height}px`,
             opacity: '1',
             '--popup-inline-radius': inlineRadius,
             '--popup-expanded-radius': expandedRadius,
@@ -349,6 +381,8 @@
     }
 
     function onWindowResize(): void {
+        viewportWidth.value = window.innerWidth;
+        viewportHeight.value = window.innerHeight;
         syncPopupOriginWithActiveGroup();
     }
 
@@ -837,7 +871,6 @@
     }
 
     .group-popup-overlay {
-        --popup-target-size: 375px;
         --popup-overlay-blur-target: 6px;
         background: rgba(10, 12, 18, var(--popup-overlay-opacity, 0.75));
         backdrop-filter: blur(var(--popup-overlay-blur, 0px));
@@ -854,22 +887,19 @@
     }
     @media (min-width: 960px) {
         .group-popup-overlay {
-            --popup-target-size: 435px;
             --popup-overlay-blur-target: 4.5px;
         }
     }
     @media (min-width: 1440px) {
         .group-popup-overlay {
-            --popup-target-size: 500px;
             --popup-overlay-blur-target: 3.5px;
         }
     }
 
     .group-popup-wrapper {
         position: fixed;
-        transform: translate3d(-50%, -50%, 0);
         backface-visibility: hidden;
-        will-change: left, top, width, height, border-radius, box-shadow, opacity, transform;
+        will-change: left, top, width, height, border-radius, box-shadow, opacity;
         border-radius: var(--popup-card-radius, 14%);
         z-index: 1101;
 
