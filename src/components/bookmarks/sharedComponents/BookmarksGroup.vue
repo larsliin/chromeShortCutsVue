@@ -41,7 +41,7 @@
                             v-else
                             :bookmark="element"
                             :key="`${element.id}-group`"
-                            @open="onOpenGroup($event)" />
+                            @open="groupPopup.onOpenGroup($event)" />
                     </li>
                 </template>
             </draggable>
@@ -74,50 +74,25 @@
             </v-row>
         </template>
     </Teleport>
-    <Teleport to="body"
-        v-if="showGroupPopup && activeGroup">
-        <div
-            ref="popupOverlayRef"
-            class="group-popup-overlay"
-            :style="popupOverlayStyle"
-            role="dialog"
-            tabindex="-1"
-            aria-modal="true"
-            @keydown.esc="onOverlayEscape()"
-            @keydown.tab="onOverlayTab($event)"
-            @mousedown.self="onOverlayClickSelf()">
-            <div
-                class="group-popup-wrapper"
-                :class="[popupState, { 'popup-transition': popupTransitioning }]"
-                :style="popupStyle">
-                <BookmarkGroupCard
-                    class="group-popup-card"
-                    :bookmark="activeGroup"
-                    popup
-                    :expanded="popupState === 'open'"
-                    @close="closeGroupPopup()"
-                    @[EMITS.DRAG_START]="popupDragging = true"
-                    @[EMITS.POPUP_DRAG_END]="popupDragging = false"
-                    @[EMITS.DRAG_OUT_OF_GROUP]="handlePopupDragOutOfGroup" />
-            </div>
-        </div>
-    </Teleport>
+    <BookmarkGroupPopup :popup="groupPopup" />
 </template>
 
 <script setup lang="ts">
     import {
-        computed, nextTick, onMounted, onUnmounted, ref,
+        computed, nextTick, ref,
     } from 'vue';
     import { useDragCursor } from '@cmp/useDragCursor';
     import type { BookmarkNode, DragEventInfo } from '@/types/bookmark';
     import { GROUPING, EMITS } from '@/constants';
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
     import BookmarkGroupCard from '@/components/bookmarks/sharedComponents/BookmarkGroupCard.vue';
+    import BookmarkGroupPopup from '@/components/bookmarks/sharedComponents/BookmarkGroupPopup.vue';
     import draggable from 'vuedraggable';
     import { useBookmarksStore } from '@stores/bookmarks';
     import emitter from '@cmp/eventBus';
 
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
+    import { useGroupPopup } from '@cmp/useGroupPopup';
     import BookmarkConfirmAction
         from '@/components/forms/BookmarkConfirmAction.vue';
     import {
@@ -128,6 +103,7 @@
     import { computeDropIntent } from '@utils/dragIntent';
 
     const utils = useBookmarkOps();
+    const groupPopup = useGroupPopup();
 
     interface Props {
         folder: BookmarkNode;
@@ -142,248 +118,20 @@
     ]);
 
     const dragging = ref(false);
-    const popupDragging = ref(false);
 
     const bookmarksStore = useBookmarksStore();
 
     const showConfirmDelete = ref(false);
-    const showGroupPopup = ref(false);
-    const popupState = ref<'opening' | 'open' | 'closing'>('opening');
-    const activeGroupId = ref('');
     const draggedBookmarkId = ref<string | null>(null);
     const dropIntent = ref<{ type: 'create' | 'add-to-group'; targetId: string } | null>(null);
-    const popupOrigin = ref<{ left: number; top: number; width: number; height: number } | null>(null);
-    const popupFallbackSize = 360;
-    const popupAnimationMs = 280;
     const popupSwallowClickMs = 300;
-    // Tracked in JS (instead of vw/vh) so the popup's centered position can be
-    // rounded to a whole pixel — translate(-50%) of a fractional box blurs text.
-    const viewportWidth = ref(window.innerWidth);
-    const viewportHeight = ref(window.innerHeight);
 
     const dragCursor = useDragCursor();
-    const popupOverlayRef = ref<HTMLElement | null>(null);
-    const popupReturnFocusEl = ref<HTMLElement | null>(null);
-    const closePopupTimeoutId = ref<number | null>(null);
-    // Only animate while the popup is actually opening/closing — disabling the
-    // transition once settled keeps window resizes from sliding the popup.
-    const popupTransitioning = ref(true);
-    const popupTransitionTimeoutId = ref<number | null>(null);
-
-    function setPopupOriginFromRect(rect?: DOMRect | null): void {
-        popupOrigin.value = rect
-            ? {
-                left: rect.left + (rect.width / 2),
-                top: rect.top + (rect.height / 2),
-                width: rect.width,
-                height: rect.height,
-            }
-            : null;
-    }
-
-    // Mirrors the .group-popup-overlay media query breakpoints (960px/1440px).
-    function getPopupTargetSize(width: number): number {
-        if (width >= 1440) {
-            return 500;
-        }
-        if (width >= 960) {
-            return 435;
-        }
-        return 375;
-    }
-
-    function getInlineGroupRadius(): string {
-        if (bookmarksStore.iconSize === 'small') {
-            return GROUPING.RADIUS_SMALL;
-        }
-
-        if (bookmarksStore.iconSize === 'large') {
-            return GROUPING.RADIUS_LARGE;
-        }
-
-        return GROUPING.RADIUS_MEDIUM;
-    }
 
     const renderItems = computed(() => props.bookmarks ?? []);
-    const activeGroup = computed(() => (
-        activeGroupId.value
-            ? findNodeById(bookmarksStore.bookmarks ?? [], activeGroupId.value)
-            : null
-    ));
 
-    const popupStyle = computed(() => {
-        const origin = popupOrigin.value;
-        const isOpen = popupState.value === 'open';
-        const inlineRadius = getInlineGroupRadius();
-        const expandedRadius = '8%';
-
-        // Compute the top-left corner directly, all rounded to whole pixels.
-        // This replaces left/top-at-center + transform: translate(-50%, -50%),
-        // which blurred text whenever the box's runtime size was fractional.
-        let left: number;
-        let top: number;
-        let width: number;
-        let height: number;
-
-        if (isOpen) {
-            const maxWidth = viewportWidth.value - 32;
-            const maxHeight = viewportHeight.value - 32;
-            const size = Math.round(Math.min(getPopupTargetSize(viewportWidth.value), maxWidth, maxHeight));
-            width = size;
-            height = size;
-            left = Math.round((viewportWidth.value - size) / 2);
-            top = Math.round((viewportHeight.value - size) / 2);
-        } else {
-            width = Math.round(origin?.width ?? popupFallbackSize);
-            height = Math.round(origin?.height ?? popupFallbackSize);
-            left = Math.round((origin?.left ?? popupFallbackSize / 2) - (width / 2));
-            top = Math.round((origin?.top ?? popupFallbackSize / 2) - (height / 2));
-        }
-
-        return {
-            left: `${left}px`,
-            top: `${top}px`,
-            width: `${width}px`,
-            height: `${height}px`,
-            opacity: '1',
-            '--popup-inline-radius': inlineRadius,
-            '--popup-expanded-radius': expandedRadius,
-            '--popup-card-radius': isOpen ? expandedRadius : inlineRadius,
-            '--popup-group-radius': isOpen ? expandedRadius : inlineRadius,
-        } as Record<string, string>;
-    });
-
-    const popupOverlayStyle = computed(() => {
-        const isOpen = popupState.value === 'open';
-
-        return {
-            '--popup-overlay-opacity': isOpen ? '0.75' : '0',
-            '--popup-overlay-blur': isOpen ? (`var(--popup-overlay-blur-target, ${GROUPING.POPUP_OVERLAY_BLUR})`) : '0px',
-        } as Record<string, string>;
-    });
     function isRegularBookmark(item: BookmarkNode): boolean {
         return !isGroupFolder(item, bookmarksStore.groupIds);
-    }
-
-    async function onOpenGroup(payload: { groupId: string; rect?: DOMRect }): Promise<void> {
-        setPopupOriginFromRect(payload.rect ?? null);
-
-        popupReturnFocusEl.value = document.activeElement as HTMLElement | null;
-        activeGroupId.value = payload.groupId;
-        showGroupPopup.value = true;
-        popupState.value = 'opening';
-
-        if (popupTransitionTimeoutId.value !== null) {
-            window.clearTimeout(popupTransitionTimeoutId.value);
-            popupTransitionTimeoutId.value = null;
-        }
-        popupTransitioning.value = true;
-
-        await nextTick();
-        setBackgroundInert(true);
-        popupOverlayRef.value?.focus();
-        requestAnimationFrame(() => {
-            popupState.value = 'open';
-
-            popupTransitionTimeoutId.value = window.setTimeout(() => {
-                popupTransitioning.value = false;
-                popupTransitionTimeoutId.value = null;
-            }, popupAnimationMs);
-        });
-    }
-
-    function closeGroupPopup(): void {
-        if (!showGroupPopup.value) {
-            return;
-        }
-
-        syncPopupOriginWithActiveGroup();
-
-        if (popupTransitionTimeoutId.value !== null) {
-            window.clearTimeout(popupTransitionTimeoutId.value);
-            popupTransitionTimeoutId.value = null;
-        }
-        popupTransitioning.value = true;
-
-        popupState.value = 'closing';
-
-        if (closePopupTimeoutId.value !== null) {
-            window.clearTimeout(closePopupTimeoutId.value);
-        }
-
-        closePopupTimeoutId.value = window.setTimeout(() => {
-            showGroupPopup.value = false;
-            activeGroupId.value = '';
-            popupOrigin.value = null;
-            popupState.value = 'opening';
-            closePopupTimeoutId.value = null;
-            setBackgroundInert(false);
-            popupReturnFocusEl.value?.focus();
-            popupReturnFocusEl.value = null;
-        }, popupAnimationMs);
-    }
-
-    async function closeGroupPopupAfterReflow(): Promise<void> {
-        await nextTick();
-        await new Promise<void>((resolve) => {
-            requestAnimationFrame(() => resolve());
-        });
-        closeGroupPopup();
-    }
-
-    function waitForBookmarkMoveRefresh(bookmarkId: string): {
-        promise: Promise<void>;
-        cancel: () => void;
-    } {
-        let cancel!: () => void;
-        const promise = new Promise<void>((resolve) => {
-            const onBookmarksUpdated = (event: { type: string; id: string }): void => {
-                if (event.type !== 'moved' || event.id !== bookmarkId) {
-                    return;
-                }
-
-                emitter.off(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdated);
-                resolve();
-            };
-
-            emitter.on(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdated);
-            cancel = () => {
-                emitter.off(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdated);
-                resolve();
-            };
-        });
-
-        return { promise, cancel };
-    }
-
-    function syncPopupOriginWithActiveGroup(): void {
-        if (!showGroupPopup.value || !activeGroupId.value) {
-            return;
-        }
-
-        const listItem = document.querySelector(
-            `[data-bookmark-id="${activeGroupId.value}"]`,
-        ) as HTMLElement | null;
-
-        if (!listItem) {
-            return;
-        }
-
-        // Match the same visual anchor as the open-click payload (group card body)
-        // so close animations keep a square aspect ratio after resizes.
-        const originElement = listItem.querySelector('.group-body.group-link') as HTMLElement | null;
-
-        if (!originElement) {
-            return;
-        }
-
-        setPopupOriginFromRect(originElement.getBoundingClientRect());
-    }
-
-    function onWindowResize(): void {
-        viewportWidth.value = window.innerWidth;
-        viewportHeight.value = window.innerHeight;
-        syncPopupOriginWithActiveGroup();
     }
 
     function resetDropIntent(): void {
@@ -402,8 +150,7 @@
 
     function shouldHidePopupOrigin(element: BookmarkNode): boolean {
         return isGroupFolder(element, bookmarksStore.groupIds)
-            && showGroupPopup.value
-            && activeGroupId.value === element.id;
+            && groupPopup.shouldHidePopupOrigin(element.id);
     }
 
     function computeDropIntentFor(draggedId: string, targetId: string): {
@@ -529,122 +276,6 @@
         showConfirmDelete.value = true;
     }
 
-    function onOverlayEscape(): void {
-        if (popupDragging.value) {
-            return;
-        }
-
-        closeGroupPopup();
-    }
-
-    // The popup is teleported outside #app, so making the app inert keeps the
-    // bookmarks behind the backdrop out of the tab order.
-    function setBackgroundInert(inert: boolean): void {
-        const appRoot = document.getElementById('app');
-
-        if (!appRoot) {
-            return;
-        }
-
-        if (inert) {
-            appRoot.setAttribute('inert', '');
-        } else {
-            appRoot.removeAttribute('inert');
-        }
-    }
-
-    function getPopupFocusables(): HTMLElement[] {
-        const overlay = popupOverlayRef.value;
-
-        if (!overlay) {
-            return [];
-        }
-
-        return Array.from(
-            overlay.querySelectorAll<HTMLElement>(GROUPING.FOCUSABLE_SELECTOR),
-        ).filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
-    }
-
-    function onOverlayTab(event: KeyboardEvent): void {
-        const focusables = getPopupFocusables();
-
-        if (!focusables.length) {
-            event.preventDefault();
-            popupOverlayRef.value?.focus();
-            return;
-        }
-
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        const active = document.activeElement as HTMLElement | null;
-        const outsideTrap = !active || !popupOverlayRef.value?.contains(active);
-
-        if (event.shiftKey && (active === first || outsideTrap)) {
-            event.preventDefault();
-            last.focus();
-            return;
-        }
-
-        if (!event.shiftKey && (active === last || outsideTrap)) {
-            event.preventDefault();
-            first.focus();
-        }
-    }
-
-    function onOverlayClickSelf(): void {
-        if (popupDragging.value) {
-            return;
-        }
-
-        closeGroupPopup();
-    }
-
-    function handlePopupDragOutOfGroup(payload: {
-        bookmarkId: string;
-        groupId: string;
-        groupParentId: string;
-    }): void {
-        onPopupDragOutOfGroup(payload);
-    }
-
-    async function onPopupDragOutOfGroup(payload: {
-        bookmarkId: string;
-        groupId: string;
-        groupParentId: string;
-    }): Promise<void> {
-        popupDragging.value = false;
-        const moveRefresh = waitForBookmarkMoveRefresh(payload.bookmarkId);
-
-        try {
-            const parentSubtree = await bookmarksStore.getBookmarks(payload.groupParentId);
-            const parentChildren = (parentSubtree?.[0]?.children ?? []) as BookmarkNode[];
-            const targetIndex = parentChildren.length;
-
-            await bookmarksStore.moveBookmark(payload.bookmarkId, {
-                parentId: payload.groupParentId,
-                index: targetIndex,
-            });
-        } catch (_error) {
-            // Swallow the failure and rely on the Chrome probe below.
-            // The group may have already been mutated by another handler.
-        }
-
-        // Probe Chrome directly so the popup closes once the group runs empty.
-        // The group folder itself is kept so it can be refilled later.
-        const groupSubtree = await bookmarksStore
-            .getBookmarks(payload.groupId)
-            .catch(() => null);
-        const remaining = (groupSubtree?.[0]?.children ?? []).filter((item) => !!item.url);
-
-        if (!remaining.length) {
-            await moveRefresh.promise;
-            await closeGroupPopupAfterReflow();
-            return;
-        }
-
-        moveRefresh.cancel();
-    }
-
     async function onDeleteConfirm(_event?: unknown): Promise<void> {
         emits(EMITS.BEFORE_DELETE);
 
@@ -751,25 +382,6 @@
             resetDropIntent();
         }
     }
-
-    onMounted(() => {
-        window.addEventListener('resize', onWindowResize, { passive: true });
-    });
-
-    onUnmounted(() => {
-        window.removeEventListener('resize', onWindowResize);
-        setBackgroundInert(false);
-
-        if (closePopupTimeoutId.value !== null) {
-            window.clearTimeout(closePopupTimeoutId.value);
-            closePopupTimeoutId.value = null;
-        }
-
-        if (popupTransitionTimeoutId.value !== null) {
-            window.clearTimeout(popupTransitionTimeoutId.value);
-            popupTransitionTimeoutId.value = null;
-        }
-    });
 </script>
 <style lang="scss">
     // Set on <body> for the duration of a drag by useDragCursor.
@@ -868,81 +480,5 @@
             }
         }
 
-    }
-
-    .group-popup-overlay {
-        --popup-overlay-blur-target: 6px;
-        background: rgba(10, 12, 18, var(--popup-overlay-opacity, 0.75));
-        backdrop-filter: blur(var(--popup-overlay-blur, 0px));
-        -webkit-backdrop-filter: blur(var(--popup-overlay-blur, 0px));
-        inset: 0;
-        padding: clamp(16px, 4vw, 48px);
-        position: fixed;
-        contain: paint;
-        transition: background-color 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-            backdrop-filter 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-            -webkit-backdrop-filter 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
-        will-change: backdrop-filter;
-        z-index: 1100;
-    }
-    @media (min-width: 960px) {
-        .group-popup-overlay {
-            --popup-overlay-blur-target: 4.5px;
-        }
-    }
-    @media (min-width: 1440px) {
-        .group-popup-overlay {
-            --popup-overlay-blur-target: 3.5px;
-        }
-    }
-
-    .group-popup-wrapper {
-        position: fixed;
-        backface-visibility: hidden;
-        will-change: left, top, width, height, border-radius, box-shadow, opacity;
-        border-radius: var(--popup-card-radius, 14%);
-        z-index: 1101;
-
-        // Only animate while actually opening/closing. Removing the transition
-        // once settled stops window resizes from sliding the popup around.
-        &.popup-transition {
-            transition:
-                left 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-                top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-                width 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-                height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-                opacity 0.18s ease,
-                box-shadow 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
-                border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
-        }
-
-        &.opening,
-        &.closing {
-            border-radius: var(--popup-inline-radius, 11.11%);
-            box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-        }
-
-        &.open {
-            border-radius: var(--popup-expanded-radius, 14%);
-            box-shadow: none; // Removed drop shadow for flat design on expanded popup
-        }
-
-        &.open :deep(.bookmark.popup):hover .group-link .group-grid,
-        &.open :deep(.bookmark.popup) .group-link:active .group-grid,
-        &.open :deep(.bookmark.popup):hover :deep(.bookmark-link:not(.folder) .bookmark-image-container),
-        &.open :deep(.bookmark.popup) :deep(.bookmark-link:active:not(.folder) .bookmark-image-container) {
-            transform: none !important;
-            box-shadow: none !important;
-        }
-    }
-
-    :deep(.group-popup-card) {
-        border-radius: var(--popup-card-radius, 14%);
-        margin: 0;
-        // .group-grid clips its own content with a matching radius, so the
-        // card root stays visible — letting the close button overlay the corner.
-        transition: border-radius 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
-        width: 100%;
-        height: 100%;
     }
 </style>
