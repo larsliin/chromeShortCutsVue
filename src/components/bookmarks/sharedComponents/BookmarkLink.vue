@@ -431,7 +431,7 @@
             }
 
             .bookmark-title-container {
-                // Start collapsed to match the preview look.
+                // Start collapsed to match the preview look
                 // Line-height 0 ensures the row truly takes no space.
                 margin-top: 0;
                 opacity: 0;
