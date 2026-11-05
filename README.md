@@ -25,7 +25,7 @@ A Chrome Extension (Manifest V3) that replaces your new tab page with a fully cu
 | UI Framework | Vue 3 (Composition API, `<script setup>`) |
 | State Management | Pinia |
 | Component Library | Vuetify 3 |
-| Build Tool | Vite 5 + `@crxjs/vite-plugin` |
+| Build Tool | Vite 5 |
 | Drag and Drop | `vuedraggable` |
 | Form Validation | `@vuelidate/core` + `@vuelidate/validators` |
 | Reactive Utilities | `@vueuse/core` |
@@ -41,17 +41,16 @@ A Chrome Extension (Manifest V3) that replaces your new tab page with a fully cu
 # Install dependencies
 npm install
 
-# Development build with hot reload (via CRXJS)
-npm run dev
-
-# Production build → dist/
-npm run build
+# Build the extension → dist-extension/
+npm run build:extension
 
 # Lint and auto-fix
 npm run lint
 ```
 
-Load the extension in Chrome: open `chrome://extensions`, enable **Developer Mode**, click **Load unpacked**, and select the `dist/` folder.
+`build:extension` runs `vite build` and then `scripts/prepare-extension.js`, which copies `manifest.json` and `icons/` into `dist-extension/`.
+
+Load the extension in Chrome: open `chrome://extensions`, enable **Developer Mode**, click **Load unpacked**, and select the `dist-extension/` folder. After changing source files, re-run the build and reload the extension.
 
 ---
 
@@ -67,7 +66,7 @@ npm run test:run
 # Unit tests with coverage report
 npm run test:coverage
 
-# E2E tests (requires built extension in dist/)
+# E2E tests (requires built extension in dist-extension/)
 npm run test:e2e
 
 # Full suite (unit + E2E)
@@ -144,7 +143,7 @@ The project uses two testing layers to ensure reliability:
 
 ### E2E Tests — Playwright (`e2e/`)
 
-**[Playwright](https://playwright.dev/)** loads the built extension into a real Chromium browser to test user-facing behaviour end-to-end. Tests run sequentially (single worker) to avoid Chrome storage conflicts. A global setup step builds the extension automatically if `dist/` is missing.
+**[Playwright](https://playwright.dev/)** loads the built extension into a real Chromium browser to test user-facing behaviour end-to-end. Tests run sequentially (single worker) to avoid Chrome storage conflicts. A global setup step builds the extension automatically if `dist-extension/` is missing.
 
 **Why Playwright?** It supports loading unpacked Chrome extensions in a real browser context — essential for testing Chrome API interactions (bookmarks, storage, popups) that can't be simulated in jsdom.
 

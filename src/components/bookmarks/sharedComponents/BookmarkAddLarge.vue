@@ -9,12 +9,12 @@
         @click="onClick()">
         <v-icon
             class="icon"
-            :icon="mdiStar" />
+            :icon="StarIcon" />
     </div>
 </template>
 
 <script setup lang="ts">
-    import { mdiStar } from '@mdi/js';
+    import StarIcon from '@/components/bookmarks/sharedComponents/StarIcon.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
     import emitter from '@cmp/eventBus';

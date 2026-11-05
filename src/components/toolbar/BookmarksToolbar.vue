@@ -10,7 +10,7 @@
                 <template v-slot:activator="{ props: tooltipProps }">
                     <v-btn
                         class="toolbar-add-button"
-                        :icon="mdiStar"
+                        :icon="StarIcon"
                         v-bind="tooltipProps"
                         @click="dialogAddOpen = true" />
                 </template>
@@ -144,7 +144,6 @@
 
 <script setup lang="ts">
     import {
-        mdiStar,
         mdiWrench,
         mdiAlertCircleOutline,
         mdiFolderMultiple,
@@ -161,6 +160,7 @@
     import BookmarkConfirmAction
         from '@/components/forms/BookmarkConfirmAction.vue';
     import BookmarksFilter from '@/components/fields/BookmarksFilter.vue';
+    import StarIcon from '@/components/bookmarks/sharedComponents/StarIcon.vue';
 
     const dialogSettings = ref(false);
 
@@ -304,7 +304,7 @@
         }
 
         &-add-button {
-            color: var(--yellow);
+            color: var(--green);
         }
 
         &-group-button {

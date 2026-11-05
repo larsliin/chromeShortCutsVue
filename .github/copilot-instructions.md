@@ -82,8 +82,7 @@
 
 ## Commands
 
-- npm run dev for development
-- npm run build for production
+- npm run build:extension to build the extension into dist-extension/ (load it unpacked in Chrome)
 - npm run lint for linting and auto-fixes
 
 ## Known Anti-Patterns to Avoid

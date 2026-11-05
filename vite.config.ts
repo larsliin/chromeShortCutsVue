@@ -1,18 +1,13 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import { crx } from '@crxjs/vite-plugin';
 import { fileURLToPath, URL } from 'url';
 import { resolve } from 'path';
-import manifest from './manifest.json';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    plugins: [
-        vue(),
-        crx({ manifest }),
-    ],
+    plugins: [vue()],
     resolve: {
         alias: [
             {
@@ -48,21 +43,22 @@ export default defineConfig({
             },
         },
     },
-    server: {
-        port: 5173,
-        strictPort: true,
-        hmr: {
-            host: 'localhost',
-            port: 5173,
-        },
-    },
     build: {
+        outDir: 'dist-extension',
+        emptyOutDir: true,
         minify: true,
         chunkSizeWarningLimit: 1600,
         rollupOptions: {
             input: {
                 newtab: resolve(__dirname, 'index.html'),
                 popup: resolve(__dirname, 'popup.html'),
+                background: resolve(__dirname, 'background.js'),
+            },
+            output: {
+                // The manifest references the service worker by a fixed file name
+                entryFileNames: (chunk) => (chunk.name === 'background'
+                    ? 'background.js'
+                    : 'assets/[name]-[hash].js'),
             },
         },
     },

@@ -9,7 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const pathToExtension = path.join(__dirname, '..', 'dist');
+const pathToExtension = path.join(__dirname, '..', 'dist-extension');
 
 // ---------------------------------------------------------------------------
 // Custom fixture types: shared worker state and per-test page state.

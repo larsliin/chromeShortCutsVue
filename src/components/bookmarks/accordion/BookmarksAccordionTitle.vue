@@ -68,8 +68,9 @@
     } from 'vue';
     import type { BookmarkNode } from '@/types/bookmark';
     import {
-        mdiRename, mdiDragHorizontal, mdiDeleteOutline, mdiStar, mdiFormatColorFill,
+        mdiRename, mdiDragHorizontal, mdiDeleteOutline, mdiFormatColorFill,
     } from '@mdi/js';
+    import StarIcon from '@/components/bookmarks/sharedComponents/StarIcon.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkConfirmAction
         from '@/components/forms/BookmarkConfirmAction.vue';
@@ -104,7 +105,7 @@
     const list = ref([
         {
             title: 'New Bookmark',
-            icon: mdiStar,
+            icon: StarIcon,
             event: EMITS.BOOKMARK_ADD,
         },
         {

@@ -11,7 +11,7 @@
                 <span class="bookmark-image"
                     :style="{ 'background-image': `url(${image})` }"></span>
             </template>
-            <BIconStarFill v-else-if="allowFallbackIcon" />
+            <StarIcon v-else-if="allowFallbackIcon" />
             <span
                 v-if="loading">
                 <div class="lds-ring">
@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
     import { mdiFolderOpen } from '@mdi/js';
-    import { BIconStarFill } from 'bootstrap-icons-vue';
+    import StarIcon from '@/components/bookmarks/sharedComponents/StarIcon.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const bookmarksStore = useBookmarksStore();
@@ -123,7 +123,7 @@
         background-color: rgb(var(--v-theme-bookmark-surface));
         border-radius: 11.11%;
         box-shadow: 0px 0 20px 0px rgba(0, 0, 0, 0.15);
-        color: var(--yellow);
+        color: var(--green);
         display: flex;
         font-size: 50px;
         justify-content: center;
