@@ -96,7 +96,7 @@
                     </v-row>
                 </v-container>
             </v-card-text>
-            <v-card-actions>
+            <v-card-actions class="bookmark-create-actions">
                 <v-spacer />
                 <v-btn
                     v-if="data && data.id"
@@ -388,6 +388,11 @@
 <style scoped lang="scss">
     .bookmark-create-card {
         position: relative;
+    }
+
+    // Align buttons with the fields above: v-card-text (16px) + v-container (16px).
+    .bookmark-create-actions {
+        padding: 8px 32px 32px;
     }
 
     .color-picker-overlay {

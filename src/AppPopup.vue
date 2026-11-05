@@ -81,6 +81,12 @@
 <style lang="scss">
     @use "./scss/typography.scss";
 
+    // The popup has no scroll-lock overlay, so the stable gutter only adds an empty strip.
+    html:has(.popup-wrapper),
+    html:has(.popup-wrapper) body {
+        scrollbar-gutter: auto;
+    }
+
     .popup-wrapper {
         min-width: 650px;
     }
