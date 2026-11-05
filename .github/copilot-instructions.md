@@ -82,6 +82,7 @@
 
 ## Commands
 
+- npm run dev to rebuild dist-extension/ on every file change (watch build, no hot reload)
 - npm run build:extension to build the extension into dist-extension/ (load it unpacked in Chrome)
 - npm run lint for linting and auto-fixes
 

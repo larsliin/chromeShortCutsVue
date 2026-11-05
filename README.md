@@ -40,6 +40,9 @@ A Chrome Extension (Manifest V3) that replaces your new tab page with a fully cu
 # Install dependencies
 npm install
 
+# Rebuild dist-extension/ on every file change (load it unpacked in Chrome, then refresh the tab)
+npm run dev
+
 # Build the extension → dist-extension/
 npm run build:extension
 
@@ -47,9 +50,9 @@ npm run build:extension
 npm run lint
 ```
 
-`build:extension` runs `vite build` and then `scripts/prepare-extension.js`, which copies `manifest.json` and `icons/` into `dist-extension/`.
+Every Vite build (`npm run dev` and `npm run build:extension`) runs `scripts/prepare-extension.js` afterwards, which copies `manifest.json` and `icons/` into `dist-extension/`.
 
-Load the extension in Chrome: open `chrome://extensions`, enable **Developer Mode**, click **Load unpacked**, and select the `dist-extension/` folder. After changing source files, re-run the build and reload the extension.
+Load the extension in Chrome: open `chrome://extensions`, enable **Developer Mode**, click **Load unpacked**, and select the `dist-extension/` folder. After changing source files, refresh the tab (or reload the extension if `background.js` changed).
 
 ---
 

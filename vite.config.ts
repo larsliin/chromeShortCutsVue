@@ -2,12 +2,19 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'url';
 import { resolve } from 'path';
+import prepareExtension from './scripts/prepare-extension';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    plugins: [vue()],
+    plugins: [
+        vue(),
+        {
+            name: 'prepare-extension',
+            closeBundle: prepareExtension,
+        },
+    ],
     resolve: {
         alias: [
             {
