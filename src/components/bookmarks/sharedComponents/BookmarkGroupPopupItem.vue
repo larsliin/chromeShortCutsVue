@@ -16,7 +16,6 @@
 </template>
 
 <script setup lang="ts">
-    import { toRefs } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import type { BookmarkNode } from '@/types/bookmark';
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
@@ -29,13 +28,12 @@
         expanded?: boolean;
     }
 
-    const props = withDefaults(defineProps<Props>(), {
+    withDefaults(defineProps<Props>(), {
         image: null,
         expanded: true,
     });
 
     const bookmarksStore = useBookmarksStore();
-    const { image, expanded } = toRefs(props);
 </script>
 
 <style scoped lang="scss">

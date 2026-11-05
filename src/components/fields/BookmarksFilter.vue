@@ -17,7 +17,7 @@
 <script setup lang="ts">
     import { cloneDeep } from 'lodash';
     import type { BookmarkNode } from '@/types/bookmark';
-    import { EMITS } from '@/constants';
+    import { EMITS, TIMEOUTS } from '@/constants';
     import { mdiMagnify } from '@mdi/js';
     import {
         ref, onMounted, onUnmounted, nextTick,
@@ -72,7 +72,7 @@
         transitionTimer = setTimeout(() => {
             bookmarksStore.transitionDisabled = false;
             transitionTimer = null;
-        }, 500);
+        }, TIMEOUTS.FILTER_TRANSITION_RESET_MS);
     }
 
     // Filter the data
@@ -92,7 +92,7 @@
         throttleTimer = setTimeout(() => {
             throttleTimer = null;
             runFilter(event);
-        }, 150);
+        }, TIMEOUTS.FILTER_DEBOUNCE_MS);
     }
 
     const isEnabled = ref(false);

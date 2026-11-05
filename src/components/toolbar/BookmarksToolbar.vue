@@ -1,53 +1,26 @@
 <template>
     <div class="toolbar d-flex" v-if="ready">
         <div>
-            <v-tooltip
-                location="top center"
-                origin="auto"
-                open-delay="600"
-                transition="none"
-                text="Add bookmark">
-                <template v-slot:activator="{ props: tooltipProps }">
-                    <v-btn
-                        class="toolbar-add-button"
-                        :icon="StarIcon"
-                        v-bind="tooltipProps"
-                        @click="dialogAddOpen = true" />
-                </template>
-            </v-tooltip>
+            <TooltipButton
+                class="toolbar-add-button"
+                text="Add bookmark"
+                :icon="StarIcon"
+                @click="dialogAddOpen = true" />
             <BookmarksFilter
                 class="toolbar-filter-input" />
         </div>
         <div>
-            <v-tooltip
-                location="top center"
-                origin="auto"
-                open-delay="600"
-                transition="none"
-                :text="bookmarksStore.groupMode ? 'Disable group mode' : 'Enable group mode'">
-                <template v-slot:activator="{ props: tooltipProps }">
-                    <v-btn
-                        class="toolbar-group-button"
-                        :class="{ active: bookmarksStore.groupMode }"
-                        :icon="mdiFolderMultiple"
-                        v-bind="tooltipProps"
-                        @click="onToggleGroupMode()" />
-                </template>
-            </v-tooltip>
-            <v-tooltip
-                location="top center"
-                origin="auto"
-                open-delay="600"
-                transition="none"
-                text="Settings">
-                <template v-slot:activator="{ props: tooltipProps }">
-                    <v-btn
-                        class="toolbar-settings-button"
-                        :icon="mdiWrench"
-                        v-bind="tooltipProps"
-                        @click="dialogSettings = true" />
-                </template>
-            </v-tooltip>
+            <TooltipButton
+                class="toolbar-group-button"
+                :class="{ active: bookmarksStore.groupMode }"
+                :text="bookmarksStore.groupMode ? 'Disable group mode' : 'Enable group mode'"
+                :icon="mdiFolderMultiple"
+                @click="onToggleGroupMode()" />
+            <TooltipButton
+                class="toolbar-settings-button"
+                text="Settings"
+                :icon="mdiWrench"
+                @click="dialogSettings = true" />
         </div>
     </div>
     <Teleport to="body"
@@ -160,6 +133,7 @@
     import BookmarkConfirmAction
         from '@/components/forms/BookmarkConfirmAction.vue';
     import BookmarksFilter from '@/components/fields/BookmarksFilter.vue';
+    import TooltipButton from '@/components/fields/TooltipButton.vue';
     import StarIcon from '@/components/bookmarks/sharedComponents/StarIcon.vue';
 
     const dialogSettings = ref(false);
@@ -183,7 +157,7 @@
         deleteConfirmId.value = event.id;
 
         const bookmark = await bookmarksStore.getBookmarkById(event.id);
-        deleteConfirmIsFolder.value = !bookmark?.url;
+        deleteConfirmIsFolder.value = !bookmark.url;
 
         showConfirmDelete.value = true;
     }
@@ -196,10 +170,9 @@
         showConfirmDelete.value = false;
         dialogAddOpen.value = false;
 
-        const bookmarkResponse = await bookmarksStore.getBookmarkById(id);
-        const bookmark = bookmarkResponse;
+        const bookmark = await bookmarksStore.getBookmarkById(id);
 
-        if (bookmark && bookmark.url) {
+        if (bookmark.url) {
             bookmarksStore.removeBookmark(bookmark.id);
             bookmarksStore.deleteLocalStorageItem(bookmark.id);
         } else {
@@ -259,7 +232,7 @@
         emitter.off(EMITS.CLICK_BACKGROUND, onClickBackgroundHandler);
     });
 
-    onMounted(async () => {
+    onMounted(() => {
         emitter.on(EMITS.EDIT, onEditHandler);
         emitter.on(EMITS.BOOKMARK_ADD, onBookmarkAddHandler);
         emitter.on(EMITS.CLICK_BACKGROUND, onClickBackgroundHandler);
@@ -269,10 +242,6 @@
 </script>
 
 <style scoped lang="scss">
-    .add-bookmark-btn.v-btn.v-btn--density-default {
-        height: calc(var(--v-btn-height) + 3px);
-    }
-
     .toolbar {
         $breakpoint: 540px;
 
@@ -303,20 +272,20 @@
             flex: 0 1 calc(100% - 90px);
         }
 
-        &-add-button {
+        :deep(.toolbar-add-button) {
             color: var(--green);
         }
 
-        &-group-button {
+        :deep(.toolbar-group-button) {
             transition: box-shadow 0.28s cubic-bezier(0.2, 0.85, 0.2, 1), color 0.28s ease;
+        }
 
-            &.active {
-                color: #4ade80;
-                box-shadow:
-                    0 0 10px rgba(74, 222, 128, 0.6),
-                    0 0 20px rgba(74, 222, 128, 0.4),
-                    inset 0 0 8px rgba(74, 222, 128, 0.2);
-            }
+        :deep(.toolbar-group-button.active) {
+            color: #4ade80;
+            box-shadow:
+                0 0 10px rgba(74, 222, 128, 0.6),
+                0 0 20px rgba(74, 222, 128, 0.4),
+                inset 0 0 8px rgba(74, 222, 128, 0.2);
         }
 
         &-filter-input {

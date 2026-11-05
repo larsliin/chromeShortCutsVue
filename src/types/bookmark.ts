@@ -1,4 +1,5 @@
 import type { VIcon } from 'vuetify/components';
+import type { EMITS } from '@/constants';
 
 export interface BookmarkNode extends chrome.bookmarks.BookmarkTreeNode {
     color?: string;
@@ -19,7 +20,12 @@ export interface BookmarkStat {
 export interface FoldoutListItem {
     title: string;
     icon: InstanceType<typeof VIcon>['$props']['icon'];
-    event: string;
+    event: EMITS.DELETE
+    | EMITS.DELETE_ALL
+    | EMITS.RENAME
+    | EMITS.OPEN_COLOR_EDITOR
+    | EMITS.EDIT
+    | EMITS.BOOKMARK_ADD;
 }
 
 export interface BookmarkFormData {

@@ -151,7 +151,7 @@
     import {
         computed, onMounted, onUnmounted, ref, useTemplateRef, watch,
     } from 'vue';
-    import { EMITS, GROUPING } from '@/constants';
+    import { EMITS } from '@/constants';
     import type { BookmarkNode, DragEventInfo, FoldoutListItem } from '@/types/bookmark';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
@@ -162,7 +162,8 @@
     import draggable from 'vuedraggable';
     import emitter from '@cmp/eventBus';
     import { useDragCursor } from '@cmp/useDragCursor';
-    import { getGroupPreviewItems } from '@utils/bookmarkGroups';
+    import { getGroupDisplayName, getGroupPreviewItems } from '@utils/bookmarkGroups';
+    import { getMoveIndex } from '@utils/dragIntent';
 
     interface Props {
         bookmark: BookmarkNode;
@@ -229,10 +230,7 @@
     const showUngroupConfirm = ref(false);
     const showDeleteAllConfirm = ref(false);
 
-    const displayTitle = computed(() => {
-        const t = (props.bookmark.title ?? '').trim();
-        return t.length ? t : GROUPING.DEFAULT_NAME;
-    });
+    const displayTitle = computed(() => getGroupDisplayName(props.bookmark.title));
 
     async function onRenameConfirm(name: string): Promise<void> {
         showRenameDialog.value = false;
@@ -376,7 +374,7 @@
             return;
         }
 
-        const index = event.newIndex > event.oldIndex ? event.newIndex + 1 : event.newIndex;
+        const index = getMoveIndex(event);
 
         await bookmarksStore.reorderBookmark(bookmark.id, index);
     }

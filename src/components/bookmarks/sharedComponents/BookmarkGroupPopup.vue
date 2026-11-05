@@ -8,9 +8,9 @@
             role="dialog"
             tabindex="-1"
             aria-modal="true"
-            @keydown.esc="popup.onOverlayEscape()"
+            @keydown.esc="popup.onOverlayDismiss()"
             @keydown.tab="popup.onOverlayTab($event)"
-            @mousedown.self="popup.onOverlayClickSelf()">
+            @mousedown.self="popup.onOverlayDismiss()">
             <div
                 class="group-popup-wrapper"
                 :class="[popup.popupState.value, { 'popup-transition': popup.popupTransitioning.value }]"

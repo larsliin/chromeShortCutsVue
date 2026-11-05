@@ -787,6 +787,69 @@ describe('getTree', () => {
 });
 
 // ---------------------------------------------------------------------------
+// loadBookmarksBarId
+// ---------------------------------------------------------------------------
+
+describe('loadBookmarksBarId', () => {
+    it('stores the id of the bookmarks bar folder and resolves true', async () => {
+        const bar = makeFolder({ id: 'bar', folderType: 'bookmarks-bar' } as Partial<chrome.bookmarks.BookmarkTreeNode>);
+        const other = makeFolder({ id: 'other', folderType: 'other' } as Partial<chrome.bookmarks.BookmarkTreeNode>);
+        fireNoArgCallback(chromeMock.bookmarks.getTree, [makeTree([other, bar])]);
+
+        await expect(store.loadBookmarksBarId()).resolves.toBe(true);
+        expect(store.bookmarksBarId).toBe('bar');
+    });
+
+    it('resolves false and leaves the id untouched when there is no bookmarks bar', async () => {
+        fireNoArgCallback(chromeMock.bookmarks.getTree, [makeTree([makeFolder({ id: 'other' })])]);
+
+        await expect(store.loadBookmarksBarId()).resolves.toBe(false);
+        expect(store.bookmarksBarId).toBeNull();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// saveColor
+// ---------------------------------------------------------------------------
+
+describe('saveColor', () => {
+    it('adds the color to the existing map and persists it', async () => {
+        chromeMock.storage.sync.get.mockResolvedValueOnce({ bookmarkColors: { a: '#111' } });
+
+        await store.saveColor('bookmarkColors', 'b', '#222');
+
+        expect(chromeMock.storage.sync.set)
+            .toHaveBeenCalledWith({ bookmarkColors: { a: '#111', b: '#222' } });
+    });
+
+    it('removes the entry when the color is cleared', async () => {
+        chromeMock.storage.sync.get.mockResolvedValueOnce({ bookmarkColors: { a: '#111', b: '#222' } });
+
+        await store.saveColor('bookmarkColors', 'b', null);
+
+        expect(chromeMock.storage.sync.set).toHaveBeenCalledWith({ bookmarkColors: { a: '#111' } });
+    });
+
+    it('deletes the storage key once the last color is cleared', async () => {
+        chromeMock.storage.sync.get.mockResolvedValueOnce({ bookmarkColors: { a: '#111' } });
+        fireCallback(chromeMock.storage.sync.remove, []);
+
+        await store.saveColor('bookmarkColors', 'a', null);
+
+        expect(chromeMock.storage.sync.remove).toHaveBeenCalledWith(['bookmarkColors'], expect.any(Function));
+    });
+
+    it('does nothing when clearing a color that was never set', async () => {
+        chromeMock.storage.sync.get.mockResolvedValueOnce({});
+
+        await store.saveColor('bookmarkColors', 'a', null);
+
+        expect(chromeMock.storage.sync.set).not.toHaveBeenCalled();
+        expect(chromeMock.storage.sync.remove).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
 // getColorizedBookmarks
 // ---------------------------------------------------------------------------
 

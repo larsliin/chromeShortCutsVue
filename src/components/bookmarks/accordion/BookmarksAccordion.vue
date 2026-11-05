@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-    import { EMITS } from '@/constants';
+    import { EMITS, STORAGE_KEYS } from '@/constants';
     import { mdiUnfoldLessHorizontal, mdiUnfoldMoreHorizontal } from '@mdi/js';
     import {
         onMounted, onUnmounted, ref, nextTick,
@@ -69,30 +69,33 @@
     import BookmarksGroup from '@/components/bookmarks/sharedComponents/BookmarksGroup.vue';
     import draggable from 'vuedraggable';
     import emitter from '@cmp/eventBus';
+    import { getMoveIndex } from '@utils/dragIntent';
 
-    const utils = useAccordionSync();
+    const { updateAccordionModel, persistAccordionModel } = useAccordionSync();
 
     const bookmarksStore = useBookmarksStore();
 
     const expansionPanels = ref();
+
+    function getOpenPanelIndexes(): number[] {
+        const panels: Element[] = Array.from(
+            expansionPanels.value.$el.querySelectorAll('.v-expansion-panel'),
+        );
+
+        return panels.reduce<number[]>((open, element, i) => {
+            if (element.classList.contains('v-expansion-panel--active')) {
+                open.push(i);
+            }
+            return open;
+        }, []);
+    }
 
     // Store open accordion items in synced storage.
     // We persist the index instead of the accordion model.
     async function onUpdate() {
         await nextTick();
 
-        const panelsSelector = expansionPanels.value.$el.querySelectorAll('.v-expansion-panel');
-        const arr2: number[] = [];
-
-        panelsSelector.forEach((element: Element, i: number) => {
-            const isOpen = element.classList.contains('v-expansion-panel--active');
-
-            if (isOpen) {
-                arr2.push(i);
-            }
-        });
-
-        bookmarksStore.setSyncStorage({ accordion: arr2 });
+        bookmarksStore.setSyncStorage({ [STORAGE_KEYS.ACCORDION]: getOpenPanelIndexes() });
     }
 
     function onDragStart(_event?: unknown): void {
@@ -102,25 +105,14 @@
     async function onDragEnd(event: DragEventInfo): Promise<void> {
         const bookmark = (bookmarksStore.bookmarks ?? [])[event.newIndex];
 
-        const index = event.newIndex > event.oldIndex ? event.newIndex + 1 : event.newIndex;
-
         await nextTick();
 
         // update bookmarks order
-        bookmarksStore.reorderBookmark(bookmark.id, index);
+        bookmarksStore.reorderBookmark(bookmark.id, getMoveIndex(event));
 
         // update active panels array
-        const panelsSelector = expansionPanels.value.$el.querySelectorAll('.v-expansion-panel');
-
-        const arr: number[] = [];
-        panelsSelector.forEach((element: Element, i: number) => {
-            const isOpen = element.classList.contains('v-expansion-panel--active');
-
-            if (isOpen) {
-                arr.push(i);
-            }
-        });
-        bookmarksStore.setSyncStorage({ accordion: arr });
+        const arr = getOpenPanelIndexes();
+        bookmarksStore.setSyncStorage({ [STORAGE_KEYS.ACCORDION]: arr });
 
         const panelsCollection = expansionPanels.value
             .$el.getElementsByClassName('v-expansion-panel');
@@ -143,18 +135,11 @@
     }
 
     function onUnfoldAllClick() {
-        bookmarksStore.accordionModel = [];
-
-        bookmarksStore.setSyncStorage({ accordion: [] });
+        persistAccordionModel([]);
     }
 
     function onFoldAllClick() {
-        const panelsSelector = expansionPanels.value.$el.querySelectorAll('.v-expansion-panel');
-        const arr = [...Array(panelsSelector.length).keys()];
-
-        bookmarksStore.accordionModel = Array.from(arr);
-
-        bookmarksStore.setSyncStorage({ accordion: [...bookmarksStore.accordionModel] });
+        persistAccordionModel(Array.from({ length: bookmarksStore.bookmarks?.length ?? 0 }, (_v, i) => i));
     }
 
     function onBeforeDelete() {
@@ -162,7 +147,7 @@
     }
 
     function onBookmarksImportHandler(): void {
-        utils.updateAccordionModel(0);
+        updateAccordionModel(0);
     }
 
     let tmpPanelsModel: number[] | null = null;
@@ -189,7 +174,7 @@
         emitter.on(EMITS.BOOKMARKS_IMPORT, onBookmarksImportHandler);
         emitter.on(EMITS.FILTER_UPDATED, onFilterUpdatedHandler);
 
-        const accordionResponse = await bookmarksStore.getSyncStorage('accordion');
+        const accordionResponse = await bookmarksStore.getSyncStorage(STORAGE_KEYS.ACCORDION);
 
         if (accordionResponse) {
             bookmarksStore.accordionModel = Array.from(accordionResponse as number[]);

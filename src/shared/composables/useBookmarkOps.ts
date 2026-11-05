@@ -4,12 +4,25 @@ import { useBookmarksStore } from '@stores/bookmarks';
 import type { BookmarkNode } from '@/types/bookmark';
 import { findNodeById, flattenBookmarkLinks } from '@utils/bookmarkGroups';
 
+export interface StoredBookmarkItem {
+    id: string;
+    image?: string;
+    [key: string]: unknown;
+}
+
 export function useBookmarkOps() {
     const bookmarksStore = useBookmarksStore();
 
+    // Local storage entries that carry an icon image.
+    async function getStoredImageItems(): Promise<StoredBookmarkItem[]> {
+        const items = ((await bookmarksStore.getLocalStorageAll()) || {}) as
+            Record<string, StoredBookmarkItem>;
+
+        return Object.values(items).filter((item) => !!item?.image);
+    }
+
     async function deleteLocalStoreImages(): Promise<void> {
-        const localStorageItems = await bookmarksStore.getLocalStorageAll() as Record<string, { image?: string; id: string }>;
-        const imageItems = Object.values(localStorageItems).filter((e) => e.image);
+        const imageItems = await getStoredImageItems();
 
         await Promise.all(imageItems.map((item) => bookmarksStore.deleteLocalStorageItem(item.id)));
     }
@@ -45,7 +58,7 @@ export function useBookmarkOps() {
         }
 
         const response = await bookmarksStore.getBookmarks(bookmarksStore.rootId);
-        const folders = response.flatMap((item) => item.children?.flatMap((child) => child) ?? []);
+        const folders = response.flatMap((item) => item.children ?? []);
 
         await Promise.all(folders.map((item) => bookmarksStore.removeBookmarkFolder(item.id)));
 
@@ -61,6 +74,7 @@ export function useBookmarkOps() {
     }
 
     return {
+        getStoredImageItems,
         deleteLocalStoreImages,
         deleteBookmarkFolder,
         getBookmarksAsFlatArr,

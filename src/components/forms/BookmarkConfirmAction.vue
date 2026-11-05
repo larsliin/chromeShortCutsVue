@@ -34,11 +34,7 @@
 </template>
 
 <script setup lang="ts">
-    import { onMounted, onUnmounted } from 'vue';
     import { EMITS } from '@/constants';
-    import { useBookmarksStore } from '@stores/bookmarks';
-
-    const bookmarksStore = useBookmarksStore();
 
     interface Props {
         title?: string;
@@ -59,14 +55,6 @@
     function onConfirmDelete() {
         emits(EMITS.CONFIRM, props.id);
     }
-
-    onMounted(() => {
-        bookmarksStore.dialogOpen = true;
-    });
-
-    onUnmounted(() => {
-        bookmarksStore.dialogOpen = false;
-    });
 </script>
 
 <style scoped lang="scss">

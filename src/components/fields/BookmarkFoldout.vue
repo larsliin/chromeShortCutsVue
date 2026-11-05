@@ -72,28 +72,8 @@
 
     const toggle = ref();
 
-    function onListItemClick(event: string): void {
-        switch (event) {
-        case EMITS.RENAME:
-            emits(EMITS.RENAME);
-            break;
-        case EMITS.OPEN_COLOR_EDITOR:
-            emits(EMITS.OPEN_COLOR_EDITOR);
-            break;
-        case EMITS.DELETE:
-            emits(EMITS.DELETE);
-            break;
-        case EMITS.DELETE_ALL:
-            emits(EMITS.DELETE_ALL);
-            break;
-        case EMITS.EDIT:
-            emits(EMITS.EDIT);
-            break;
-        case EMITS.BOOKMARK_ADD:
-            emits(EMITS.BOOKMARK_ADD);
-            break;
-        default:
-        }
+    function onListItemClick(event: FoldoutListItem['event']): void {
+        emits(event);
     }
 
     watch(toggle, (newVal) => {

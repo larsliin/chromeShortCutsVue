@@ -198,30 +198,39 @@
 <script setup lang="ts">
     import { mdiDownload, mdiUpload } from '@mdi/js';
     import {
-        ref, onMounted, watch, onUnmounted, reactive, type Ref,
+        ref, watch, reactive, type Ref,
     } from 'vue';
     // eslint-disable-next-line
     import useVuelidate from '@vuelidate/core';
-    import { EMITS, FILE_NAMES, GROUPING, ICON_SIZE } from '@/constants';
+    import {
+        EMITS, ARGS, FILE_NAMES, ICON_SIZE, STORAGE_KEYS,
+    } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import emitter from '@cmp/eventBus';
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
     import { useAccordionSync } from '@cmp/useAccordionSync';
     import { useBookmarkLoader } from '@cmp/useBookmarkLoader';
+    import { useDarkMode } from '@cmp/useDarkMode';
     import type { BookmarkNode, FolderColorItem, ImportFileData } from '@/types/bookmark';
-    import { findNodeById, hasLegacyGroupPrefix } from '@utils/bookmarkGroups';
+    import {
+        findNodeById,
+        getGroupDisplayName,
+        hasLegacyGroupPrefix,
+        isImportedGroupFolder,
+    } from '@utils/bookmarkGroups';
+    import { runSequentially } from '@utils/async';
     import {
         isImportBookmarksFileValid,
         isImportIconsFileValid,
     } from '@utils/importValidation';
-    import { useTheme } from 'vuetify';
     import ToolTip from '@/components/fields/ToolTip.vue';
 
-    const theme = useTheme();
-
-    const { deleteLocalStoreImages, deleteAllBookmarks, getBookmarksAsFlatArr } = useBookmarkOps();
-    const { buildRootFolder } = useAccordionSync();
+    const {
+        getStoredImageItems, deleteLocalStoreImages, deleteAllBookmarks, getBookmarksAsFlatArr,
+    } = useBookmarkOps();
+    const { buildRootFolder, persistAccordionModel } = useAccordionSync();
     const bookmarkLoader = useBookmarkLoader();
+    const { applyDarkMode } = useDarkMode();
 
     const emits = defineEmits([EMITS.CLOSE, EMITS.SAVE]);
 
@@ -251,89 +260,70 @@
     const $v = useVuelidate(rules, { formData });
 
     const isBookmarksFileValid = ref(false);
-    const isIconsFileValid = ref();
+    const isIconsFileValid = ref(false);
 
     const errorDialog = ref(false);
-
-    onMounted(async () => {
-        bookmarksStore.dialogOpen = true;
-    });
 
     function clearFileInput() {
         formData.iconsFileImport = null;
         formData.bookmarksFileImport = null;
     }
 
-    async function onClickExportIcons() {
-        // Safely get and filter local storage items
-        const localStorageItems = (await bookmarksStore.getLocalStorageAll() as Record<string, Record<string, unknown>>) || {};
-        const localStorageItemsImageArr = Object.values(localStorageItems)
-            .filter((e): e is Record<string, unknown> => !!e && !!(e as Record<string, unknown>).image);
-
-        // Get color data from sync storage
-        const folderColorsResponse = await bookmarksStore.getSyncStorage('folderColors');
-        const bookmarkColorsResponse = await bookmarksStore.getSyncStorage('bookmarkColors');
-
-        // Process folders with colors
-        const foldersWithColors: FolderColorItem[] = [];
-        if (folderColorsResponse && bookmarksStore.bookmarks) {
-            const mapped = Object.entries(folderColorsResponse as Record<string, string>)
-                .map((e) => {
-                    if (!e || !e[0]) return null;
-                    const folder = (bookmarksStore.bookmarks ?? []).find((a) => a.id === e[0]);
-                    if (!folder || !folder.title) return null;
-                    return { id: e[0], color: e[1], title: folder.title } satisfies FolderColorItem;
-                })
-                .filter((folder): folder is FolderColorItem => folder !== null);
-            foldersWithColors.push(...mapped);
-        }
-
-        // Process bookmarks with colors
-        const bookmarkColorsMap = bookmarkColorsResponse as Record<string, string> | null;
-        const bookmarksWithColors = bookmarkColorsMap
-            ? localStorageItemsImageArr
-                .filter((obj): obj is Record<string, unknown> => !!(obj as Record<string, unknown>).id)
-                .map((obj) => ({
-                    ...obj,
-                    color: bookmarkColorsMap[(obj.id as string)] || obj.color || null,
-                }))
-            : [];
-
-        // Prepare and export data
-        const exportArr = {
-            folders: foldersWithColors,
-            bookmarks: bookmarksWithColors,
-            type: 'icons',
-        };
-
-        const jsonString = JSON.stringify(exportArr);
-        const blob = new Blob([jsonString], { type: 'application/json' });
+    function downloadJson(data: object, fileName: string): void {
+        const url = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
         const a = document.createElement('a');
-        const url = URL.createObjectURL(blob);
 
         try {
             a.href = url;
-            a.download = `${FILE_NAMES.BOOKMARK_ICONS_EXPORT}.json`;
+            a.download = `${fileName}.json`;
             a.click();
         } finally {
             URL.revokeObjectURL(url);
         }
     }
 
+    async function onClickExportIcons() {
+        const imageItems = await getStoredImageItems();
+
+        // Get color data from sync storage
+        const folderColors = (await bookmarksStore.getSyncStorage(STORAGE_KEYS.FOLDER_COLORS)) as
+            Record<string, string> | null;
+        const bookmarkColors = (await bookmarksStore.getSyncStorage(STORAGE_KEYS.BOOKMARK_COLORS)) as
+            Record<string, string> | null;
+
+        // Process folders with colors
+        const foldersWithColors: FolderColorItem[] = Object.entries(folderColors ?? {})
+            .flatMap(([id, color]) => {
+                const folder = (bookmarksStore.bookmarks ?? []).find((e) => e.id === id);
+                return folder?.title ? [{ id, color, title: folder.title }] : [];
+            });
+
+        // Process bookmarks with colors
+        const bookmarksWithColors = bookmarkColors
+            ? imageItems
+                .filter((item) => !!item.id)
+                .map((item) => ({
+                    ...item,
+                    color: bookmarkColors[item.id] || item.color || null,
+                }))
+            : [];
+
+        downloadJson(
+            { folders: foldersWithColors, bookmarks: bookmarksWithColors, type: 'icons' },
+            FILE_NAMES.BOOKMARK_ICONS_EXPORT,
+        );
+    }
+
     async function onClickExportBookmarks(): Promise<void> {
         const exportBookmarks: BookmarkNode[] = Array.from(bookmarksStore.bookmarks ?? []);
 
         // fetch all images from local storage
-        const localStorageItems = await bookmarksStore.getLocalStorageAll() as Record<string, Record<string, unknown>>;
-        const localStorageItemsImageArr = Object.values(localStorageItems)
-            .filter((e): e is Record<string, unknown> => !!(e as Record<string, unknown>).image);
-
-        localStorageItemsImageArr.forEach((localitem) => {
+        (await getStoredImageItems()).forEach((localitem) => {
             // Use findNodeById to traverse all descendants including bookmarks inside group folders
-            const bookmark = findNodeById(exportBookmarks, localitem.id as string);
+            const bookmark = findNodeById(exportBookmarks, localitem.id);
 
             if (bookmark) {
-                bookmark.image = localitem.image as string;
+                bookmark.image = localitem.image;
             }
         });
 
@@ -352,14 +342,7 @@
         }
         tagGroups(exportBookmarks);
 
-        // run exporter
-        const result = { bookmarks: exportBookmarks, type: 'bookmarks' };
-        const jsonString = JSON.stringify(result);
-
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([jsonString], { type: 'application/json' }));
-        a.download = `${FILE_NAMES.BOOKMARKS_EXPORT}.json`;
-        a.click();
+        downloadJson({ bookmarks: exportBookmarks, type: 'bookmarks' }, FILE_NAMES.BOOKMARKS_EXPORT);
     }
 
     const colorsFoldersMap: Record<string, string> = {};
@@ -372,13 +355,13 @@
 
         if (Object.keys(colorsFoldersMap).length) {
             persistPromises.push(
-                bookmarksStore.setSyncStorage({ folderColors: { ...colorsFoldersMap } }),
+                bookmarksStore.setSyncStorage({ [STORAGE_KEYS.FOLDER_COLORS]: { ...colorsFoldersMap } }),
             );
         }
 
         if (Object.keys(colorsBookmarksMap).length) {
             persistPromises.push(
-                bookmarksStore.setSyncStorage({ bookmarkColors: { ...colorsBookmarksMap } }),
+                bookmarksStore.setSyncStorage({ [STORAGE_KEYS.BOOKMARK_COLORS]: { ...colorsBookmarksMap } }),
             );
         }
 
@@ -386,7 +369,7 @@
 
         await bookmarkLoader.getBookmarks();
 
-        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'import', id: '' });
+        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.IMPORT, id: '' });
     }
 
     // save imported images
@@ -394,22 +377,17 @@
         results: chrome.bookmarks.BookmarkTreeNode[],
         images: (string | undefined | null)[],
     ): Promise<void> {
-        const promiseArr: Promise<void>[] = [];
-        results.forEach((item, index) => {
-            if (images[index]) {
-                promiseArr.push(bookmarksStore.setLocalStorage({
-                    [item.id]: {
-                        id: item.id,
-                        parentId: item.parentId,
-                        image: images[index],
-                        url: item.url,
-                        title: item.title,
-                    },
-                }));
-            }
-        });
-
-        await Promise.all(promiseArr);
+        await Promise.all(results.flatMap((item, index) => (images[index]
+            ? [bookmarksStore.setLocalStorage({
+                [item.id]: {
+                    id: item.id,
+                    parentId: item.parentId,
+                    image: images[index],
+                    url: item.url,
+                    title: item.title,
+                },
+            })]
+            : [])));
 
         // when all images are saved then update bookmarks
         await updateBookmarksStore();
@@ -438,85 +416,47 @@
         // once the whole import is done (single persistence at the end).
         const newGroupIds: string[] = [];
 
-        // Helper to create group folder children sequentially
-        async function createGroupChildren(
-            groupFolderId: string,
-            groupChildren: BookmarkNode[],
-        ): Promise<void> {
-            await groupChildren.reduce<Promise<void>>(
-                (chain, groupChild) => chain.then(async () => {
-                    if (groupChild.url) {
-                        const createdGroupBookmark = await bookmarksStore.createBookmark(
-                            groupFolderId,
-                            groupChild.title,
-                            groupChild.url,
-                        );
-                        createdBookmarks.push(createdGroupBookmark);
-                        imagesArr.push(groupChild.image);
+        async function createLink(parentId: string, link: BookmarkNode): Promise<void> {
+            const created = await bookmarksStore.createBookmark(parentId, link.title, link.url);
+            createdBookmarks.push(created);
+            imagesArr.push(link.image);
 
-                        if (groupChild.color) {
-                            colorsBookmarksMap[createdGroupBookmark.id] = groupChild.color;
-                        }
-                    }
-                }),
-                Promise.resolve(),
-            );
+            if (link.color) {
+                colorsBookmarksMap[created.id] = link.color;
+            }
         }
 
-        // Detect groups via the explicit isGroup flag, with a legacy fallback
-        // for older export files that still relied on the title prefix.
-        function isImportedGroup(child: BookmarkNode): boolean {
-            if (child.url) return false;
-            return child.isGroup === true || hasLegacyGroupPrefix(child.title);
+        async function createChild(parentId: string, child: BookmarkNode): Promise<void> {
+            if (child.url) {
+                await createLink(parentId, child);
+                return;
+            }
+
+            // Defensive: skip any other child types (non-group folders without url)
+            if (!isImportedGroupFolder(child)) {
+                return;
+            }
+
+            // Create the group folder first, then its links sequentially.
+            // Legacy-prefixed or empty titles fall back to the default name.
+            const createdGroupFolder = await bookmarksStore.createBookmark(
+                parentId,
+                getGroupDisplayName(hasLegacyGroupPrefix(child.title) ? '' : child.title),
+            );
+
+            newGroupIds.push(createdGroupFolder.id);
+
+            await runSequentially(
+                (child.children ?? []).filter((groupChild) => groupChild.url),
+                (groupChild) => createLink(createdGroupFolder.id, groupChild),
+            );
         }
 
         // Process each top-level folder's children sequentially to preserve order
-        await Promise.all(bookmarks.map(async (topLevelFolder) => {
-            const newParentId = foldersMap[topLevelFolder.id];
-            const children = topLevelFolder.children ?? [];
-
-            // Process children sequentially using reduce chain
-            await children.reduce<Promise<void>>(
-                (chain, child) => chain.then(async () => {
-                    if (child.url) {
-                        // Regular bookmark link - create directly under top-level folder
-                        const created = await bookmarksStore.createBookmark(
-                            newParentId,
-                            child.title,
-                            child.url,
-                        );
-                        createdBookmarks.push(created);
-                        imagesArr.push(child.image);
-
-                        if (child.color) {
-                            colorsBookmarksMap[created.id] = child.color;
-                        }
-                    } else if (isImportedGroup(child)) {
-                        // Create the group folder first, then its children.
-                        // Use the imported title or fall back to the default name.
-                        const importedTitle = (child.title ?? '').trim();
-                        const cleanTitle = (importedTitle.length === 0
-                            || hasLegacyGroupPrefix(importedTitle))
-                            ? GROUPING.DEFAULT_NAME
-                            : importedTitle;
-
-                        const createdGroupFolder = await bookmarksStore.createBookmark(
-                            newParentId,
-                            cleanTitle,
-                        );
-
-                        newGroupIds.push(createdGroupFolder.id);
-
-                        await createGroupChildren(
-                            createdGroupFolder.id,
-                            child.children ?? [],
-                        );
-                    }
-                    // Defensive: skip any other child types (non-group folders without url)
-                }),
-                Promise.resolve(),
-            );
-        }));
+        await Promise.all(bookmarks.map((topLevelFolder) => runSequentially(
+            topLevelFolder.children ?? [],
+            (child) => createChild(foldersMap[topLevelFolder.id], child),
+        )));
 
         // Register all imported groups in groupIds and persist once.
         if (newGroupIds.length) {
@@ -528,10 +468,7 @@
             await bookmarksStore.persistGroupIds();
         }
 
-        bookmarksStore.accordionModel = [0];
-        await bookmarksStore.setSyncStorage({
-            accordion: [...bookmarksStore.accordionModel],
-        });
+        await persistAccordionModel([0]);
 
         await saveImages(createdBookmarks, imagesArr);
     }
@@ -549,8 +486,8 @@
         await deleteAllBookmarks();
         await buildRootFolder();
 
-        await bookmarksStore.deleteSyncStorageItem('folderColors');
-        await bookmarksStore.deleteSyncStorageItem('statistics');
+        await bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.FOLDER_COLORS);
+        await bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.STATISTICS);
 
         bookmarksStore.statistics = [];
 
@@ -559,23 +496,19 @@
         const bookmarksRootResponse = await bookmarksStore.getBookmarkById(bookmarksStore.rootId as string);
 
         const importObj = JSON.parse(event.target?.result as string) as ImportFileData;
-        const foldersPromiseArr: Promise<chrome.bookmarks.BookmarkTreeNode>[] = [];
+        const importedFolders = importObj.bookmarks ?? [];
 
-        (importObj.bookmarks ?? []).forEach((folder) => {
-            foldersPromiseArr.push(bookmarksStore
-                .createBookmark(bookmarksRootResponse.id, folder.title));
-        });
-
-        const createdFolders = await Promise.all(foldersPromiseArr);
-        await onImportedFoldersCreated(createdFolders, importObj.bookmarks ?? []);
+        const createdFolders = await Promise.all(importedFolders.map((folder) => bookmarksStore
+            .createBookmark(bookmarksRootResponse.id, folder.title)));
+        await onImportedFoldersCreated(createdFolders, importedFolders);
     }
 
-    // import bookmarks
+    // import icons
     async function onIconsImportReaderLoad(event: ProgressEvent<FileReader>): Promise<void> {
         bookmarksStore.isImporting = true;
 
-        bookmarksStore.deleteSyncStorageItem('bookmarkColors');
-        bookmarksStore.deleteSyncStorageItem('folderColors');
+        bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.BOOKMARK_COLORS);
+        bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.FOLDER_COLORS);
 
         const importIcons = JSON.parse(event.target?.result as string) as ImportFileData;
         const bookmarksFlatResponse = await getBookmarksAsFlatArr();
@@ -588,26 +521,24 @@
                 .filter((e) => item.url === e.url);
 
             bookmarks.forEach((bookmark) => {
-                if (bookmark) {
-                    if (item.color) {
-                        colorArr[bookmark.id] = item.color;
-                    }
-
-                    promiseAllArr.push(bookmarksStore.setLocalStorage({
-                        [bookmark.id]: {
-                            id: bookmark.id,
-                            parentId: item.parentId,
-                            image: item.image,
-                            url: item.url,
-                            title: item.title,
-                        },
-                    }));
+                if (item.color) {
+                    colorArr[bookmark.id] = item.color;
                 }
+
+                promiseAllArr.push(bookmarksStore.setLocalStorage({
+                    [bookmark.id]: {
+                        id: bookmark.id,
+                        parentId: item.parentId,
+                        image: item.image,
+                        url: item.url,
+                        title: item.title,
+                    },
+                }));
             });
         });
 
         // save bookmarks colors to local storage
-        bookmarksStore.setSyncStorage({ bookmarkColors: colorArr });
+        bookmarksStore.setSyncStorage({ [STORAGE_KEYS.BOOKMARK_COLORS]: colorArr });
 
         const folderColorArr: Record<string, string> = {};
 
@@ -615,15 +546,13 @@
             const bookmark = bookmarksStore.bookmarks
                 ?.find((e) => item.title === e.title);
 
-            if (bookmark) {
-                if (item.color) {
-                    folderColorArr[bookmark.id] = item.color;
-                }
+            if (bookmark && item.color) {
+                folderColorArr[bookmark.id] = item.color;
             }
         });
 
         // save folders colors to local storage
-        bookmarksStore.setSyncStorage({ folderColors: folderColorArr });
+        bookmarksStore.setSyncStorage({ [STORAGE_KEYS.FOLDER_COLORS]: folderColorArr });
 
         // when all colors and images have been updated and loaded then emit event
         await Promise.all(promiseAllArr);
@@ -638,42 +567,30 @@
             reader.readAsText(formData.bookmarksFileImport);
         }
 
-        if (formData.iconsFileImport) {
+        if (formData.iconsFileImport && isIconsFileValid.value) {
             const reader = new FileReader();
             reader.onload = onIconsImportReaderLoad;
             reader.readAsText(formData.iconsFileImport);
         }
 
-        // enableSystemDarkMode
-        bookmarksStore.enableSystemDarkMode = formData.enableSystemDarkMode;
-
+        // The preferred dark mode setting is only editable while the OS setting is off.
         if (formData.enableSystemDarkMode) {
-            bookmarksStore.setSyncStorage({ systemDarkMode: true });
-
-            bookmarksStore.enableDarkMode = window
-                .matchMedia('(prefers-color-scheme: dark)').matches;
+            bookmarksStore.setSyncStorage({ [STORAGE_KEYS.SYSTEM_DARK_MODE]: true });
         } else {
-            bookmarksStore.deleteSyncStorageItem('systemDarkMode');
-
-            bookmarksStore.enableDarkMode = false;
-        }
-
-        // enablePreferDarkMode
-        if (!formData.enableSystemDarkMode) {
-            bookmarksStore.enablePreferDarkMode = formData.enablePreferDarkMode;
-            bookmarksStore.enableDarkMode = bookmarksStore.enablePreferDarkMode;
+            bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.SYSTEM_DARK_MODE);
 
             if (formData.enablePreferDarkMode) {
-                bookmarksStore.setSyncStorage({ darkMode: true });
+                bookmarksStore.setSyncStorage({ [STORAGE_KEYS.DARK_MODE]: true });
             } else {
-                bookmarksStore.deleteSyncStorageItem('darkMode');
+                bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.DARK_MODE);
             }
         }
-        theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
+
+        applyDarkMode(formData.enablePreferDarkMode, formData.enableSystemDarkMode);
 
         // iconSize
         bookmarksStore.iconSize = formData.iconSize;
-        bookmarksStore.setSyncStorage({ iconSize: formData.iconSize });
+        bookmarksStore.setSyncStorage({ [STORAGE_KEYS.ICON_SIZE]: formData.iconSize });
 
         emits(EMITS.SAVE);
     }
@@ -681,7 +598,7 @@
     function handleFileImport(
         file: File | File[] | null,
         importType: 'bookmarksFileImport' | 'iconsFileImport',
-        isValid: Ref<boolean | undefined>,
+        isValid: Ref<boolean>,
         validationFn: (data: ImportFileData) => boolean,
     ): void {
         if (!file) {
@@ -731,10 +648,6 @@
             }
         },
     );
-
-    onUnmounted(() => {
-        bookmarksStore.dialogOpen = false;
-    });
 </script>
 <style lang="scss" scoped>
     .switch-container {

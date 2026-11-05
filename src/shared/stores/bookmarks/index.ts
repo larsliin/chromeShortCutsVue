@@ -16,20 +16,15 @@ export interface BookmarksState {
     // --- UI state ---
     accordionModel: number[] | null;
     bookmarkSearch: string | null;
-    dialogOpen: boolean;
     dragStart: boolean;
     groupMode: boolean;
     editBase64Image: string | null;
     errorMessage: string | null;
     isImporting: boolean;
-    titleInputActive: boolean;
     popup: boolean;
-    rootElem: HTMLElement | null;
 
     // --- Appearance ---
-    transition: boolean;
     transitionDisabled: boolean;
-    folderColors: boolean;
     iconSize: string;
 
     // --- Dark mode settings ---
@@ -52,20 +47,15 @@ export const useBookmarksStore = defineStore('bookmarksStore', {
         // --- UI state ---
         accordionModel: null,
         bookmarkSearch: null,
-        dialogOpen: false,
         dragStart: false,
         groupMode: false,
         editBase64Image: null,
         errorMessage: null,
         isImporting: false,
-        titleInputActive: false,
         popup: false,
-        rootElem: null,
 
         // --- Appearance ---
-        transition: true,
         transitionDisabled: false,
-        folderColors: false,
         iconSize: ICON_SIZE.MEDIUM,
 
         // --- Dark mode settings ---

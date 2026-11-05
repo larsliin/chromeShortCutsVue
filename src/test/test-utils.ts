@@ -1,51 +1,17 @@
-import { createApp, type App, type Component } from 'vue';
 import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
 import { mount } from '@vue/test-utils';
 import { createTestingPinia } from '@pinia/testing';
 import { vi } from 'vitest';
+import type { Component } from 'vue';
 
 // ---------------------------------------------------------------------------
 // Shared Vuetify instance
 // Created once per test-file run — cheaper than instantiating per test.
-// Pass it via `global.plugins` when mounting components that use Vuetify UI.
 // ---------------------------------------------------------------------------
 
-export const vuetify = createVuetify({ components, directives });
-
-// ---------------------------------------------------------------------------
-// withSetup — composable test helper
-// ---------------------------------------------------------------------------
-
-/**
- * Runs a composable in a minimal Vue app so lifecycle hooks and inject() work.
- * Use it for composables that need mounted/unmounted support.
- */
-export function withSetup<T>(
-    composable: () => T,
-    options: { provide?: Record<string | symbol, unknown> } = {},
-): [T, App] {
-    let result!: T;
-
-    const app = createApp({
-        setup() {
-            result = composable();
-            // Suppress "missing template/render function" warning
-            return () => {};
-        },
-    });
-
-    if (options.provide) {
-        Object.entries(options.provide).forEach(([key, value]) => {
-            app.provide(key, value);
-        });
-    }
-
-    app.mount(document.createElement('div'));
-
-    return [result, app];
-}
+const vuetify = createVuetify({ components, directives });
 
 // ---------------------------------------------------------------------------
 // mountWithPlugins — single mount entry point for component tests

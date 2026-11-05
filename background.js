@@ -1,22 +1,7 @@
 import { FOLDER } from './src/constants';
+import { searchFolder } from './src/shared/composables/chromeApi';
 
 /* eslint-disable */
-function searchFolder(bookmarkTreeNodes, folderName) {
-    // eslint-disable-next-line no-restricted-syntax
-    for (const node of bookmarkTreeNodes) {
-        if (node.title === folderName && node.children) {
-            return node;
-        }
-        if (node.children) {
-            const result = searchFolder(node.children, folderName);
-            if (result) {
-                return result;
-            }
-        }
-    }
-    return false;
-}
-
 chrome.runtime.onInstalled.addListener(async (details) => {
     const title = FOLDER.ROOT.label;
     const { reason } = details;
@@ -51,7 +36,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     }
 });
 
-function disableActionButton(tabId, url) {
+function disableActionButton(url) {
     const protocols = ['http', 'https'];
     const startsWithAny = protocols.some((prefix) => url.startsWith(`${prefix}:`));
 
@@ -67,12 +52,12 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
         if (chrome.runtime.lastError) {
             return;
         }
-        disableActionButton(activeInfo.tabId, tab.url);
+        disableActionButton(tab.url);
     });
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
     if (changeInfo.url) {
-        disableActionButton(tabId, changeInfo.url);
+        disableActionButton(changeInfo.url);
     }
 });

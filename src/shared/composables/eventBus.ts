@@ -1,10 +1,12 @@
 import mitt from 'mitt';
 import { EMITS } from '@/constants';
 
-export type AppEventMap = {
+export type BookmarksUpdatedPayload = { type: string; id: string; children?: string[] };
+
+type AppEventMap = {
     [EMITS.BOOKMARK_ADD]: string;
     [EMITS.BOOKMARKS_IMPORT]: void;
-    [EMITS.BOOKMARKS_UPDATED]: { type: string; id: string; children?: string[] };
+    [EMITS.BOOKMARKS_UPDATED]: BookmarksUpdatedPayload;
     [EMITS.CHANGED]: string;
     [EMITS.CLICK_BACKGROUND]: void;
     [EMITS.DRAG_START]: void;

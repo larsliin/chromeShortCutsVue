@@ -6,14 +6,16 @@ import { useBookmarksStore } from '@stores/bookmarks';
 import { useBookmarkOps } from '@cmp/useBookmarkOps';
 import { useAccordionSync } from '@cmp/useAccordionSync';
 import { useBookmarkLoader } from '@cmp/useBookmarkLoader';
-import { FOLDER, EMITS, ARGS, GROUPING, STORAGE_KEYS } from '@/constants';
-import emitter from '@cmp/eventBus';
-import { findNodeById } from '@utils/bookmarkGroups';
+import {
+    FOLDER, EMITS, ARGS, GROUPING, STORAGE_KEYS,
+} from '@/constants';
+import emitter, { type BookmarksUpdatedPayload } from '@cmp/eventBus';
+import { findNodeById, removeNodeById } from '@utils/bookmarkGroups';
 
 export function useBookmarkEvents() {
     const bookmarksStore = useBookmarksStore();
     const { getStoredBookmarkById, deleteLocalStoreImages } = useBookmarkOps();
-    const { buildRootFolder, updateAccordionModel } = useAccordionSync();
+    const { buildRootFolder, updateAccordionModel, persistAccordionModel } = useAccordionSync();
     const { getBookmarks: reloadBookmarks, update } = useBookmarkLoader();
 
     function collectLeafIds(node: BookmarkNode): string[] {
@@ -22,10 +24,6 @@ export function useBookmarkEvents() {
         }
 
         return (node.children ?? []).flatMap((child) => collectLeafIds(child));
-    }
-
-    function hasNode(id: string, nodes: BookmarkNode[]): boolean {
-        return !!findNodeById(nodes, id);
     }
 
     function findParentNode(nodes: BookmarkNode[], id: string): BookmarkNode | null {
@@ -47,7 +45,7 @@ export function useBookmarkEvents() {
             return true;
         }
 
-        return hasNode(id, bookmarksStore.bookmarks ?? []);
+        return !!findNodeById(bookmarksStore.bookmarks ?? [], id);
     }
 
     async function isNewBookmarkInScope(
@@ -85,14 +83,7 @@ export function useBookmarkEvents() {
     }
 
     function removeBookmarkFromTree(id: string): void {
-        const removeFromNodes = (nodes: BookmarkNode[]): BookmarkNode[] => nodes
-            .filter((node) => node.id !== id)
-            .map((node) => ({
-                ...node,
-                children: removeFromNodes(node.children ?? []),
-            }));
-
-        bookmarksStore.bookmarks = removeFromNodes(bookmarksStore.bookmarks ?? []);
+        bookmarksStore.bookmarks = removeNodeById(bookmarksStore.bookmarks ?? [], id);
 
         bookmarksStore.deleteLocalStorageItem(id);
     }
@@ -127,11 +118,10 @@ export function useBookmarkEvents() {
     async function removeEverything(event: string): Promise<void> {
         const cleanup = [
             bookmarksStore.deleteLocalStorageItem(FOLDER.ROOT.name),
-            bookmarksStore.deleteLocalStorageItem('root'),
-            bookmarksStore.deleteSyncStorageItem('accordion'),
-            bookmarksStore.deleteSyncStorageItem('folderColors'),
-            bookmarksStore.deleteSyncStorageItem('bookmarkColors'),
-            bookmarksStore.deleteSyncStorageItem('statistics'),
+            bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.ACCORDION),
+            bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.FOLDER_COLORS),
+            bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.BOOKMARK_COLORS),
+            bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.STATISTICS),
             deleteLocalStoreImages(),
         ];
 
@@ -142,14 +132,14 @@ export function useBookmarkEvents() {
             bookmarksStore.bookmarks = [];
             bookmarksStore.accordionModel = null;
 
-            emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
+            emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.REMOVED, id: event });
         } catch (_error) {
             bookmarksStore.errorMessage = 'Failed to remove bookmarks. Please try again.';
         }
     }
 
     async function applyStoredColor(id: string): Promise<void> {
-        const colorsObj = await bookmarksStore.getSyncStorage('bookmarkColors') as
+        const colorsObj = await bookmarksStore.getSyncStorage(STORAGE_KEYS.BOOKMARK_COLORS) as
             Record<string, string> | null;
 
         const bookmark = getStoredBookmarkById(id);
@@ -158,8 +148,8 @@ export function useBookmarkEvents() {
         bookmark.color = colorsObj?.[id] || '';
     }
 
-    async function onBookmarksUpdated(event: { type: string; id: string }): Promise<void> {
-        if (event.type !== 'color') return;
+    async function onBookmarksUpdated(event: BookmarksUpdatedPayload): Promise<void> {
+        if (event.type !== ARGS.COLOR) return;
 
         await applyStoredColor(event.id);
     }
@@ -208,8 +198,7 @@ export function useBookmarkEvents() {
                 await reloadBookmarks();
 
                 if (bookmarksStore.accordionModel === null) {
-                    bookmarksStore.accordionModel = [0];
-                    await bookmarksStore.setSyncStorage({ [STORAGE_KEYS.ACCORDION]: [0] });
+                    await persistAccordionModel([0]);
                 }
             } finally {
                 bootstrapPromise = null;
@@ -276,7 +265,7 @@ export function useBookmarkEvents() {
         }
 
         emitter.emit(EMITS.BOOKMARKS_UPDATED, {
-            type: 'removed',
+            type: ARGS.REMOVED,
             id: event,
             children: removedChildren,
         });
@@ -291,23 +280,18 @@ export function useBookmarkEvents() {
         }
 
         try {
-            const [bookmarkResponse] = await Promise.all([
-                bookmarksStore.getBookmarkById(event),
-                bookmarksStore.getLocalStorage(event),
-            ]);
+            const bookmarkResponse = await bookmarksStore.getBookmarkById(event);
 
-            if (bookmarkResponse) {
-                await persistChangedBookmark(event, bookmarkResponse);
-                emitter.emit(EMITS.ICON_UPDATE, event);
-                syncInMemoryNode(event, bookmarkResponse);
-            }
+            await persistChangedBookmark(event, bookmarkResponse);
+            emitter.emit(EMITS.ICON_UPDATE, event);
+            syncInMemoryNode(event, bookmarkResponse);
         } catch (_error) {
             bookmarksStore.errorMessage = 'Failed to update bookmark. Please try again.';
         }
 
         await applyStoredColor(event);
 
-        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'update', id: event });
+        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.UPDATED, id: event });
     }
 
     async function onMoved(event: string): Promise<void> {
@@ -315,11 +299,7 @@ export function useBookmarkEvents() {
 
         await update();
 
-        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'moved', id: event });
-    }
-
-    function onChangedFromBus(id: string): void {
-        onChanged(id);
+        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.MOVED, id: event });
     }
 
     onMounted(() => {
@@ -328,7 +308,7 @@ export function useBookmarkEvents() {
         chrome.bookmarks.onMoved.addListener(onMoved);
         chrome.bookmarks.onChanged.addListener(onChanged);
 
-        emitter.on(EMITS.CHANGED, onChangedFromBus);
+        emitter.on(EMITS.CHANGED, onChanged);
         emitter.on(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdated);
     });
 
@@ -338,7 +318,7 @@ export function useBookmarkEvents() {
         chrome.bookmarks.onMoved.removeListener(onMoved);
         chrome.bookmarks.onChanged.removeListener(onChanged);
 
-        emitter.off(EMITS.CHANGED, onChangedFromBus);
+        emitter.off(EMITS.CHANGED, onChanged);
         emitter.off(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdated);
     });
 }

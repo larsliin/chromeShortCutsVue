@@ -14,8 +14,10 @@ export function isBookmarkLink(bookmark: BookmarkNode | chrome.bookmarks.Bookmar
     return !!bookmark.url;
 }
 
-export function defaultGroupName(): string {
-    return GROUPING.DEFAULT_NAME;
+// Empty or whitespace-only names fall back to the default group name.
+export function getGroupDisplayName(title: string | undefined | null): string {
+    const trimmed = (title ?? '').trim();
+    return trimmed.length ? trimmed : GROUPING.DEFAULT_NAME;
 }
 
 export function getGroupPreviewItems(groupFolder: BookmarkNode): BookmarkNode[] {
@@ -52,8 +54,36 @@ export function findNodeById(nodes: BookmarkNode[], id: string): BookmarkNode | 
     }, null);
 }
 
+// Recursively removes a node by id from the tree.
+// Subtrees without the target keep their original object identity.
+export function removeNodeById(nodes: BookmarkNode[], id: string): BookmarkNode[] {
+    return nodes
+        .filter((node) => node.id !== id)
+        .map((node) => {
+            if (!node.children?.length) {
+                return node;
+            }
+            const newChildren = removeNodeById(node.children, id);
+            if (newChildren.length === node.children.length) {
+                return node;
+            }
+            return { ...node, children: newChildren };
+        });
+}
+
 // Legacy helper retained only for import-time fallback and migration. New
 // runtime code must use isGroupFolder(node, groupIds) instead.
 export function hasLegacyGroupPrefix(title: string | undefined | null): boolean {
     return !!title && title.startsWith(GROUPING.LEGACY_FOLDER_PREFIX);
+}
+
+// Treat an imported folder as a group when the export marked it as such.
+// Falls back to the legacy title prefix for older exports.
+export function isImportedGroupFolder(
+    node: { isGroup?: boolean; title?: string; url?: string },
+): boolean {
+    if (node.url) {
+        return false;
+    }
+    return node.isGroup === true || hasLegacyGroupPrefix(node.title);
 }

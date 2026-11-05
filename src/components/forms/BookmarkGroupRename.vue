@@ -44,7 +44,8 @@
 
 <script setup lang="ts">
     import { ref } from 'vue';
-    import { EMITS, GROUPING } from '@/constants';
+    import { EMITS } from '@/constants';
+    import { getGroupDisplayName } from '@utils/bookmarkGroups';
 
     interface Props {
         value?: string;
@@ -69,8 +70,7 @@
         if (formValidation && !formValidation.valid) {
             return;
         }
-        const trimmed = name.value.trim();
-        emits(EMITS.CONFIRM, trimmed.length ? trimmed : GROUPING.DEFAULT_NAME);
+        emits(EMITS.CONFIRM, getGroupDisplayName(name.value));
     }
 
     function onCancel(): void {

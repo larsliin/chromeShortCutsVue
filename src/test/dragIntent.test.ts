@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { GROUPING } from '@/constants';
 import type { BookmarkNode } from '@/types/bookmark';
-import { computeDropIntent } from '@utils/dragIntent';
+import { computeDropIntent, getMoveIndex } from '@utils/dragIntent';
 
 // ---------------------------------------------------------------------------
 // Drag-intent fixtures
@@ -198,5 +198,16 @@ describe('computeDropIntent — guards', () => {
         const scene = buildScene();
         const intent = computeDropIntent(baseArgs({ scene, draggedId: '' }));
         expect(intent).toBeNull();
+    });
+});
+
+describe('getMoveIndex', () => {
+    it('adds one slot when the item moves down the list', () => {
+        expect(getMoveIndex({ oldIndex: 1, newIndex: 3 })).toBe(4);
+    });
+
+    it('keeps the new index when the item moves up or stays put', () => {
+        expect(getMoveIndex({ oldIndex: 3, newIndex: 1 })).toBe(1);
+        expect(getMoveIndex({ oldIndex: 2, newIndex: 2 })).toBe(2);
     });
 });

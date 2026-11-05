@@ -1,10 +1,13 @@
 import type { BookmarkNode } from '@/types/bookmark';
-import { GROUPING, STORAGE_KEYS } from '@/constants';
+import { FOLDER, GROUPING, STORAGE_KEYS } from '@/constants';
 import * as chromeApi from '@cmp/chromeApi';
+import { runSequentially } from '@utils/async';
 import {
+    getGroupDisplayName,
     hasLegacyGroupPrefix,
     isBookmarkLink,
     isGroupFolder,
+    removeNodeById,
 } from '@utils/bookmarkGroups';
 
 // Single-flight guard so overlapping ungroup calls never remove the same group folder twice.
@@ -37,24 +40,22 @@ function isMissingBookmarkError(error: unknown): boolean {
     return /can't find bookmark|not found|doesn't exist/i.test(msg);
 }
 
-// Recursively removes a node by id from the tree.
-// Optimized to early-exit branches that don't contain the target id,
-// avoiding unnecessary object copies for unaffected subtrees.
-function removeNodeById(nodes: BookmarkNode[], id: string): BookmarkNode[] {
-    return nodes
-        .filter((node) => node.id !== id)
-        .map((node) => {
-            if (!node.children?.length) {
-                return node;
-            }
-            // Only clone if children actually changed.
-            const newChildren = removeNodeById(node.children, id);
-            // Early exit: if no children were removed, return original node.
-            if (newChildren.length === node.children.length) {
-                return node;
-            }
-            return { ...node, children: newChildren };
-        });
+// Removes a node in Chrome and prunes it from the local tree when Chrome already dropped it.
+function removeAndPrune(
+    store: { bookmarks: BookmarkNode[] | null },
+    id: string,
+    remove: (nodeId: string) => Promise<string>,
+): Promise<string> {
+    return executeWithStaleNodeFallback(
+        () => remove(id),
+        id,
+        store.bookmarks,
+        (nodeId, tree) => {
+            // eslint-disable-next-line no-param-reassign
+            store.bookmarks = removeNodeById(tree ?? [], nodeId);
+            return nodeId;
+        },
+    );
 }
 
 function applyBookmarkColors(
@@ -159,8 +160,8 @@ export default {
             Record<string, string> | null,
         ] = await Promise.all([
             chromeApi.getBookmarkSubTree(id),
-            chromeApi.getSyncStorage('folderColors') as Promise<Record<string, string> | null>,
-            chromeApi.getSyncStorage('bookmarkColors') as Promise<Record<string, string> | null>,
+            chromeApi.getSyncStorage(STORAGE_KEYS.FOLDER_COLORS) as Promise<Record<string, string> | null>,
+            chromeApi.getSyncStorage(STORAGE_KEYS.BOOKMARK_COLORS) as Promise<Record<string, string> | null>,
         ]);
 
         const result = [...tree] as BookmarkNode[];
@@ -184,17 +185,6 @@ export default {
 
     async getBookmarkById(id: string): Promise<chrome.bookmarks.BookmarkTreeNode> {
         return chromeApi.getBookmarkById(id);
-    },
-
-    async getBookmarkByIdOrNull(id: string): Promise<chrome.bookmarks.BookmarkTreeNode | null> {
-        return chromeApi.getBookmarkByIdOrNull(id);
-    },
-
-    searchFolder(
-        nodes: chrome.bookmarks.BookmarkTreeNode[],
-        folderName: string,
-    ): chrome.bookmarks.BookmarkTreeNode | false {
-        return chromeApi.searchFolder(nodes, folderName);
     },
 
     async getFolderByTitle(
@@ -350,11 +340,10 @@ export default {
             // Chrome inserts before the target index, so this preserves the order.
             const groupChildren = (groupFolder.children ?? []).filter((child) => !!child.url);
 
-            await groupChildren.reduce<Promise<void>>((chain, child, index) => chain
-                .then(() => chromeApi.moveBookmark(child.id, {
-                    parentId,
-                    index: (groupFolder.index ?? 0) + index,
-                })), Promise.resolve());
+            await runSequentially(groupChildren, (child, index) => chromeApi.moveBookmark(child.id, {
+                parentId,
+                index: (groupFolder.index ?? 0) + index,
+            }));
 
             // The folder may already be gone when Chrome events overlap.
             await executeWithStaleNodeFallback(
@@ -384,15 +373,7 @@ export default {
         },
         groupFolderId: string,
     ): Promise<void> {
-        await executeWithStaleNodeFallback(
-            () => chromeApi.removeBookmarkTree(groupFolderId),
-            groupFolderId,
-            this.bookmarks,
-            (nodeId, tree) => {
-                this.bookmarks = removeNodeById(tree ?? [], nodeId);
-                return nodeId;
-            },
-        );
+        await removeAndPrune(this, groupFolderId, chromeApi.removeBookmarkTree);
         await this.unregisterGroupId(groupFolderId);
     },
 
@@ -404,9 +385,7 @@ export default {
         if (!this.groupIds[groupFolderId]) {
             return null;
         }
-        const trimmed = (name ?? '').trim();
-        const finalName = trimmed.length ? trimmed : GROUPING.DEFAULT_NAME;
-        return chromeApi.updateBookmark(groupFolderId, { title: finalName });
+        return chromeApi.updateBookmark(groupFolderId, { title: getGroupDisplayName(name) });
     },
 
     async loadGroupIds(
@@ -503,9 +482,9 @@ export default {
 
         // Rename each legacy folder sequentially to avoid hammering Chrome's
         // bookmarks API with a parallel storm of updates.
-        await legacyFolders.reduce<Promise<void>>((chain, folder) => chain.then(async () => {
+        await runSequentially(legacyFolders, async (folder) => {
             await chromeApi.updateBookmark(folder.id, { title: GROUPING.DEFAULT_NAME });
-        }), Promise.resolve());
+        });
     },
 
     // Drop entries from groupIds whose Chrome folder no longer exists (or is
@@ -542,34 +521,57 @@ export default {
     },
 
     async removeBookmark(this: { bookmarks: BookmarkNode[] | null }, id: string): Promise<string> {
-        return executeWithStaleNodeFallback(
-            () => chromeApi.removeBookmark(id),
-            id,
-            this.bookmarks,
-            (nodeId, tree) => {
-                this.bookmarks = removeNodeById(tree ?? [], nodeId);
-                return nodeId;
-            },
-        );
+        return removeAndPrune(this, id, chromeApi.removeBookmark);
     },
 
     async removeBookmarkFolder(
         this: { bookmarks: BookmarkNode[] | null },
         id: string,
     ): Promise<string> {
-        return executeWithStaleNodeFallback(
-            () => chromeApi.removeBookmarkTree(id),
-            id,
-            this.bookmarks,
-            (nodeId, tree) => {
-                this.bookmarks = removeNodeById(tree ?? [], nodeId);
-                return nodeId;
-            },
-        );
+        return removeAndPrune(this, id, chromeApi.removeBookmarkTree);
     },
 
     async getTree(): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
         return chromeApi.getBookmarkTree();
+    },
+
+    // Resolves the bookmarks bar node and stores its id. Returns false when it is missing.
+    async loadBookmarksBarId(
+        this: {
+            bookmarksBarId: string | null;
+            getTree: () => Promise<chrome.bookmarks.BookmarkTreeNode[]>;
+        },
+    ): Promise<boolean> {
+        const tree = await this.getTree();
+        const bookmarksBar = (tree[0].children ?? []).find(
+            (node) => (node as { folderType?: string }).folderType === FOLDER.ROOT.parentFolderType,
+        );
+
+        if (!bookmarksBar) {
+            return false;
+        }
+
+        this.bookmarksBarId = bookmarksBar.id;
+        return true;
+    },
+
+    // Reads a color map, sets or clears one entry, and persists it (removing the key when empty).
+    async saveColor(key: string, id: string, color: string | null): Promise<void> {
+        const colors = ((await chromeApi.getSyncStorage(key)) || {}) as Record<string, string>;
+
+        if (color) {
+            colors[id] = color;
+        } else if (colors[id]) {
+            delete colors[id];
+        } else {
+            return;
+        }
+
+        if (Object.keys(colors).length) {
+            await chromeApi.setSyncStorage({ [key]: colors });
+        } else {
+            await chromeApi.deleteSyncStorageItem(key);
+        }
     },
 
     async setLocalStorage(storageObj: Record<string, unknown>): Promise<void> {
@@ -602,9 +604,5 @@ export default {
 
     async toBase64(file: File): Promise<string | ArrayBuffer | null> {
         return chromeApi.toBase64(file);
-    },
-
-    setBookmarksBarId(this: { bookmarksBarId: string | null }, id: string): void {
-        this.bookmarksBarId = id;
     },
 };

@@ -4,11 +4,13 @@ import type { BookmarkNode } from '@/types/bookmark';
 import {
     isGroupFolder,
     isBookmarkLink,
-    defaultGroupName,
+    getGroupDisplayName,
     hasLegacyGroupPrefix,
+    isImportedGroupFolder,
     getGroupPreviewItems,
     flattenBookmarkLinks,
     findNodeById,
+    removeNodeById,
 } from '@utils/bookmarkGroups';
 
 // ---------------------------------------------------------------------------
@@ -108,16 +110,60 @@ describe('hasLegacyGroupPrefix', () => {
 });
 
 // ---------------------------------------------------------------------------
-// defaultGroupName
+// getGroupDisplayName
 // ---------------------------------------------------------------------------
 
-describe('defaultGroupName', () => {
-    it('returns the GROUPING.DEFAULT_NAME constant', () => {
-        expect(defaultGroupName()).toBe(GROUPING.DEFAULT_NAME);
+describe('getGroupDisplayName', () => {
+    it('returns the trimmed title', () => {
+        expect(getGroupDisplayName('  Work  ')).toBe('Work');
     });
 
-    it('returns a non-empty string', () => {
-        expect(defaultGroupName().length).toBeGreaterThan(0);
+    it('falls back to GROUPING.DEFAULT_NAME for empty, blank, null and undefined titles', () => {
+        expect(getGroupDisplayName('')).toBe(GROUPING.DEFAULT_NAME);
+        expect(getGroupDisplayName('   ')).toBe(GROUPING.DEFAULT_NAME);
+        expect(getGroupDisplayName(null)).toBe(GROUPING.DEFAULT_NAME);
+        expect(getGroupDisplayName(undefined)).toBe(GROUPING.DEFAULT_NAME);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// isImportedGroupFolder
+// ---------------------------------------------------------------------------
+
+describe('isImportedGroupFolder', () => {
+    it('accepts folders flagged with isGroup', () => {
+        expect(isImportedGroupFolder({ isGroup: true, title: 'Any' })).toBe(true);
+    });
+
+    it('accepts folders using the legacy title prefix', () => {
+        expect(isImportedGroupFolder({ title: `${GROUPING.LEGACY_FOLDER_PREFIX}Old` })).toBe(true);
+    });
+
+    it('rejects plain folders and anything with a url', () => {
+        expect(isImportedGroupFolder({ title: 'Plain' })).toBe(false);
+        expect(isImportedGroupFolder({ isGroup: true, url: 'https://a.com' })).toBe(false);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// removeNodeById
+// ---------------------------------------------------------------------------
+
+describe('removeNodeById', () => {
+    it('removes a nested node and keeps untouched subtrees by reference', () => {
+        const untouched = group('other', [link('c')]);
+        const tree = [group('g', [link('a'), link('b')]), untouched];
+
+        const result = removeNodeById(tree, 'a');
+
+        expect(result[0].children?.map((n) => n.id)).toEqual(['b']);
+        expect(result[1]).toBe(untouched);
+    });
+
+    it('returns an equivalent tree when the id is absent', () => {
+        const tree = [link('a')];
+
+        expect(removeNodeById(tree, 'missing')).toEqual(tree);
     });
 });
 

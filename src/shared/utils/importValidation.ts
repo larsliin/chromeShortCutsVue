@@ -1,14 +1,5 @@
 import type { ImportFileData } from '@/types/bookmark';
-import { hasLegacyGroupPrefix } from '@utils/bookmarkGroups';
-
-// Treat a folder as a group when the export marked it as such.
-// Fall back to the legacy title prefix for older exports.
-function looksLikeGroupForImport(child: { isGroup?: boolean; title?: string; url?: string }): boolean {
-    if (child.url) {
-        return false;
-    }
-    return child.isGroup === true || hasLegacyGroupPrefix(child.title ?? '');
-}
+import { isImportedGroupFolder } from '@utils/bookmarkGroups';
 
 // Validate the exported bookmarks JSON before import.
 // The file must include at least one navigable bookmark.
@@ -27,7 +18,7 @@ export function isImportBookmarksFileValid(args: ImportFileData): boolean {
     if (args.bookmarks.some((b) => b.children?.length)) {
         const directChildren = args.bookmarks.flatMap((e) => e.children ?? []);
         const groupFolderChildren = directChildren
-            .filter((child) => looksLikeGroupForImport(child))
+            .filter((child) => isImportedGroupFolder(child))
             .flatMap((group) => group.children ?? []);
         const allBookmarks = [...directChildren, ...groupFolderChildren];
 

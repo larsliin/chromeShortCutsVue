@@ -27,8 +27,7 @@ A Chrome Extension (Manifest V3) that replaces your new tab page with a fully cu
 | Component Library | Vuetify 3 |
 | Build Tool | Vite 5 |
 | Drag and Drop | `vuedraggable` |
-| Form Validation | `@vuelidate/core` + `@vuelidate/validators` |
-| Reactive Utilities | `@vueuse/core` |
+| Form Validation | `@vuelidate/core` |
 | Styling | SCSS + scoped component styles |
 | Unit Tests | Vitest + jsdom |
 | E2E Tests | Playwright (Chromium) |
@@ -92,7 +91,7 @@ The project uses two testing layers to ensure reliability:
 | Test Group | Description |
 |---|---|
 | **getBookmarks** | Resolves with the bookmark tree for a given id, propagating Chrome API errors |
-| **getBookmarkById / getBookmarkByIdOrNull** | Returns a single bookmark by id; the OrNull variant resolves with `null` instead of rejecting when the id is missing |
+| **getBookmarkById** | Returns a single bookmark by id, rejecting when the id is missing or Chrome reports an error |
 | **createBookmark / updateBookmark** | CRUD wrappers around `chrome.bookmarks.create` and `update` |
 | **moveBookmark / reorderBookmark** | Move bookmarks between folders or within a folder, asserting the Chrome destination payload |
 | **removeBookmark / removeBookmarkFolder** | Removes a bookmark or a folder tree, propagating Chrome errors; a "can't find bookmark" error resolves instead and prunes the stale node from the in-memory tree |
@@ -103,6 +102,8 @@ The project uses two testing layers to ensure reliability:
 | **renameBookmarkGroup** | Updates the Chrome folder title for a registered group id; trims input and falls back to the default name when empty; no-op (returns `null`) when the id is not in `groupIds` |
 | **migrateLegacyGroupFolders** | One-time migration: registers any folder whose title starts with the legacy `__mst_group__:` prefix in the `groupIds` map and renames it to the default name; no-op when no legacy folders are present or `rootId` is unset |
 | **Storage wrappers** | Local and sync storage get/set/delete pass-throughs forward errors from `chrome.runtime.lastError` |
+| **loadBookmarksBarId** | Stores the id of the bookmarks bar folder and resolves `true`; resolves `false` and leaves the id unset when the bar is missing |
+| **saveColor** | Adds, replaces or clears one entry of a color map in sync storage; deletes the storage key when the map empties and does nothing when clearing an unset color |
 
 #### `bookmarkGroups.util.test.ts` — Group Utility Tests
 
@@ -110,11 +111,13 @@ The project uses two testing layers to ensure reliability:
 |---|---|
 | **isGroupFolder** | Identifies group folders by membership in the `groupIds` map and the absence of a url; rejects links even when their id is registered |
 | **isBookmarkLink** | Treats any node with a non-empty url as a link; rejects empty-string urls |
-| **defaultGroupName** | Returns `GROUPING.DEFAULT_NAME` for new and rename-fallback paths |
+| **getGroupDisplayName** | Trims the title and falls back to `GROUPING.DEFAULT_NAME` for empty, blank, null or undefined titles |
 | **hasLegacyGroupPrefix** | Legacy-only predicate for detecting old `__mst_group__:` titles during import and migration |
+| **isImportedGroupFolder** | Detects imported group folders via the `isGroup` flag or the legacy title prefix; rejects plain folders and anything with a url |
 | **getGroupPreviewItems** | Caps preview to `GROUPING.PREVIEW_ITEMS`, drops non-link children, tolerates undefined children |
 | **flattenBookmarkLinks** | Recursively collects link descendants from nested folders and groups |
 | **findNodeById** | Locates nodes anywhere in the tree (including inside group folders); returns null when absent; stops at first match |
+| **removeNodeById** | Removes a nested node while keeping untouched subtrees by reference; returns an equivalent tree when the id is absent |
 
 #### `dragIntent.test.ts` — Drag-and-Drop Intent Tests
 
@@ -123,6 +126,7 @@ The project uses two testing layers to ensure reliability:
 | **create group** | Produces a `create` intent when a link is dragged onto another link sharing the parent; rejects when the dragged item is a group, the parent is itself a group, or the siblings have mismatched parents |
 | **add to group** | Produces an `add-to-group` intent when a link is dragged onto a group folder; respects `GROUPING.MAX_ITEMS` cap; counts only link children towards the cap |
 | **guards** | Returns null when group mode is disabled, when ids are identical, when ids are missing from the visible items, or when the dragged id is empty |
+| **getMoveIndex** | Adds one slot when an item moves down the list and keeps the new index when it moves up or stays put |
 
 #### `importValidation.test.ts` — Import File Validation Tests
 

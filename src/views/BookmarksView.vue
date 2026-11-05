@@ -11,7 +11,7 @@
 
 <script setup lang="ts">
     import { onMounted } from 'vue';
-    import { FOLDER, ICON_SIZE } from '@/constants';
+    import { ICON_SIZE, STORAGE_KEYS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { useDarkMode } from '@cmp/useDarkMode';
     import { useAccordionSync } from '@cmp/useAccordionSync';
@@ -34,32 +34,18 @@
     useBookmarkEvents();
 
     async function init(): Promise<void> {
-        const tree = await bookmarksStore.getTree();
-
-        const bookmarksBar = (tree[0].children ?? []).find((node) => {
-            const n = node as chrome.bookmarks.BookmarkTreeNode & { folderType?: string };
-            return n.folderType === FOLDER.ROOT.parentFolderType;
-        });
-
-        if (!bookmarksBar) {
+        if (!await bookmarksStore.loadBookmarksBarId()) {
             return;
         }
 
-        bookmarksStore.setBookmarksBarId(bookmarksBar.id);
-
         const [
-            _rootFolder,
             darkMode,
             systemDarkMode,
             iconSize,
         ] = await Promise.all([
-            bookmarksStore.getFolderByTitle(
-                bookmarksStore.bookmarksBarId as string,
-                FOLDER.ROOT.label,
-            ),
-            bookmarksStore.getSyncStorage('darkMode'),
-            bookmarksStore.getSyncStorage('systemDarkMode'),
-            bookmarksStore.getSyncStorage('iconSize'),
+            bookmarksStore.getSyncStorage(STORAGE_KEYS.DARK_MODE),
+            bookmarksStore.getSyncStorage(STORAGE_KEYS.SYSTEM_DARK_MODE),
+            bookmarksStore.getSyncStorage(STORAGE_KEYS.ICON_SIZE),
             buildRootFolder(),
         ]);
 

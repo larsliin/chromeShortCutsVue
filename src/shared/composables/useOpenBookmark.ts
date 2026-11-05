@@ -1,6 +1,7 @@
 // Shared click-open logic used by bookmark UI components.
 // It records stats, persists them, and opens the bookmark.
 import { useBookmarksStore } from '@stores/bookmarks';
+import { STORAGE_KEYS } from '@/constants';
 import type { BookmarkNode, BookmarkStat } from '@/types/bookmark';
 
 export function useOpenBookmark() {
@@ -42,16 +43,15 @@ export function useOpenBookmark() {
             return b.timestamp - a.timestamp;
         });
 
-        bookmarksStore.setSyncStorage({ statistics: sorted });
+        bookmarksStore.setSyncStorage({ [STORAGE_KEYS.STATISTICS]: sorted });
     }
 
     function open(bookmark: BookmarkNode, event: MouseEvent | KeyboardEvent): void {
+        event.preventDefault();
+
         if (!bookmark.url) {
-            event.preventDefault();
             return;
         }
-
-        event.preventDefault();
 
         recordClick(bookmark);
 

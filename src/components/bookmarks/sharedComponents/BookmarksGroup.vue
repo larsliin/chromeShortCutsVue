@@ -1,7 +1,7 @@
 <template>
     <div
         class="folder"
-        :class="{ 'icon-small': bookmarksStore.iconSize === 'small' }">
+        :class="{ 'icon-small': bookmarksStore.iconSize === ICON_SIZE.SMALL }">
         <div class="folder-inner" v-if="bookmarks">
             <draggable
                 :animation="200"
@@ -69,7 +69,7 @@
                         :title="folder.title"
                         :id="folder.id"
                         @cancel="showConfirmDelete = false"
-                        @confirm="onDeleteConfirm($event)" />
+                        @confirm="onDeleteConfirm()" />
                 </v-dialog>
             </v-row>
         </template>
@@ -83,7 +83,7 @@
     } from 'vue';
     import { useDragCursor } from '@cmp/useDragCursor';
     import type { BookmarkNode, DragEventInfo } from '@/types/bookmark';
-    import { GROUPING, EMITS } from '@/constants';
+    import { GROUPING, EMITS, ICON_SIZE } from '@/constants';
     import BookmarkLink from '@/components/bookmarks/sharedComponents/BookmarkLink.vue';
     import BookmarkGroupCard from '@/components/bookmarks/sharedComponents/BookmarkGroupCard.vue';
     import BookmarkGroupPopup from '@/components/bookmarks/sharedComponents/BookmarkGroupPopup.vue';
@@ -100,7 +100,7 @@
         isBookmarkLink,
         isGroupFolder,
     } from '@utils/bookmarkGroups';
-    import { computeDropIntent } from '@utils/dragIntent';
+    import { computeDropIntent, getMoveIndex, type DropIntent } from '@utils/dragIntent';
 
     const utils = useBookmarkOps();
     const groupPopup = useGroupPopup();
@@ -112,18 +112,13 @@
 
     const props = withDefaults(defineProps<Props>(), { bookmarks: () => [] });
 
-    const emits = defineEmits([
-        EMITS.DELETE,
-        EMITS.BEFORE_DELETE,
-    ]);
-
     const dragging = ref(false);
 
     const bookmarksStore = useBookmarksStore();
 
     const showConfirmDelete = ref(false);
     const draggedBookmarkId = ref<string | null>(null);
-    const dropIntent = ref<{ type: 'create' | 'add-to-group'; targetId: string } | null>(null);
+    const dropIntent = ref<DropIntent | null>(null);
     const popupSwallowClickMs = 300;
 
     const dragCursor = useDragCursor();
@@ -153,10 +148,7 @@
             && groupPopup.shouldHidePopupOrigin(element.id);
     }
 
-    function computeDropIntentFor(draggedId: string, targetId: string): {
-        type: 'create' | 'add-to-group';
-        targetId: string;
-    } | null {
+    function computeDropIntentFor(draggedId: string, targetId: string): DropIntent | null {
         return computeDropIntent({
             draggedId,
             targetId,
@@ -276,20 +268,10 @@
         showConfirmDelete.value = true;
     }
 
-    async function onDeleteConfirm(_event?: unknown): Promise<void> {
-        emits(EMITS.BEFORE_DELETE);
-
-        await nextTick();
-
-        // close confirmation dialogue
+    async function onDeleteConfirm(): Promise<void> {
         showConfirmDelete.value = false;
 
-        // get updated bookmark folder index
-        const bookmarkResponse = await bookmarksStore.getBookmarkById(props.folder.id);
-
-        await utils.deleteBookmarkFolder(bookmarkResponse as BookmarkNode);
-
-        emits(EMITS.DELETE, { id: props.folder.id, index: bookmarkResponse.index });
+        await utils.deleteBookmarkFolder(props.folder);
     }
 
     // Drag-add handling is done at drag end via dropIntent.
@@ -323,7 +305,7 @@
             return;
         }
 
-        const index = event.newIndex > event.oldIndex ? event.newIndex + 1 : event.newIndex;
+        const index = getMoveIndex(event);
 
         await nextTick();
 

@@ -10,13 +10,16 @@ export function useBookmarkLoader() {
 
     let pendingRefresh = false;
 
-    async function performUpdate(): Promise<void> {
-        const rootId = await bookmarksStore.getLocalStorage(FOLDER.ROOT.name);
+    async function loadTree(rootId: unknown): Promise<void> {
         const tree = await bookmarksStore.getColorizedBookmarks(rootId as string);
 
-        const rootChildren = tree[0].children ?? [];
+        const rootChildren = tree[0]?.children ?? [];
         await bookmarksStore.reconcileGroupIdsFromTree(rootChildren);
         bookmarksStore.bookmarks = rootChildren as BookmarkNode[];
+    }
+
+    async function performUpdate(): Promise<void> {
+        await loadTree(await bookmarksStore.getLocalStorage(FOLDER.ROOT.name));
     }
 
     // Skip refreshes during drag so vuedraggable does not lose its source array.
@@ -69,11 +72,7 @@ export function useBookmarkLoader() {
             await bookmarksStore.loadGroupIds();
             await bookmarksStore.migrateLegacyGroupFolders();
 
-            const tree = await bookmarksStore.getColorizedBookmarks(rootId as string);
-            const rootChildren = tree[0]?.children ?? [];
-
-            await bookmarksStore.reconcileGroupIdsFromTree(rootChildren);
-            bookmarksStore.bookmarks = rootChildren as BookmarkNode[];
+            await loadTree(rootId);
 
             await bookmarksStore.cleanupGroupIds();
             await runCleanup();

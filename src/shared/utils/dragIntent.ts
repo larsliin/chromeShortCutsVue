@@ -1,5 +1,5 @@
 import { GROUPING } from '@/constants';
-import type { BookmarkNode } from '@/types/bookmark';
+import type { BookmarkNode, DragEventInfo } from '@/types/bookmark';
 import {
     findNodeById,
     isBookmarkLink,
@@ -9,6 +9,11 @@ import {
 export interface DropIntent {
     type: 'create' | 'add-to-group';
     targetId: string;
+}
+
+// Chrome inserts before the target index, so moving down needs one extra slot.
+export function getMoveIndex({ newIndex, oldIndex }: DragEventInfo): number {
+    return newIndex > oldIndex ? newIndex + 1 : newIndex;
 }
 
 interface ComputeDropIntentArgs {

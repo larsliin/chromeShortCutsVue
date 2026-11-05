@@ -142,11 +142,11 @@
 </template>
 
 <script setup lang="ts">
-    import { ref, onMounted, onUnmounted } from 'vue';
+    import { ref, computed, onMounted, onUnmounted } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import BookmarkCreateIcon from '@/components/forms/BookmarkCreateIcon.vue';
     import BookmarkColorEdit from '@/components/forms/BookmarkColorEdit.vue';
-    import { EMITS } from '@/constants';
+    import { EMITS, ARGS, STORAGE_KEYS } from '@/constants';
     import { isValidURL } from '@utils/urlUtils';
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
     import { useAccordionSync } from '@cmp/useAccordionSync';
@@ -179,8 +179,8 @@
 
     const bookmarksStore = useBookmarksStore();
 
-    const foldersArr = ref();
-    const foldersIdArr = ref();
+    const folders = ref<chrome.bookmarks.BookmarkTreeNode[]>([]);
+    const foldersArr = computed(() => folders.value.map((folder) => folder.title));
 
     const id = ref();
     // The top-level folder that actually contains the bookmark, resolved through
@@ -200,16 +200,14 @@
     async function moveToFolder(folderStr: string, newFolderId?: string): Promise<void> {
         if (newFolderId) {
             await bookmarksStore.moveBookmark(id.value as string, { parentId: newFolderId });
-        } else {
-            const folders: Record<string, string>[] = foldersIdArr.value ?? [];
-            const isSameFolder = !!folders.find((item) => item[folderStr] === originalTopFolderId.value);
+            return;
+        }
 
-            if (!isSameFolder) {
-                const target = folders.find((item) => Object.prototype.hasOwnProperty.call(item, folderStr));
-                if (target) {
-                    await bookmarksStore.moveBookmark(id.value as string, { parentId: target[folderStr] });
-                }
-            }
+        const sameTitled = folders.value.filter((folder) => folder.title === folderStr);
+        const isSameFolder = sameTitled.some((folder) => folder.id === originalTopFolderId.value);
+
+        if (sameTitled.length && !isSameFolder) {
+            await bookmarksStore.moveBookmark(id.value as string, { parentId: sameTitled[0].id });
         }
     }
 
@@ -237,36 +235,24 @@
         }
 
         // check if there is any existing folders with that folder name in our root folder
-        const findFolderResponse = await bookmarksStore
+        const [existingFolder] = await bookmarksStore
             .getFolderByTitle(bookmarksStore.rootId as string, folderStr);
-        let createBookmarkResponse;
 
         bookmarksStore.editBase64Image = base64Image.value;
 
-        if (findFolderResponse && findFolderResponse.length) {
-            // if we have a folder with the provided folder name already
-            if (id.value) {
-                createBookmarkResponse = await bookmarksStore
-                    .updateBookmark(id.value, { title: titleTxt.value, url: urlTxt.value });
+        const targetFolder = existingFolder
+            ?? await bookmarksStore.createBookmark(bookmarksStore.rootId as string, folderStr);
 
-                await moveToFolder(folderStr);
-            } else {
-                createBookmarkResponse = await bookmarksStore
-                    .createBookmark(findFolderResponse[0].id, titleTxt.value, urlTxt.value);
-            }
+        let createBookmarkResponse;
+
+        if (id.value) {
+            createBookmarkResponse = await bookmarksStore
+                .updateBookmark(id.value, { title: titleTxt.value, url: urlTxt.value });
+
+            await moveToFolder(folderStr, existingFolder ? undefined : targetFolder.id);
         } else {
-            const createFolderResponse = await bookmarksStore
-                .createBookmark(bookmarksStore.rootId as string, folderStr);
-
-            if (id.value) {
-                createBookmarkResponse = await bookmarksStore
-                    .updateBookmark(id.value, { title: titleTxt.value, url: urlTxt.value });
-
-                await moveToFolder(folderStr, createFolderResponse.id);
-            } else {
-                createBookmarkResponse = await bookmarksStore
-                    .createBookmark(createFolderResponse.id, titleTxt.value, urlTxt.value);
-            }
+            createBookmarkResponse = await bookmarksStore
+                .createBookmark(targetFolder.id, titleTxt.value, urlTxt.value);
         }
 
         if (id.value) {
@@ -290,7 +276,7 @@
             await saveBookmarkColor(bookmarkId);
         }
 
-        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'color', id: bookmarkId });
+        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.COLOR, id: bookmarkId });
 
         emits(EMITS.SAVE);
     }
@@ -313,21 +299,11 @@
     }
 
     async function saveBookmarkColor(bookmarkId: string): Promise<void> {
-        const colorsObj = (await bookmarksStore.getSyncStorage('bookmarkColors') || {}) as Record<string, string>;
-
-        if (bookmarkColor.value) {
-            colorsObj[bookmarkId] = bookmarkColor.value;
-        } else if (colorsObj[bookmarkId]) {
-            delete colorsObj[bookmarkId];
-        } else {
-            return;
-        }
-
-        if (!Object.keys(colorsObj).length) {
-            await bookmarksStore.deleteSyncStorageItem('bookmarkColors');
-        } else {
-            await bookmarksStore.setSyncStorage({ bookmarkColors: colorsObj });
-        }
+        await bookmarksStore.saveColor(
+            STORAGE_KEYS.BOOKMARK_COLORS,
+            bookmarkId,
+            bookmarkColor.value,
+        );
 
         const bookmark = getStoredBookmarkById(bookmarkId);
         if (bookmark) {
@@ -335,12 +311,14 @@
         }
     }
 
+    async function loadFolders(): Promise<void> {
+        const bookmarks = await bookmarksStore.getBookmarks(bookmarksStore.rootId as string);
+        folders.value = bookmarks[0].children ?? [];
+    }
+
     async function onBookmarksUpdatedHandler(): Promise<void> {
         if (bookmarksStore.rootId) {
-            const bookmarks = await bookmarksStore.getBookmarks(bookmarksStore.rootId);
-            const children = bookmarks[0].children ?? [];
-            foldersArr.value = children.map((e) => e.title);
-            foldersIdArr.value = children.map((e) => ({ [e.title]: e.id }));
+            await loadFolders();
         }
 
         if (!bookmarksStore.hasBookmarks) {
@@ -349,16 +327,11 @@
     }
 
     async function init() {
-        bookmarksStore.dialogOpen = true;
-
         if (!bookmarksStore.rootId) {
             return;
         }
 
-        const bookmarks = await bookmarksStore.getBookmarks(bookmarksStore.rootId as string);
-        const folderChildren = bookmarks[0].children ?? [];
-        foldersArr.value = folderChildren.map((e) => e.title);
-        foldersIdArr.value = folderChildren.map((e) => ({ [e.title]: e.id }));
+        await loadFolders();
 
         const slctDisabled = !bookmarksStore.hasBookmarks;
 
@@ -373,7 +346,7 @@
 
             // Load existing bookmark color
             if (props.data.id) {
-                const colorsObj = await bookmarksStore.getSyncStorage('bookmarkColors');
+                const colorsObj = await bookmarksStore.getSyncStorage(STORAGE_KEYS.BOOKMARK_COLORS);
                 if (colorsObj && (colorsObj as Record<string, string>)[props.data.id]) {
                     bookmarkColor.value = (colorsObj as Record<string, string>)[props.data.id];
                 }
@@ -384,7 +357,7 @@
             // A grouped bookmark's immediate parent is its group folder, not a
             // top-level folder. Walk one level down to find the top-level folder
             // that owns either the bookmark directly or its group folder.
-            const topLevelFolder = folderChildren.find((folder) => folder.id === props.data?.parentId
+            const topLevelFolder = folders.value.find((folder) => folder.id === props.data?.parentId
                 || folder.children?.some((child) => child.id === props.data?.parentId));
             originalTopFolderId.value = topLevelFolder?.id ?? null;
             folderSlct.value = topLevelFolder?.title ?? null;
@@ -442,13 +415,5 @@
                     0 24px 38px 3px rgba(0, 0, 0, 0.14),
                     0 9px 46px 8px rgba(0, 0, 0, 0.12);
         border-radius: 4px;
-    }
-
-    .clearbit-note {
-        font-size: 12px;
-    }
-
-    a.dark {
-        color: var(--darkmode-400);
     }
 </style>

@@ -4,10 +4,24 @@ import {
     computed, nextTick, onMounted, onUnmounted, ref,
 } from 'vue';
 import type { BookmarkNode } from '@/types/bookmark';
-import { GROUPING, EMITS } from '@/constants';
+import {
+    GROUPING, EMITS, ARGS, ICON_SIZE,
+} from '@/constants';
 import { useBookmarksStore } from '@stores/bookmarks';
-import emitter from '@cmp/eventBus';
+import emitter, { type BookmarksUpdatedPayload } from '@cmp/eventBus';
 import { findNodeById } from '@utils/bookmarkGroups';
+
+interface DragOutOfGroupPayload {
+    bookmarkId: string;
+    groupId: string;
+    groupParentId: string;
+}
+
+const INLINE_GROUP_RADIUS = {
+    [ICON_SIZE.SMALL]: GROUPING.RADIUS_SMALL,
+    [ICON_SIZE.MEDIUM]: GROUPING.RADIUS_MEDIUM,
+    [ICON_SIZE.LARGE]: GROUPING.RADIUS_LARGE,
+};
 
 export function useGroupPopup() {
     const bookmarksStore = useBookmarksStore();
@@ -61,15 +75,7 @@ export function useGroupPopup() {
     }
 
     function getInlineGroupRadius(): string {
-        if (bookmarksStore.iconSize === 'small') {
-            return GROUPING.RADIUS_SMALL;
-        }
-
-        if (bookmarksStore.iconSize === 'large') {
-            return GROUPING.RADIUS_LARGE;
-        }
-
-        return GROUPING.RADIUS_MEDIUM;
+        return INLINE_GROUP_RADIUS[bookmarksStore.iconSize as ICON_SIZE] ?? GROUPING.RADIUS_MEDIUM;
     }
 
     const popupStyle = computed(() => {
@@ -139,6 +145,13 @@ export function useGroupPopup() {
         }
     }
 
+    function clearPopupTransitionTimeout(): void {
+        if (popupTransitionTimeoutId.value !== null) {
+            window.clearTimeout(popupTransitionTimeoutId.value);
+            popupTransitionTimeoutId.value = null;
+        }
+    }
+
     async function onOpenGroup(payload: { groupId: string; rect?: DOMRect }): Promise<void> {
         setPopupOriginFromRect(payload.rect ?? null);
 
@@ -147,10 +160,7 @@ export function useGroupPopup() {
         showGroupPopup.value = true;
         popupState.value = 'opening';
 
-        if (popupTransitionTimeoutId.value !== null) {
-            window.clearTimeout(popupTransitionTimeoutId.value);
-            popupTransitionTimeoutId.value = null;
-        }
+        clearPopupTransitionTimeout();
         popupTransitioning.value = true;
 
         await nextTick();
@@ -173,10 +183,7 @@ export function useGroupPopup() {
 
         syncPopupOriginWithActiveGroup();
 
-        if (popupTransitionTimeoutId.value !== null) {
-            window.clearTimeout(popupTransitionTimeoutId.value);
-            popupTransitionTimeoutId.value = null;
-        }
+        clearPopupTransitionTimeout();
         popupTransitioning.value = true;
 
         popupState.value = 'closing';
@@ -211,8 +218,8 @@ export function useGroupPopup() {
     } {
         let cancel!: () => void;
         const promise = new Promise<void>((resolve) => {
-            const onBookmarksUpdated = (event: { type: string; id: string }): void => {
-                if (event.type !== 'moved' || event.id !== bookmarkId) {
+            const onBookmarksUpdated = (event: BookmarksUpdatedPayload): void => {
+                if (event.type !== ARGS.MOVED || event.id !== bookmarkId) {
                     return;
                 }
 
@@ -260,7 +267,8 @@ export function useGroupPopup() {
         syncPopupOriginWithActiveGroup();
     }
 
-    function onOverlayEscape(): void {
+    // Escape and backdrop clicks both dismiss the popup unless an item is being dragged.
+    function onOverlayDismiss(): void {
         if (popupDragging.value) {
             return;
         }
@@ -306,14 +314,6 @@ export function useGroupPopup() {
         }
     }
 
-    function onOverlayClickSelf(): void {
-        if (popupDragging.value) {
-            return;
-        }
-
-        closeGroupPopup();
-    }
-
     function setPopupOverlayEl(el: HTMLElement | null): void {
         popupOverlayRef.value = el;
     }
@@ -322,11 +322,7 @@ export function useGroupPopup() {
         popupDragging.value = value;
     }
 
-    async function onPopupDragOutOfGroup(payload: {
-        bookmarkId: string;
-        groupId: string;
-        groupParentId: string;
-    }): Promise<void> {
+    async function onPopupDragOutOfGroup(payload: DragOutOfGroupPayload): Promise<void> {
         popupDragging.value = false;
         const moveRefresh = waitForBookmarkMoveRefresh(payload.bookmarkId);
 
@@ -360,11 +356,7 @@ export function useGroupPopup() {
         moveRefresh.cancel();
     }
 
-    function handlePopupDragOutOfGroup(payload: {
-        bookmarkId: string;
-        groupId: string;
-        groupParentId: string;
-    }): void {
+    function handlePopupDragOutOfGroup(payload: DragOutOfGroupPayload): void {
         onPopupDragOutOfGroup(payload);
     }
 
@@ -385,27 +377,20 @@ export function useGroupPopup() {
             closePopupTimeoutId.value = null;
         }
 
-        if (popupTransitionTimeoutId.value !== null) {
-            window.clearTimeout(popupTransitionTimeoutId.value);
-            popupTransitionTimeoutId.value = null;
-        }
+        clearPopupTransitionTimeout();
     });
 
     return {
         showGroupPopup,
         popupState,
-        activeGroupId,
         activeGroup,
-        popupDragging,
         popupTransitioning,
-        popupOverlayRef,
         popupStyle,
         popupOverlayStyle,
         onOpenGroup,
         closeGroupPopup,
-        onOverlayEscape,
+        onOverlayDismiss,
         onOverlayTab,
-        onOverlayClickSelf,
         handlePopupDragOutOfGroup,
         shouldHidePopupOrigin,
         setPopupOverlayEl,

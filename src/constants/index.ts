@@ -36,8 +36,14 @@ export enum EMITS {
     TOGGLE = 'toggle',
 }
 
+// Payload types for EMITS.BOOKMARKS_UPDATED.
 export enum ARGS {
+    COLOR = 'color',
     CREATED = 'created',
+    IMPORT = 'import',
+    MOVED = 'moved',
+    REMOVED = 'removed',
+    UPDATED = 'update',
 }
 
 export enum FILE_NAMES {
@@ -52,6 +58,8 @@ export const LOGO_GENERATOR = Object.freeze({
 
 export const TIMEOUTS = Object.freeze({
     DIALOG_CLOSE_MS: 1000,
+    FILTER_DEBOUNCE_MS: 150,
+    FILTER_TRANSITION_RESET_MS: 500,
 });
 
 export const STORAGE_KEYS = Object.freeze({
@@ -59,6 +67,10 @@ export const STORAGE_KEYS = Object.freeze({
     FOLDER_COLORS: 'folderColors',
     BOOKMARK_COLORS: 'bookmarkColors',
     ACCORDION: 'accordion',
+    STATISTICS: 'statistics',
+    DARK_MODE: 'darkMode',
+    SYSTEM_DARK_MODE: 'systemDarkMode',
+    ICON_SIZE: 'iconSize',
 });
 
 export const GROUPING = Object.freeze({
@@ -67,7 +79,6 @@ export const GROUPING = Object.freeze({
     LEGACY_FOLDER_PREFIX: '__mst_group__:',
     DEFAULT_NAME: 'Group',
     MAX_ITEMS: 9,
-    PREVIEW_COLUMNS: 3,
     PREVIEW_ITEMS: 9,
     MAX_NESTED_LEVEL: 1,
     // Depth offset for the root and top-level bookmarks bar.

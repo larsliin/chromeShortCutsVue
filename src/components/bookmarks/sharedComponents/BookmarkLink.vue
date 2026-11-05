@@ -55,7 +55,7 @@
                         :id="bookmark.id"
                         :typeFolder="!bookmark.url"
                         @cancel="showConfirmDelete = false"
-                        @confirm="onDeleteConfirm($event)" />
+                        @confirm="onDeleteConfirm()" />
                 </v-dialog>
             </v-row>
         </template>
@@ -84,7 +84,7 @@
         ref, onMounted, onUnmounted, toRef, computed, useAttrs, type Ref,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { EMITS } from '@/constants';
+    import { EMITS, ARGS, STORAGE_KEYS } from '@/constants';
     import emitter from '@cmp/eventBus';
     import type { BookmarkNode, FoldoutListItem } from '@/types/bookmark';
     import BookmarkConfirmAction
@@ -133,12 +133,14 @@
     }
 
     const iconResolved = ref(false);
-    const list = ref<FoldoutListItem[]>([
-        {
-            title: 'Delete',
-            icon: mdiDeleteOutline,
-            event: EMITS.DELETE,
-        },
+    const list = computed<FoldoutListItem[]>(() => [
+        ...(props.bookmark.url
+            ? [
+                { title: 'Edit', icon: mdiRename, event: EMITS.EDIT },
+                { title: 'Color', icon: mdiFormatColorFill, event: EMITS.OPEN_COLOR_EDITOR },
+            ] as const
+            : []),
+        { title: 'Delete', icon: mdiDeleteOutline, event: EMITS.DELETE },
     ]);
 
     const emits = defineEmits([
@@ -181,7 +183,7 @@
     });
 
     async function updateColor() {
-        const getColorResponse = await bookmarksStore.getSyncStorage('bookmarkColors');
+        const getColorResponse = await bookmarksStore.getSyncStorage(STORAGE_KEYS.BOOKMARK_COLORS);
 
         if (getColorResponse) {
             color.value = (getColorResponse as Record<string, string>)[props.bookmark.id];
@@ -194,7 +196,7 @@
         showConfirmDelete.value = true;
     }
 
-    function onDeleteConfirm(_event?: unknown): void {
+    function onDeleteConfirm(): void {
         showConfirmDelete.value = false;
 
         if (props.bookmark.url) {
@@ -219,37 +221,18 @@
         }
     }
 
-    const selectedColor = ref();
-
     const showColorEdit = ref(false);
 
     async function onColorConfirm(event: string | null): Promise<void> {
-        selectedColor.value = event;
-
         showColorEdit.value = false;
 
-        const getColorsResponse = await bookmarksStore.getSyncStorage('bookmarkColors');
-        const colorsObj = (getColorsResponse || {}) as Record<string, string>;
+        await bookmarksStore.saveColor(STORAGE_KEYS.BOOKMARK_COLORS, props.bookmark.id, event);
 
         const bookmark = utils.getStoredBookmarkById(props.bookmark.id);
+        if (bookmark) { bookmark.color = event ?? ''; }
+        color.value = event;
 
-        if (event) {
-            colorsObj[props.bookmark.id] = selectedColor.value;
-            if (bookmark) { bookmark.color = selectedColor.value; }
-            color.value = selectedColor.value;
-        } else if (colorsObj[props.bookmark.id]) {
-            delete colorsObj[props.bookmark.id];
-            if (bookmark) { bookmark.color = ''; }
-            color.value = null;
-        }
-
-        if (!Object.keys(colorsObj).length) {
-            bookmarksStore.deleteSyncStorageItem('bookmarkColors');
-        } else {
-            bookmarksStore.setSyncStorage({ bookmarkColors: colorsObj });
-        }
-
-        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'color', id: props.bookmark.id });
+        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.COLOR, id: props.bookmark.id });
     }
 
     onUnmounted(() => {
@@ -260,23 +243,6 @@
     onMounted(() => {
         emitter.on(EMITS.IMAGES_IMPORT, onImagesImportHandler);
         emitter.on(EMITS.ICON_UPDATE, onIconUpdateHandler);
-
-        if (props.bookmark.url) {
-            const colorItem = {
-                title: 'Color',
-                icon: mdiFormatColorFill,
-                event: EMITS.OPEN_COLOR_EDITOR,
-            };
-
-            const editItem = {
-                title: 'Edit',
-                icon: mdiRename,
-                event: EMITS.EDIT,
-            };
-
-            list.value.unshift(colorItem);
-            list.value.unshift(editItem);
-        }
 
         updateImage();
     });
@@ -291,10 +257,6 @@
         position: relative;
         // Own stacking context so inner z-indexes can't outrank a hovered sibling.
         z-index: 0;
-    }
-
-    .foldout {
-        margin-right: 4px;
     }
 
     .bookmark-link {

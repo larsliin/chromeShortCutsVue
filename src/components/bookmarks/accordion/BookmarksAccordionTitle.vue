@@ -1,6 +1,5 @@
 <template>
     <v-expansion-panel-title
-        ref="expansionPanelTitle"
         :color="color">
         <BookmarkFoldout
             :list="list"
@@ -46,7 +45,7 @@
                         :title="model"
                         :id="bookmark.id"
                         @cancel="showConfirmDelete = false"
-                        @confirm="onDeleteConfirm($event)" />
+                        @confirm="onDeleteConfirm()" />
                 </v-dialog>
                 <v-dialog
                     v-model="showColorEdit"
@@ -66,7 +65,7 @@
     import {
         computed, ref, onMounted, onUnmounted, nextTick, watch,
     } from 'vue';
-    import type { BookmarkNode } from '@/types/bookmark';
+    import type { BookmarkNode, FoldoutListItem } from '@/types/bookmark';
     import {
         mdiRename, mdiDragHorizontal, mdiDeleteOutline, mdiFormatColorFill,
     } from '@mdi/js';
@@ -77,19 +76,18 @@
     import BookmarkColorEdit
         from '@/components/forms/BookmarkColorEdit.vue';
 
-    import { EMITS } from '@/constants';
+    import { EMITS, STORAGE_KEYS } from '@/constants';
     import emitter from '@cmp/eventBus';
     import BookmarkFoldout from '@/components/fields/BookmarkFoldout.vue';
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
     import { flattenBookmarkLinks } from '@utils/bookmarkGroups';
+    import { getContrastColor } from '@utils/colorUtils';
 
     const utils = useBookmarkOps();
 
     const bookmarksStore = useBookmarksStore();
 
     const emits = defineEmits([
-        EMITS.DELETE,
-        EMITS.BOOKMARK_ADD,
         EMITS.BEFORE_DELETE,
     ]);
 
@@ -102,7 +100,7 @@
     const bookmarkCount = computed(() => flattenBookmarkLinks([props.bookmark]).length);
 
     // https://pictogrammers.com/library/mdi
-    const list = ref([
+    const list: FoldoutListItem[] = [
         {
             title: 'New Bookmark',
             icon: StarIcon,
@@ -123,10 +121,9 @@
             icon: mdiDeleteOutline,
             event: EMITS.DELETE,
         },
-    ]);
+    ];
 
     const input = ref();
-    const expansionPanelTitle = ref();
 
     function onBookmarkAdd() {
         emitter.emit(EMITS.BOOKMARK_ADD, props.bookmark.id);
@@ -134,61 +131,26 @@
 
     const showColorEdit = ref(false);
 
-    const selectedColor = ref();
-
     const color = ref();
     const inputBackgroundColor = ref('');
 
+    // Light text gets a dark backdrop and dark text gets a light one.
     function updateInputBackgroundColor() {
         if (input.value) {
-            const computedStyle = getComputedStyle(input.value);
-            const textColor = computedStyle.color;
-
-            // If text is light, use black background, otherwise use white background
-            const rgbMatch = textColor.match(/rgba?\((\d+),?\s*(\d+),?\s*(\d+)/);
-
-            if (rgbMatch) {
-                const r = parseInt(rgbMatch[1], 10);
-                const g = parseInt(rgbMatch[2], 10);
-                const b = parseInt(rgbMatch[3], 10);
-
-                // Simple luminance calculation
-                const luminance = (r + g + b) / 3;
-
-                // If text is light (white-ish), use black background
-                // If text is dark (black-ish), use white background
-                inputBackgroundColor.value = luminance > 127
-                    ? 'rgba(0, 0, 0, 0.6)'
-                    : 'rgba(255, 255, 255, 0.6)';
-            }
+            inputBackgroundColor.value = getContrastColor(getComputedStyle(input.value).color) === 'black'
+                ? 'rgba(0, 0, 0, 0.6)'
+                : 'rgba(255, 255, 255, 0.6)';
         }
     }
 
     async function onColorConfirm(event: string | null): Promise<void> {
-        selectedColor.value = event;
-
         showColorEdit.value = false;
 
-        const getColorsResponse = await bookmarksStore.getSyncStorage('folderColors');
-        const colorsObj = (getColorsResponse || {}) as Record<string, string>;
+        await bookmarksStore.saveColor(STORAGE_KEYS.FOLDER_COLORS, props.bookmark.id, event);
 
         const folder = bookmarksStore.bookmarks?.find((e) => e.id === props.bookmark.id);
-
-        if (event) {
-            colorsObj[props.bookmark.id] = selectedColor.value;
-            if (folder) folder.color = selectedColor.value;
-            color.value = selectedColor.value;
-        } else if (colorsObj[props.bookmark.id]) {
-            delete colorsObj[props.bookmark.id];
-            if (folder) folder.color = '';
-            color.value = null;
-        }
-
-        if (!Object.keys(colorsObj).length) {
-            bookmarksStore.deleteSyncStorageItem('folderColors');
-        } else {
-            bookmarksStore.setSyncStorage({ folderColors: colorsObj });
-        }
+        if (folder) folder.color = event ?? '';
+        color.value = event;
 
         // Update input background color after color change
         await nextTick();
@@ -205,7 +167,7 @@
         showConfirmDelete.value = true;
     }
 
-    async function onDeleteConfirm(_event?: unknown): Promise<void> {
+    async function onDeleteConfirm(): Promise<void> {
         emits(EMITS.BEFORE_DELETE);
 
         await nextTick();
@@ -213,13 +175,7 @@
         // close confirmation dialogue
         showConfirmDelete.value = false;
 
-        // get updated bookmark folder index
-        const bookmarkResponse = await bookmarksStore.getBookmarkById(props.bookmark.id);
-        const bookmark = bookmarkResponse;
-
-        utils.deleteBookmarkFolder(bookmarkResponse);
-
-        emits(EMITS.DELETE, { id: props.bookmark.id, index: bookmark.index });
+        utils.deleteBookmarkFolder(props.bookmark);
     }
 
     function onInputClick(event: MouseEvent): void {
@@ -248,7 +204,7 @@
     }
 
     async function updateColor() {
-        const getColorResponse = await bookmarksStore.getSyncStorage('folderColors');
+        const getColorResponse = await bookmarksStore.getSyncStorage(STORAGE_KEYS.FOLDER_COLORS);
 
         if (getColorResponse) {
             color.value = (getColorResponse as Record<string, string>)[props.bookmark.id];
