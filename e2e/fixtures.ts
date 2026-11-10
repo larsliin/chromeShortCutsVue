@@ -9,13 +9,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const pathToExtension = path.join(__dirname, '..', 'dist');
+const pathToExtension = path.join(__dirname, '..', 'dist-extension');
 
 // ---------------------------------------------------------------------------
-// Custom fixture types
-// Worker-scoped: extensionContext + extensionId are shared across all tests in
-// a worker (one cold-start per suite run instead of one per test).
-// Test-scoped: extensionPage is recreated fresh for every test.
+// Custom fixture types: shared worker state and per-test page state.
 // ---------------------------------------------------------------------------
 
 interface WorkerFixtures {

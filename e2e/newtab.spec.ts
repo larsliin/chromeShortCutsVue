@@ -14,9 +14,7 @@ import {
 // ---------------------------------------------------------------------------
 
 /**
- * Wait for the app to finish initialising (add-button visible = init complete).
- * .toolbar has height:0 by design so we target the first button inside it.
- * 20 s covers the cold-start of a fresh Chrome profile on first run.
+ * Wait for the app to finish loading. The toolbar button is the readiness signal.
  */
 async function waitForAppReady(page: import('@playwright/test').Page) {
     await expect(page.locator('.toolbar-add-button')).toBeVisible({ timeout: 20_000 });
@@ -103,16 +101,24 @@ test.describe('Settings dialog', () => {
     test('opens when settings button is clicked', async ({ extensionPage }) => {
         await extensionPage.locator('.toolbar-settings-button').click();
 
-        await expect(extensionPage.getByText('Settings')).toBeVisible();
+        // The dialog is teleported to body; wait for specific content to appear
+        // "Prefer dark mode" is a distinctive label that appears in the settings form
+        await expect(extensionPage.getByText('Prefer dark mode')).toBeVisible({ timeout: 10_000 });
     });
 
     test('closes when Close is clicked', async ({ extensionPage }) => {
         await extensionPage.locator('.toolbar-settings-button').click();
-        await expect(extensionPage.getByText('Settings')).toBeVisible();
 
-        await extensionPage.getByRole('button', { name: 'Close' }).click();
+        // Wait for the settings form to be visible
+        await expect(extensionPage.getByText('Prefer dark mode')).toBeVisible({ timeout: 10_000 });
 
-        await expect(extensionPage.getByText('Settings')).not.toBeVisible({ timeout: 5_000 });
+        // Click the Close button (there are two Close buttons on the page in error dialog, get the visible one)
+        const closeButtons = extensionPage.getByRole('button', { name: /^Close$/ });
+        const firstVisibleClose = closeButtons.first();
+        await firstVisibleClose.click();
+
+        // Wait for the settings form to disappear
+        await expect(extensionPage.getByText('Prefer dark mode')).not.toBeVisible({ timeout: 10_000 });
     });
 
     test('dark mode switch is present', async ({ extensionPage }) => {

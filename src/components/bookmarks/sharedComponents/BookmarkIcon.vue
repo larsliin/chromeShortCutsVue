@@ -3,8 +3,7 @@
         :style="{ backgroundColor: color }"
         :class="{ dimmed: folder, dark: bookmarksStore.enableDarkMode }">
         <span
-            class="visibility-toggle"
-            :class="{ hide }">
+            class="visibility-toggle">
             <v-icon v-if="folder"
                 :icon="mdiFolderOpen" />
             <template v-else-if="image">
@@ -12,11 +11,10 @@
                 <span class="bookmark-image"
                     :style="{ 'background-image': `url(${image})` }"></span>
             </template>
-            <BIconStarFill v-else />
+            <StarIcon v-else-if="allowFallbackIcon" />
             <span
                 v-if="loading">
-                <div class="lds-ring"
-                    :class="{ dark: bookmarksStore.enableDarkMode }">
+                <div class="lds-ring">
                     <div></div>
                     <div></div>
                     <div></div>
@@ -29,7 +27,7 @@
 
 <script setup lang="ts">
     import { mdiFolderOpen } from '@mdi/js';
-    import { BIconStarFill } from 'bootstrap-icons-vue';
+    import StarIcon from '@/components/bookmarks/sharedComponents/StarIcon.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
 
     const bookmarksStore = useBookmarksStore();
@@ -37,12 +35,16 @@
     interface Props {
         color?: string;
         folder?: boolean;
-        hide?: boolean;
         image?: string | null;
         loading?: boolean;
+        allowFallbackIcon?: boolean;
     }
 
-    withDefaults(defineProps<Props>(), { color: '', image: null });
+    withDefaults(defineProps<Props>(), {
+        color: '',
+        image: null,
+        allowFallbackIcon: true,
+    });
 </script>
 
 <style scoped lang="scss">
@@ -57,12 +59,8 @@
         width: 100%;
     }
 
-    .hide {
-        opacity: 0;
-    }
-
     .lds-ring {
-        background-color: rgba(255, 255, 255, 0.8);
+        background-color: rgba(var(--v-theme-bookmark-surface), 0.8);
         display: inline-block;
         height: 100%;
         left: 0;
@@ -70,10 +68,6 @@
         top: 0;
         width: 100%;
         z-index: 1;
-
-        &.dark {
-            background-color: rgba(var(--darkmode-rgb-300), .8)
-        }
     }
 
     .lds-ring div {
@@ -126,22 +120,21 @@
     .bookmark-image-container {
         align-items: center;
         aspect-ratio: 1;
-        background-color: #fff;
-        border-radius: 10px;
+        background-color: rgb(var(--v-theme-bookmark-surface));
+        border-radius: 11.11%;
         box-shadow: 0px 0 20px 0px rgba(0, 0, 0, 0.15);
-        color: var(--yellow);
+        color: var(--green);
         display: flex;
         font-size: 50px;
         justify-content: center;
         overflow: hidden;
-        padding: 8px;
+        padding: 8.89%;
         position: relative;
         transform-origin: center right;
         transition: transform 0.05s;
         width: 90px;
 
         &.dark {
-            background-color: var(--darkmode-300);
             box-shadow: none;
         }
 
@@ -154,7 +147,7 @@
         background-position: center;
         background-repeat: no-repeat;
         background-size: contain;
-        border-radius: 7px;
+        border-radius: 7.78%;
         display: block;
         height: 100%;
         width: 100%;

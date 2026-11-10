@@ -3,10 +3,14 @@
         <v-row>
             <v-col
                 cols="12">
-                <BookmarkIcon
-                    :loading="isIconLoading"
-                    :color="color ?? undefined"
-                    :image="base64Image" />
+                <span
+                    class="icon-preview"
+                    :class="effectiveSize">
+                    <BookmarkIcon
+                        :loading="isIconLoading"
+                        :color="color ?? undefined"
+                        :image="base64Image" />
+                </span>
             </v-col>
         </v-row>
         <v-row>
@@ -18,72 +22,36 @@
                     id="inp_image"
                     accept=".jpg, .jpeg, .gif, .png, .svg"
                     @change="onImageInpChange($event)" />
-                <v-tooltip
-                    location="top center"
-                    origin="auto"
-                    open-delay="600"
-                    transition="none"
-                    text="Upload image">
-                    <template v-slot:activator="{ props: tooltipProps }">
-                        <v-btn
-                            class="mr-3 mb-3"
-                            color="blue-darken-1"
-                            variant="tonal"
-                            :icon="mdiFolderOpen"
-                            v-bind="tooltipProps"
-                            @click="onClickFindImage()" />
-                    </template>
-                </v-tooltip>
-                <v-tooltip
-                    location="top center"
-                    origin="auto"
-                    open-delay="600"
-                    transition="none"
-                    text="Auto-generate icon based on URL">
-                    <template v-slot:activator="{ props: tooltipProps }">
-                        <v-btn
-                            class="mr-3 mb-3"
-                            color="blue-darken-1"
-                            variant="tonal"
-                            :icon="mdiCloudDownload"
-                            :disabled="!url"
-                            v-bind="tooltipProps"
-                            @click="getClearbitImage()" />
-                    </template>
-                </v-tooltip>
-                <v-tooltip
-                    location="top center"
-                    origin="auto"
-                    open-delay="600"
-                    transition="none"
-                    text="Pick background color">
-                    <template v-slot:activator="{ props: tooltipProps }">
-                        <v-btn
-                            class="mr-3 mb-3"
-                            color="blue-darken-1"
-                            variant="tonal"
-                            :icon="mdiFormatColorFill"
-                            v-bind="tooltipProps"
-                            @click="emits(EMITS.OPEN_COLOR_EDITOR)" />
-                    </template>
-                </v-tooltip>
-                <v-tooltip
-                    location="top center"
-                    origin="auto"
-                    open-delay="600"
-                    transition="none"
-                    text="Clear icon and background color">
-                    <template v-slot:activator="{ props: tooltipProps }">
-                        <v-btn
-                            class="mb-3"
-                            color="red"
-                            variant="tonal"
-                            :icon="mdiClose"
-                            :disabled="!base64Image && !color"
-                            v-bind="tooltipProps"
-                            @click="onClearImage()" />
-                    </template>
-                </v-tooltip>
+                <TooltipButton
+                    class="mr-3 mb-3"
+                    color="blue-darken-1"
+                    variant="tonal"
+                    text="Upload image"
+                    :icon="mdiFolderOpen"
+                    @click="onClickFindImage()" />
+                <TooltipButton
+                    class="mr-3 mb-3"
+                    color="blue-darken-1"
+                    variant="tonal"
+                    text="Auto-generate icon based on URL"
+                    :icon="mdiCloudDownload"
+                    :disabled="!url"
+                    @click="getClearbitImage()" />
+                <TooltipButton
+                    class="mr-3 mb-3"
+                    color="blue-darken-1"
+                    variant="tonal"
+                    text="Pick background color"
+                    :icon="mdiFormatColorFill"
+                    @click="emits(EMITS.OPEN_COLOR_EDITOR)" />
+                <TooltipButton
+                    class="mb-3"
+                    color="red"
+                    variant="tonal"
+                    text="Clear icon and background color"
+                    :icon="mdiClose"
+                    :disabled="!base64Image && !color"
+                    @click="onClearImage()" />
             </v-col>
             <v-col cols="12">
                 <template v-if="showClearbitError && bookmarksStore.popup">
@@ -98,14 +66,16 @@
 </template>
 
 <script setup lang="ts">
-    import { ref, watch } from 'vue';
+    import { ref, watch, computed } from 'vue';
     import { mdiFormatColorFill, mdiFolderOpen, mdiCloudDownload, mdiClose } from '@mdi/js';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
+    import TooltipButton from '@/components/fields/TooltipButton.vue';
     import { getDomainFromUrl, isValidURL, getBase64ImageFromUrl } from '@utils/urlUtils';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS, LOGO_GENERATOR } from '@/constants';
 
     const bookmarksStore = useBookmarksStore();
+    const effectiveSize = computed(() => `icon-${bookmarksStore.iconSize}`);
 
     interface Props {
         data?: { url?: string };
@@ -161,20 +131,16 @@
         showClearbitError.value = false;
     }
 
-    async function getBase64Data(file: File): Promise<string | ArrayBuffer | null> {
-        const base64Data = await bookmarksStore.toBase64(file);
-        return base64Data;
-    }
-
-    const imageFile = ref();
     let init = false;
 
     async function onImageInpChange(event: Event): Promise<void> {
-        const input = event.target as HTMLInputElement;
-        imageFile.value = input.files?.[0];
+        const file = (event.target as HTMLInputElement).files?.[0];
 
-        const base64Response = await getBase64Data(imageFile.value);
-        base64Image.value = base64Response;
+        if (!file) {
+            return;
+        }
+
+        base64Image.value = await bookmarksStore.toBase64(file);
 
         emits(EMITS.UPDATE, base64Image.value);
     }
@@ -200,6 +166,43 @@
 <style scoped lang="scss">
     .inp-file {
         display: none;
+    }
+
+    .icon-preview {
+        display: inline-flex;
+    }
+
+    .icon-preview.icon-small {
+        :deep(.bookmark-image-container) {
+            width: 56px;
+            padding: 7.14%;
+            border-radius: 12.5%;
+            font-size: 34px;
+        }
+
+        :deep(.bookmark-image) {
+            border-radius: 8.93%;
+        }
+    }
+
+    .icon-preview.icon-medium {
+        :deep(.bookmark-image-container) {
+            width: 82px;
+            padding: 7.32%;
+        }
+    }
+
+    .icon-preview.icon-large {
+        :deep(.bookmark-image-container) {
+            width: 108px;
+            padding: 7.41%;
+            border-radius: 12.96%;
+            font-size: 66px;
+        }
+
+        :deep(.bookmark-image) {
+            border-radius: 9.26%;
+        }
     }
 
     .clearbit-error {

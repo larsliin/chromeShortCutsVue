@@ -1,14 +1,12 @@
-// Pure Chrome API wrappers — no store state dependencies.
-// Each function wraps exactly one Chrome API call, checks lastError,
-// and returns a Promise. Import with: import * as chromeApi from '@cmp/chromeApi'
+// Pure Chrome API wrappers with no store dependency.
+// Each helper wraps one API call and checks lastError.
 
 // ─── Bookmarks ────────────────────────────────────────────────────────────────
 
-export function getBookmarkSubTree(
-    id: string,
-): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
+// Wraps a callback-style Chrome API call and rejects on chrome.runtime.lastError.
+function callChrome<T>(invoke: (callback: (result: T) => void) => void): Promise<T> {
     return new Promise((resolve, reject) => {
-        chrome.bookmarks.getSubTree(id, (result) => {
+        invoke((result) => {
             if (chrome.runtime.lastError) {
                 reject(new Error(chrome.runtime.lastError.message));
                 return;
@@ -16,106 +14,79 @@ export function getBookmarkSubTree(
             resolve(result);
         });
     });
+}
+
+export function getBookmarkSubTree(
+    id: string,
+): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
+    return callChrome((callback) => chrome.bookmarks.getSubTree(id, callback));
 }
 
 export function getBookmarkById(
     id: string,
 ): Promise<chrome.bookmarks.BookmarkTreeNode> {
-    return new Promise((resolve, reject) => {
-        chrome.bookmarks.get(id, (result) => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-                return;
-            }
-            if (result && result.length > 0) {
-                resolve(result[0]);
-            } else {
-                reject(new Error('Bookmark not found'));
-            }
-        });
+    return callChrome<chrome.bookmarks.BookmarkTreeNode[]>(
+        (callback) => chrome.bookmarks.get(id, callback),
+    ).then((result) => {
+        if (!result?.length) {
+            throw new Error('Bookmark not found');
+        }
+        return result[0];
     });
 }
 
+export function getBookmarkByIdOrNull(
+    id: string,
+): Promise<chrome.bookmarks.BookmarkTreeNode | null> {
+    return getBookmarkById(id).catch(() => null);
+}
+
 export function getBookmarkTree(): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
-    return new Promise((resolve, reject) => {
-        chrome.bookmarks.getTree((result) => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-                return;
-            }
-            resolve(result);
-        });
-    });
+    return callChrome((callback) => chrome.bookmarks.getTree(callback));
 }
 
 export function createBookmark(
     parentId: string,
     title: string,
     url?: string,
+    index?: number,
 ): Promise<chrome.bookmarks.BookmarkTreeNode> {
-    return new Promise((resolve, reject) => {
-        chrome.bookmarks.create({ parentId: parentId.toString(), title, url }, (bookmark) => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-                return;
-            }
-            resolve(bookmark);
-        });
-    });
+    const bookmarkData: chrome.bookmarks.CreateDetails = { parentId, title, url };
+
+    if (index !== undefined) {
+        bookmarkData.index = index;
+    }
+
+    return callChrome((callback) => chrome.bookmarks.create(bookmarkData, callback));
 }
 
 export function updateBookmark(
     id: string,
     data: { title?: string; url?: string },
 ): Promise<chrome.bookmarks.BookmarkTreeNode> {
-    return new Promise((resolve, reject) => {
-        chrome.bookmarks.update(id, { title: data.title, url: data.url }, (bookmark) => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-                return;
-            }
-            resolve(bookmark);
-        });
-    });
+    return callChrome((callback) => chrome.bookmarks.update(
+        id,
+        { title: data.title, url: data.url },
+        callback,
+    ));
 }
 
 export function moveBookmark(
     id: string,
     destination: { parentId?: string; index?: number },
 ): Promise<void> {
-    return new Promise((resolve, reject) => {
-        chrome.bookmarks.move(id, destination, () => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-                return;
-            }
-            resolve();
-        });
-    });
+    return callChrome<unknown>((callback) => chrome.bookmarks.move(id, destination, callback))
+        .then(() => undefined);
 }
 
-export function removeBookmark(id: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        chrome.bookmarks.remove(id, () => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-                return;
-            }
-            resolve(id);
-        });
-    });
+export async function removeBookmark(id: string): Promise<string> {
+    await callChrome<void>((callback) => chrome.bookmarks.remove(id, callback));
+    return id;
 }
 
-export function removeBookmarkTree(id: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        chrome.bookmarks.removeTree(id, () => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-                return;
-            }
-            resolve(id);
-        });
-    });
+export async function removeBookmarkTree(id: string): Promise<string> {
+    await callChrome<void>((callback) => chrome.bookmarks.removeTree(id, callback));
+    return id;
 }
 
 // ─── Storage: Local ──────────────────────────────────────────────────────────
@@ -125,7 +96,7 @@ export function setLocalStorage(storageObj: Record<string, unknown>): Promise<vo
 }
 
 export function getLocalStorage(key: string): Promise<unknown> {
-    return chrome.storage.local.get(key.toString()).then((result) => result[key]);
+    return chrome.storage.local.get(key).then((result) => result[key]);
 }
 
 export function getAllLocalStorage(): Promise<Record<string, unknown>> {
@@ -133,15 +104,7 @@ export function getAllLocalStorage(): Promise<Record<string, unknown>> {
 }
 
 export function deleteLocalStorageItem(id: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-        chrome.storage.local.remove([id], () => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-                return;
-            }
-            resolve();
-        });
-    });
+    return callChrome<void>((callback) => chrome.storage.local.remove([id], callback));
 }
 
 // ─── Storage: Sync ───────────────────────────────────────────────────────────
@@ -151,19 +114,11 @@ export function setSyncStorage(storageObj: Record<string, unknown>): Promise<voi
 }
 
 export function getSyncStorage(key: string): Promise<unknown> {
-    return chrome.storage.sync.get(key.toString()).then((result) => result[key]);
+    return chrome.storage.sync.get(key).then((result) => result[key]);
 }
 
 export function deleteSyncStorageItem(id: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-        chrome.storage.sync.remove([id], () => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-                return;
-            }
-            resolve();
-        });
-    });
+    return callChrome<void>((callback) => chrome.storage.sync.remove([id], callback));
 }
 
 // ─── Pure Utilities ───────────────────────────────────────────────────────────

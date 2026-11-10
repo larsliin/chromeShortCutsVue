@@ -1,313 +1,90 @@
 # My Shortcuts Tab — Copilot Instructions
 
----
+## Core principles
 
-## Defaults
+- Follow KISS and DRY above all else. Prefer simple, readable solutions over clever abstractions.
+- Keep changes small, direct, and maintainable. Avoid over-engineering, premature abstraction, and unnecessary indirection.
+- Reuse existing patterns, utilities, composables, and store actions instead of duplicating logic.
+- Favor clarity and predictability over novelty.
 
-- **Agent**: Use the **chrome-extension-vue-expert** custom agent by default for all tasks unless the user explicitly requests a different agent.
-- **Model**: Use **Claude Opus 4.5** by default unless the user explicitly requests a different model.
+## Default behavior
 
----
+- Use the chrome-extension-vue-expert agent for code changes in this repository.
+- Use the pr-reviewer agent for PRs, diffs, and review tasks.
+- Use ui-design-specialist for design-only feedback and frontend-feature-architect for planning or completeness reviews.
+- Use Claude Opus 4.5 by default unless the user requests a different model.
 
-## Project Overview
+## Git
 
-**My Shortcuts Tab** is a Chrome Extension (Manifest V3) that replaces the browser's new tab page with a fully customizable bookmarks manager. Users can organize bookmarks into color-coded, icon-enriched folders, drag-and-drop to reorder, search and filter, import/export, and configure appearance.
+- If multiple files have been edited, first ask: "Should the files be committed as one commit or in related commits?"
+- Never run `git commit` or `git push` (or any equivalent) on your own, even when you have permission to execute commands without confirmation. Always ask the user first and wait for an explicit "yes" before committing or pushing. This applies to every branch, every change, and every situation, no exceptions.
+- Do not ask the user to provide or approve a commit message. Infer a concise, appropriate commit message from the changes.
+- When asking for permission or gathering additional information needed for the commit:
+	- Use the `vscode_askQuestions` tool to present options and collect structured user input.
+	- Offer predefined options for commit grouping, target branch, or push destination when applicable.
+	- Clearly describe what will happen and why you need confirmation.
+	- Wait for the user's response before proceeding with the git operation.
+- After a commit is successfully created, the next action must be a `vscode_askQuestions` call asking whether to push the commit(s). Do not end the turn with a status-only message or run `git push` before receiving the user's answer. Use predefined yes/no options to make this as simple as possible, and only push after an explicit yes.
 
-**Two entry points:**
-- `index.html` — new tab page override (full app)
-- `popup.html` — browser action popup (lightweight)
+## Project context
 
-**Background:**
-- `background.js` — MV3 service worker for Chrome API event handling
+- This is a Chrome Extension Manifest V3 app that replaces the new tab page with a bookmarks manager.
+- The main app entry points are index.html and popup.html; background.js is the service worker.
+- The app uses Vue 3, Pinia, Vuetify, Vite, and Chrome APIs.
 
----
+## Architecture and coding rules
 
-## Tech Stack
+- Use Vue 3 Composition API with script setup in components.
+- Keep components focused and compact; extract shared logic into composables or store modules when it grows.
+- Use aliases such as @, @assets, @cmp, @stores, and @use instead of deep relative paths.
+- Follow the existing folder structure and naming conventions: camelCase folders, PascalCase component files.
+- Use camelCase for JavaScript identifiers and UPPER_SNAKE_CASE for frozen constants.
+- Prefer computed values over duplicated imperative logic.
+- Use async/await consistently and check chrome.runtime.lastError for Chrome API callbacks.
+- Keep comments rare and meaningful; avoid commenting obvious code.
+- Keep comments short and concise; do not write comments that span more than two lines.
+- Use single-line // comments only; never use /* */ or /** */ block comments.
 
-| Layer | Technology |
-|-------|-----------|
-| UI framework | Vue 3 (Composition API, `<script setup>`) |
-| State management | Pinia |
-| Component library | Vuetify 3 |
-| Build tool | Vite 5 + `@crxjs/vite-plugin` |
-| Drag and drop | `vuedraggable` |
-| Form validation | `@vuelidate/core` + `@vuelidate/validators` |
-| Reactive utilities | `@vueuse/core` |
-| Event bus | `mitt` |
-| ID generation | `uuid` |
-| Utilities | `lodash` (prefer native JS where possible) |
-| Icons | `@mdi/js`, `bootstrap-icons-vue` |
-| Styling | SCSS (modern-compiler) + scoped component styles |
-| Linter | ESLint (Airbnb + Vue 3 rules) |
+## State and shared logic
 
----
+- Keep shared strings and config in src/constants.
+- Keep Pinia state in the store index, actions in _actions.js, and derived values in _getters.js.
+- Add new store logic to the appropriate store module instead of scattering it across components.
+- Use mitt with EMITS constants for cross-component events.
+- Avoid custom event systems or ad-hoc state patterns when an existing solution already fits.
+- Keep the store usage simple: call useBookmarksStore() once per file and keep derived state in getters instead of components.
 
-## Project Structure
+## Chrome extension patterns
 
-```
-src/
-├── App.vue                          # New tab root component
-├── AppPopup.vue                     # Popup root component
-├── main.js                          # App bootstrap (Vue + Pinia + Vuetify)
-├── constants.js                     # All shared constants (FOLDER, EMITS, FILE_NAMES, LOGO_GENERATOR, ARGS)
-├── style.css                        # Global base styles
-├── models/
-│   └── Folder.js                    # UiFolder class (label, name, parentFolderType)
-├── views/
-│   └── BookmarksView.vue            # Main view — Chrome event listeners, bookmark tree rendering
-├── components/
-│   ├── bookmarks/
-│   │   ├── accordion/               # Folder accordion (expand/collapse, drag-and-drop)
-│   │   └── sharedComponents/        # BookmarkLink, tooltip, shared bookmark UI
-│   ├── fields/                      # Reusable input fields
-│   ├── forms/                       # BookmarkCreateForm, BookmarkSettingsForm, etc.
-│   ├── navigation/                  # Navigation bar components
-│   └── toolbar/                     # Top toolbar components
-└── shared/
-    ├── assets/                      # Images, icons
-    ├── composables/                 # Shared composables (utils.js, eventBus.js)
-    ├── stores/
-    │   └── bookmarks/
-    │       ├── index.js             # Store definition + state
-    │       ├── _actions.js          # All store actions (Chrome API calls, CRUD)
-    │       └── _getters.js          # Computed/derived state (keep populated)
-    └── use/                         # (reserved for composables)
-```
+- Treat service worker state as ephemeral; persist anything that must survive reloads with chrome.storage.local or chrome.storage.sync.
+- Register Chrome listeners at the top level and clean them up in onUnmounted.
+- Centralize Chrome callback-to-promise wrapping in the shared chrome API utility instead of duplicating wrappers.
 
----
+## UI and implementation rules
 
-## Path Aliases
+- Use Vuetify theming via useTheme() and the theme prop on v-app.
+- Avoid direct DOM manipulation in components. Prefer reactive state and Vue bindings.
+- Keep styles scoped and use existing design patterns instead of introducing one-off styling approaches.
+- Prefer accessible, simple UI behavior that is easy to understand and maintain.
 
-Always use aliases. Never use relative paths that traverse more than one level.
+## Quality bar
 
-| Alias | Resolves to |
-|-------|-------------|
-| `@` | `src/` |
-| `@assets` | `src/shared/assets/` |
-| `@cmp` | `src/shared/composables/` |
-| `@stores` | `src/shared/stores/` |
-| `@use` | `src/shared/use/` |
+- Write the smallest change that solves the problem well.
+- Reuse existing utilities and conventions before introducing new abstractions.
+- Keep comments rare and meaningful; avoid commenting obvious code.
+- Follow the project’s linting and formatting rules.
 
----
+## Testing and docs
 
-## Code Style
-
-### Comments
-- Comments must always be on their **own line** — never trailing inline after code
-- Only comment non-obvious logic — do not comment self-explanatory code
-- Never delete comments that explain magic numbers, config values, or non-obvious constants
-- Use single-line `//` comments only — never `/* */` or `/** */` blocks
-- Avoid decorative separators (e.g. `// ----------` banner lines) — let whitespace and section structure speak for themselves
-- Do not overdo comments — fewer, well-placed comments are better than many obvious ones
-
-### Formatting
-- **4-space indentation** (enforced by ESLint)
-- `camelCase` for all JavaScript identifiers — no `snake_case` in function or variable names
-- `PascalCase` for Vue components and class names
-- `UPPER_SNAKE_CASE` for frozen constant objects (e.g. `EMITS`, `FOLDER`, `FILE_NAMES`)
-
-### Vue
-- Always use **Composition API with `<script setup>`** — never Options API
-- Use `defineProps`, `defineEmits`, `defineExpose` — never `this`
-- Prefer `computed()` over methods for derived values
-- Keep components under ~150 lines; extract logic to composables or store actions when they grow
-
-### Async
-- Use `async/await` throughout — never mix `Promise.then().catch()` chains with `await` in the same function
-- Every Chrome API callback must check `chrome.runtime.lastError`
-
----
-
-## Constants
-
-All shared strings and configuration values live in `src/constants.js`. **Never hardcode** event names, folder type strings, file name strings, or configuration values inline.
-
-Key constants:
-- `FOLDER.ROOT` — the root `UiFolder` model (parentFolderType: `'bookmarks-bar'`)
-- `EMITS.*` — all event bus and component emit names
-- `FILE_NAMES.*` — export file name prefixes
-- `LOGO_GENERATOR.*` — logo API domain and token
-- `ARGS.*` — shared argument string values
-
-When adding a new string used in more than one place, add it to `constants.js` first.
-
----
-
-## State Management (Pinia)
-
-### Store location
-`src/shared/stores/bookmarks/`
-
-### File responsibilities
-| File | Purpose |
-|------|---------|
-| `index.js` | Store definition (`defineStore`) and **state** only |
-| `_actions.js` | All **actions** — Chrome API calls, CRUD, storage operations |
-| `_getters.js` | All **getters** — computed/derived values from state |
-
-### Rules
-- Declare new state properties in `index.js`
-- Add new actions in `_actions.js` — never directly in a component
-- Add new computed/derived values in `_getters.js` — never scatter `computed()` logic across components
-- Call `useBookmarksStore()` **once per file**, at the top of the setup function — never call it multiple times in the same file
-
-### Store state reference
-```js
-accordionModel       // active open accordion panels
-accordionNavigation  // accordion keyboard nav enabled
-bookmarks            // flat/tree bookmark data
-bookmarkSearch       // active filter string
-dialogOpen           // global dialog visibility
-dragStart            // drag-and-drop in progress
-editBase64Image      // image data for icon editor
-enableDarkMode       // user dark mode preference
-enablePreferDarkMode // prefer-dark-mode toggle
-enableSystemDarkMode // follow system dark mode
-folderColors         // folder color feature enabled
-icons                // icon map keyed by bookmark ID
-isImporting          // import operation in progress
-popup                // running in popup context
-rootElem             // root DOM element ref
-rootId               // Chrome bookmarks root node ID
-sliderIndex          // active slider/tab index
-statistics           // bookmark usage statistics
-titleInputActive     // folder title input is focused
-transition           // animations enabled
-transitionDisabled   // animations force-disabled
-bookmarksBarId       // Chrome bookmarks bar folder ID
-```
-
----
-
-## Event Bus
-
-The event bus uses **`mitt`** (already installed). Use it for cross-component communication that does not belong in the store.
-
-All event names must come from `EMITS` in `src/constants.js` — never hardcode event name strings.
-
-The emitter instance is injected globally in `main.js` as `app.config.globalProperties.$emitter`. In composables or setup functions, inject it via `inject('emitter')` or import the instance directly.
-
-**Do not** roll a custom event bus using `Map`, `ref`, or raw watchers. Use `mitt`.
-
----
-
-## Chrome Extension Patterns
-
-### Manifest V3 constraints
-- Background scripts are **service workers** — they can be suspended; never rely on module-level variables surviving across events
-- Use `chrome.storage.local` or `chrome.storage.sync` for any state that must persist across worker restarts
-- Register **all** Chrome event listeners at the **top level** of `background.js` — never nest a listener registration inside another listener callback
-
-### Listener cleanup in Vue components
-Every `chrome.*` event listener added in `onMounted` must be removed in `onUnmounted`:
-
-```js
-onMounted(() => {
-    chrome.bookmarks.onCreated.addListener(onCreated)
-    chrome.bookmarks.onRemoved.addListener(onRemoved)
-})
-
-onUnmounted(() => {
-    chrome.bookmarks.onCreated.removeListener(onCreated)
-    chrome.bookmarks.onRemoved.removeListener(onRemoved)
-})
-```
-
-### Chrome API error handling
-Always check `chrome.runtime.lastError` inside every Chrome API callback — failures are silently swallowed otherwise:
-
-```js
-chrome.storage.sync.get(['key'], (result) => {
-    if (chrome.runtime.lastError) {
-        console.error(chrome.runtime.lastError)
-        return
-    }
-    // use result
-})
-```
-
-### Chrome API promise wrappers
-Wrap Chrome callbacks in promises in a **single shared utility** (e.g. `src/shared/composables/chromeApi.js`) — never inline `new Promise` wrappers repeatedly in `_actions.js`.
-
----
-
-## Vuetify & Theming
-
-- Set dark/light mode via the `theme` prop on `<v-app>` using Vuetify's `useTheme()` composable
-- **Never** toggle dark mode with direct `document.documentElement.classList` or `document.body.classList` manipulation
-- When checking color contrast (luminance calculations), cache the `getComputedStyle(el)` result — do not call it on every keystroke or focus event
-
----
-
-## Component Conventions
-
-### Folder naming
-- **Component folders**: camelCase (e.g. `bookmarks/accordion/`, `forms/`)
-- **Component files**: PascalCase (e.g. `BookmarksAccordion.vue`, `BookmarkLink.vue`)
-
-### DOM manipulation
-**Never** use `document.querySelector`, `document.getElementsByTagName`, or direct `classList` manipulation inside Vue components. Use reactive state and Vue class/style bindings instead.
-
-### Props & emits
-- Define all props with `defineProps`
-- Define all emits with `defineEmits`
-- All emit names must reference `EMITS` constants — never raw strings
-
----
+- Add or update tests alongside behavior changes.
+- Keep README in sync whenever tests are added, removed, or changed.
+- Prefer existing test patterns and real behavior over brittle mock-heavy tests.
 
 ## Commands
 
-```bash
-# Development (hot reload via CRXJS)
-npm run dev
-
-# Production build → dist/
-npm run build
-
-# Lint and auto-fix
-npm run lint
-```
-
-Load the extension in Chrome: open `chrome://extensions`, enable Developer Mode, click **Load unpacked**, select the `dist/` folder.
-
-
----
-
-## Documentation
-
-### README
-
-`README.md` is the single source of truth for the project's test suite documentation. **Always update `README.md`** whenever tests are:
-
-- **Added** — document the new test file and describe each test group and what it covers
-- **Removed** — remove the corresponding section from `README.md`
-- **Updated** — keep the table rows and descriptions in sync with the actual test names and behaviour
-
-This rule applies to both unit tests (`src/test/`) and E2E tests (`e2e/`). A test change is not complete until `README.md` reflects it.
-
----
-
-## Workflow Rules
-
-- **Never commit changes without asking the user first.** Always present a summary of what will be committed and wait for explicit approval before running any `git commit` command.
-
-
----
-
-## Known Patterns to Follow
-
-| Pattern | How to do it |
-|---------|-------------|
-| Shared string/config | Add to `src/constants.js` |
-| Derived state | Add getter to `_getters.js` |
-| Chrome API call | Add action to `_actions.js`, check `lastError` |
-| Chrome callback → Promise | Wrap once in `src/shared/composables/chromeApi.js` |
-| Cross-component event | Use `mitt` with an `EMITS.*` constant |
-| Repeated folder traversal | One `searchFolder()` utility, imported everywhere |
-| Color management | One store action, called from all components |
-| Dark mode toggle | `useTheme()` from Vuetify |
-| Magic number / timeout | Named constant in `constants.js` |
-| Test added / updated / removed | Update README.md test suite section to match |
+- npm run dev to rebuild dist-extension/ on every file change (watch build, no hot reload)
+- npm run build:extension to build the extension into dist-extension/ (load it unpacked in Chrome)
+- npm run lint for linting and auto-fixes
 
 ## Known Anti-Patterns to Avoid
 

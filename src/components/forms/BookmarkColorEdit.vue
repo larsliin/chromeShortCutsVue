@@ -48,11 +48,8 @@
 </template>
 
 <script setup lang="ts">
-    import { onMounted, onUnmounted, ref } from 'vue';
+    import { onMounted, ref } from 'vue';
     import { EMITS } from '@/constants';
-    import { useBookmarksStore } from '@stores/bookmarks';
-
-    const bookmarksStore = useBookmarksStore();
 
     interface Props {
         value?: string;
@@ -92,12 +89,6 @@
         color.value = props.value;
 
         hasColor.value = !!props.value;
-
-        bookmarksStore.dialogOpen = true;
-    });
-
-    onUnmounted(() => {
-        bookmarksStore.dialogOpen = false;
     });
 </script>
 <style lang="scss" scoped>

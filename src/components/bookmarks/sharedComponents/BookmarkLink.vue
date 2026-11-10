@@ -1,6 +1,10 @@
 <template>
     <span class="bookmark relative inline-block"
-        :class="{ 'foldout-open': isFoldoutOpen }">
+        :class="[attrs.class, effectiveSize, { 'foldout-open': isFoldoutOpen, 'drag-active': bookmarksStore.dragStart, expanded }]"
+        :style="{
+            '--bookmark-surface-bg': color || 'rgb(var(--v-theme-bookmark-surface))',
+            '--popup-menu-icon-color': popupMenuIconColor,
+        }">
         <span class="handle">
             <a
                 v-bind="props"
@@ -16,15 +20,16 @@
                 @click="onClick($event)">
                 <BookmarkIcon
                     :color="color ?? undefined"
-                    :hide="!ready && fadeInIcon"
                     :folder="!bookmark.url"
+                    :allowFallbackIcon="iconResolved"
                     :image="image" />
                 <span class="bookmark-title-container"
                     v-if="((hideEdit && !image) || !hideEdit)">{{ bookmark.title }}</span>
             </a>
         </span>
-        <template v-if="!hideEdit">
-            <div class="tooltip">{{ bookmark.title }}</div>
+        <template v-if="!hideEdit && expanded">
+            <BookmarkTooltip :text="bookmark.title" />
+            <span class="menu-badge" aria-hidden="true"></span>
             <div class="bookmark-edit">
                 <BookmarkFoldout
                     :darkModeBorder="true"
@@ -45,12 +50,12 @@
                     v-model="showConfirmDelete"
                     persistent
                     width="450">
-                    <BookmarkConfirmDelete
+                    <BookmarkConfirmAction
                         :title="props.bookmark.title"
                         :id="bookmark.id"
                         :typeFolder="!bookmark.url"
                         @cancel="showConfirmDelete = false"
-                        @confirm="onDeleteConfirm($event)" />
+                        @confirm="onDeleteConfirm()" />
                 </v-dialog>
             </v-row>
         </template>
@@ -76,49 +81,66 @@
 <script setup lang="ts">
     import { mdiRename, mdiDeleteOutline, mdiFormatColorFill } from '@mdi/js';
     import {
-        ref, onMounted, onUnmounted, toRef, computed, type Ref,
+        ref, onMounted, onUnmounted, toRef, computed, useAttrs, type Ref,
     } from 'vue';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { EMITS } from '@/constants';
+    import { EMITS, ARGS, STORAGE_KEYS } from '@/constants';
     import emitter from '@cmp/eventBus';
     import type { BookmarkNode, FoldoutListItem } from '@/types/bookmark';
-    import BookmarkConfirmDelete
-        from '@/components/forms/BookmarkConfirmDelete.vue';
+    import BookmarkConfirmAction
+        from '@/components/forms/BookmarkConfirmAction.vue';
     import BookmarkIcon from '@/components/bookmarks/sharedComponents/BookmarkIcon.vue';
     import BookmarkFoldout
         from '@/components/fields/BookmarkFoldout.vue';
     import BookmarkColorEdit
         from '@/components/forms/BookmarkColorEdit.vue';
+    import BookmarkTooltip from '@/components/bookmarks/sharedComponents/BookmarkTooltip.vue';
     import { useBookmarkOps } from '@cmp/useBookmarkOps';
-    import { uniq } from 'lodash';
+    import { useOpenBookmark } from '@cmp/useOpenBookmark';
+    import { getContrastColor } from '@utils/colorUtils';
+
+    // The template has multiple root nodes, so attrs must be applied manually.
+    defineOptions({ inheritAttrs: false });
 
     const utils = useBookmarkOps();
 
     interface Props {
-        tabIndex?: string;
         bookmark: BookmarkNode;
         size?: string;
         hideEdit?: boolean;
         draggable?: boolean;
-        fadeInIcon?: boolean;
+        // The collapsed preview renders the same markup without tooltip/edit UI.
+        // That keeps hover states from appearing while minified.
+        expanded?: boolean;
     }
 
     const props = withDefaults(defineProps<Props>(), {
-        tabIndex: '-1',
         size: '',
         draggable: true,
-        fadeInIcon: true,
+        expanded: true,
     });
+
+    // Collapsed previews are non-interactive, so keep them out of the tab order.
+    const tabIndex = computed(() => (props.expanded ? '0' : '-1'));
+
+    const attrs = useAttrs();
 
     const isFoldoutOpen = ref(false);
     const image = toRef(props.bookmark, 'image') as Ref<string | null | undefined>;
-    const ready = ref(false);
-    const list = ref<FoldoutListItem[]>([
-        {
-            title: 'Delete',
-            icon: mdiDeleteOutline,
-            event: EMITS.DELETE,
-        },
+
+    if (attrs.image) {
+        image.value = attrs.image as string;
+    }
+
+    const iconResolved = ref(false);
+    const list = computed<FoldoutListItem[]>(() => [
+        ...(props.bookmark.url
+            ? [
+                { title: 'Edit', icon: mdiRename, event: EMITS.EDIT },
+                { title: 'Color', icon: mdiFormatColorFill, event: EMITS.OPEN_COLOR_EDITOR },
+            ] as const
+            : []),
+        { title: 'Delete', icon: mdiDeleteOutline, event: EMITS.DELETE },
     ]);
 
     const emits = defineEmits([
@@ -132,74 +154,36 @@
     async function updateImage() {
         const getImageResponse = await bookmarksStore.getLocalStorage(props.bookmark.id);
 
-        if (getImageResponse) {
-            image.value = (getImageResponse as { image?: string }).image ?? null;
-        }
+        image.value = (getImageResponse as { image?: string } | null)?.image ?? null;
 
-        ready.value = true;
+        iconResolved.value = true;
 
         emits(EMITS.UPDATE);
     }
 
-    function onClick(event: MouseEvent | KeyboardEvent): void {
-        event.preventDefault();
+    const { open: openBookmark } = useOpenBookmark();
 
-        if ((event as PointerEvent).pointerId < 0 || !props.bookmark.url) {
+    function onClick(event: MouseEvent | KeyboardEvent): void {
+        if ((event as PointerEvent).pointerId < 0) {
+            event.preventDefault();
             return;
         }
 
-        if (!bookmarksStore.statistics) {
-            bookmarksStore.statistics = [];
-        }
-
-        const bookmarkStats = (bookmarksStore.statistics ?? [])
-            .find((item) => item.url === props.bookmark.url);
-
-        const bookmarkStatsIndex = (bookmarksStore.statistics ?? [])
-            .findIndex((item) => Object.values(item.id).includes(props.bookmark.id));
-
-        const index = (bookmarkStatsIndex) === -1 ? bookmarksStore.statistics.length
-            : bookmarkStatsIndex;
-        const clicks = bookmarkStats?.clicks !== undefined
-            ? parseInt(String(bookmarkStats.clicks), 10) + 1 : 1;
-
-        let idArr;
-        if (bookmarkStats) {
-            idArr = Object.values(bookmarkStats.id);
-            idArr.push(props.bookmark.id);
-            idArr = uniq(idArr);
-        } else {
-            idArr = [props.bookmark.id];
-        }
-
-        bookmarksStore.statistics[index] = ({
-            clicks,
-            id: idArr,
-            title: props.bookmark.title,
-            timestamp: Date.now(),
-            url: props.bookmark.url,
-        });
-
-        const sorted = bookmarksStore.statistics.sort((a, b) => {
-            if (b.clicks !== a.clicks) {
-                return b.clicks - a.clicks;
-            }
-            return b.timestamp - a.timestamp;
-        });
-
-        bookmarksStore.setSyncStorage({ statistics: sorted });
-
-        if (event.ctrlKey || event.metaKey) {
-            window.open(props.bookmark.url, '_blank');
-        } else {
-            window.location.href = props.bookmark.url;
-        }
+        openBookmark(props.bookmark, event);
     }
 
     const color = toRef(props.bookmark, 'color') as Ref<string | null | undefined>;
 
+    // Popup badge sits behind the icon, so its dots need to read against the same surface color.
+    const popupMenuIconColor = computed(() => {
+        if (color.value) {
+            return getContrastColor(color.value);
+        }
+        return bookmarksStore.enableDarkMode ? 'white' : 'black';
+    });
+
     async function updateColor() {
-        const getColorResponse = await bookmarksStore.getSyncStorage('bookmarkColors');
+        const getColorResponse = await bookmarksStore.getSyncStorage(STORAGE_KEYS.BOOKMARK_COLORS);
 
         if (getColorResponse) {
             color.value = (getColorResponse as Record<string, string>)[props.bookmark.id];
@@ -212,7 +196,7 @@
         showConfirmDelete.value = true;
     }
 
-    function onDeleteConfirm(_event?: unknown): void {
+    function onDeleteConfirm(): void {
         showConfirmDelete.value = false;
 
         if (props.bookmark.url) {
@@ -237,37 +221,18 @@
         }
     }
 
-    const selectedColor = ref();
-
     const showColorEdit = ref(false);
 
     async function onColorConfirm(event: string | null): Promise<void> {
-        selectedColor.value = event;
-
         showColorEdit.value = false;
 
-        const getColorsResponse = await bookmarksStore.getSyncStorage('bookmarkColors');
-        const colorsObj = (getColorsResponse || {}) as Record<string, string>;
+        await bookmarksStore.saveColor(STORAGE_KEYS.BOOKMARK_COLORS, props.bookmark.id, event);
 
         const bookmark = utils.getStoredBookmarkById(props.bookmark.id);
+        if (bookmark) { bookmark.color = event ?? ''; }
+        color.value = event;
 
-        if (event) {
-            colorsObj[props.bookmark.id] = selectedColor.value;
-            if (bookmark) { bookmark.color = selectedColor.value; }
-            color.value = selectedColor.value;
-        } else if (colorsObj[props.bookmark.id]) {
-            delete colorsObj[props.bookmark.id];
-            if (bookmark) { bookmark.color = ''; }
-            color.value = null;
-        }
-
-        if (!Object.keys(colorsObj).length) {
-            bookmarksStore.deleteSyncStorageItem('bookmarkColors');
-        } else {
-            bookmarksStore.setSyncStorage({ bookmarkColors: colorsObj });
-        }
-
-        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'color', id: props.bookmark.id });
+        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.COLOR, id: props.bookmark.id });
     }
 
     onUnmounted(() => {
@@ -279,37 +244,19 @@
         emitter.on(EMITS.IMAGES_IMPORT, onImagesImportHandler);
         emitter.on(EMITS.ICON_UPDATE, onIconUpdateHandler);
 
-        if (props.bookmark.url) {
-            const colorItem = {
-                title: 'Color',
-                icon: mdiFormatColorFill,
-                event: EMITS.OPEN_COLOR_EDITOR,
-            };
-
-            const editItem = {
-                title: 'Edit',
-                icon: mdiRename,
-                event: EMITS.EDIT,
-            };
-
-            list.value.unshift(colorItem);
-            list.value.unshift(editItem);
-        }
-
         updateImage();
     });
 
 </script>
 <style scoped lang="scss">
+    @use "../../../scss/menuBadge" as *;
 
     .bookmark {
         display: inline-block;
         margin: 0 0 8px;
         position: relative;
-    }
-
-    .foldout {
-        margin-right: 4px;
+        // Own stacking context so inner z-indexes can't outrank a hovered sibling.
+        z-index: 0;
     }
 
     .bookmark-link {
@@ -317,15 +264,20 @@
         color: rgba(var(--v-theme-on-surface),var(--v-high-emphasis-opacity));
         display: flex;
         flex-direction: column;
-        margin-top: 34px;
+        margin-top: 0;
         outline-color: #01a1f6;
-        outline-offset: 14px;
+        outline-offset: 7px;
+        position: relative;
         text-decoration: none;
         width: 90px;
+        z-index: 1;
+
+        &:focus-visible {
+            outline-style: solid;
+            outline-width: 2px;
+        }
 
         &.hide-edit {
-            margin-top: 4px;
-
             .bookmark-title-container {
                 margin-top: 4px;
             }
@@ -336,13 +288,13 @@
 
             .bookmark-image-container {
                 width: 100%;
-                padding: 4px;
-                border-radius: 7px;
+                padding: 7.14%;
+                border-radius: 12.5%;
                 font-size: 34px;
             }
 
             :deep(.bookmark-image) {
-                border-radius: 5px;
+                border-radius: 8.93%;
             }
 
             .bookmark-title-container {
@@ -355,7 +307,7 @@
 
             .bookmark-image-container {
                 width: 100%;
-                padding: 6px;
+                padding: 7.32%;
             }
 
             .bookmark-title-container {
@@ -368,13 +320,13 @@
 
             .bookmark-image-container {
                 width: 100%;
-                padding: 8px;
-                border-radius: 14px;
+                padding: 7.41%;
+                border-radius: 12.96%;
                 font-size: 66px;
             }
 
             :deep(.bookmark-image) {
-                border-radius: 10px;
+                border-radius: 9.26%;
             }
 
             .bookmark-title-container {
@@ -383,16 +335,12 @@
         }
 
         &.smaller {
-            width: 50px;
+            width: 58px;
 
             .bookmark-image-container {
-                border-radius: 6px;
-                padding: 4px;
+                border-radius: 12%;
+                padding: 8%;
                 width: 100%;
-
-                :deep(svg) {
-                    width: 32px
-                }
             }
 
             .bookmark-title-container {
@@ -403,14 +351,12 @@
 
     .bookmark-image-container {
         transform-origin: center right;
-    }
-
-    :deep(.v-btn--icon.v-btn--density-default) {
-        width: 28px;
-        height: 28px;
+        // Prevents the icon's drop shadow from darkening the badge poking out of the corner.
+        box-shadow: none !important;
     }
 
     .bookmark-title-container {
+        color: var(--grey-dark);
         display: inline-block;
         margin: 15px 0 0;
         max-width: 100%;
@@ -420,69 +366,106 @@
         white-space: nowrap;
     }
 
-    .bookmark-edit {
-        visibility: hidden;
-        position: absolute;
-        right: 0;
-        top: 0;
-        opacity: .5;
+    // In the popup grid, the icon fills its cell rather than the accordion width.
+    // Width needs to be set explicitly so the percentage resolves all the way down.
+    .bookmark.popup {
+        width: 100%;
+        // The stacked bottom margin overflows the fixed-square grid.
+        // Collapse it while minified and restore it as the popup opens.
+        margin-bottom: 0;
+        transition: margin-bottom 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+
+        &.expanded {
+            margin-bottom: 8px;
+        }
+
+        .bookmark-link {
+            margin-top: 0;
+            width: 100%;
+            // Stretching to 100% breaks the icon-size classes' fixed px font-size
+            // (tuned for their own fixed anchor width), so re-derive it as a
+            // percentage of this link's actual rendered width instead. All three
+            // icon-size tiers use ~61% (34/56, 50/82, 66/108), so one rule covers them
+            container-type: inline-size;
+
+            .bookmark-image-container {
+                font-size: 61cqw;
+            }
+
+            .bookmark-title-container {
+                // Start collapsed to match the preview look
+                // Line-height 0 ensures the row truly takes no space.
+                margin-top: 0;
+                opacity: 0;
+                font-size: 0;
+                line-height: 0;
+                // Let title spacing grow with the grid resize.
+                // This prevents overflow while the popup is still opening.
+                transition: font-size 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                    line-height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                    margin-top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                    opacity 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+            }
+        }
+
+        &.expanded .bookmark-link .bookmark-title-container {
+            margin-top: 10px;
+            font-size: 12px;
+            line-height: 1.2;
+            opacity: 1;
+            // Fades in immediately alongside the popup grow animation (0.28s duration, no delay).
+            transition: font-size 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                line-height 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                margin-top 0.28s cubic-bezier(0.2, 0.85, 0.2, 1),
+                opacity 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+        }
+
+        // smaller than the base tooltip so it fits the tighter popup cells.
+        .tooltip {
+            font-size: 15px;
+            padding: 2px 12px;
+        }
+    }
+
+    @include bookmark-edit-badge(rgb(var(--v-theme-bookmark-surface)));
+
+    // Smaller icons get a proportionally smaller badge/button.
+    .bookmark.icon-small {
+        --menu-badge-size: 20px;
     }
 
     .bookmark {
-        &:hover,
-        &.foldout-open {
+        &:not(.drag-active):not(.popup):hover,
+        &:not(.drag-active):not(.popup):has(:focus-visible),
+        &:not(.drag-active):not(.popup).foldout-open {
             z-index: 1;
 
-            .tooltip {
+            // Direct-child combinators: this must never reach the nested BookmarkLink
+            // instances a group renders for its preview icons — only this bookmark's
+            // own elements should react to its own hover/focus state.
+            > .handle > .bookmark-link .bookmark-image-container {
+                border-top-right-radius: 0;
+            }
+
+            > .tooltip {
                 opacity: 1;
                 transition: opacity 0s;
                 transition-delay: 400ms;
             }
 
-            .bookmark-edit {
+            > .bookmark-edit,
+            > .menu-badge {
                 visibility: visible;
             }
         }
     }
 
-    .tooltip {
-        background: rgb(var(--v-theme-surface-variant));
-        border-radius: 4px;
-        bottom: 0;
-        color: rgb(var(--v-theme-on-surface-variant));
-        font-size: 14px;
-        left: 50%;
-        max-width: 200px;
-        opacity: 0;
-        overflow: hidden;
-        padding: 5px 16px;
-        pointer-events: none;
-        position: absolute;
-        text-overflow: ellipsis;
-        transform: translate(-50%, 8px);
-        white-space: nowrap;
-
-        @media (min-width: 768px) {
-            max-width: 230px;
-        }
-
-        @media (min-width: 1024px) {
-            max-width: 300px;
-        }
-
-        @media (min-width: 1200px) {
-            max-width: 500px;
-        }
-    }
-
-    .bookmark:hover .bookmark-link:not(.folder) .bookmark-image-container {
+    .bookmark:not(.drag-active):not(.popup):hover > .handle > .bookmark-link:not(.folder) .bookmark-image-container {
         transform: perspective(400px) rotateY(25deg) scale(1.02);
-        box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
     }
 
-    .bookmark .bookmark-link:active:not(.folder) .bookmark-image-container {
+    .bookmark:not(.drag-active):not(.popup) > .handle > .bookmark-link:active:not(.folder) .bookmark-image-container {
         transform: perspective(400px) rotateY(-15deg) scale(.98);
-        box-shadow: 0 0 25px 0px rgba(0, 0, 0, 0.15);
         transform-origin: center right;
     }
 

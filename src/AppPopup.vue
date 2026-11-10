@@ -12,15 +12,14 @@
     import { ref, onMounted } from 'vue';
     import BookmarkCreateForm from '@/components/forms/BookmarkCreateForm.vue';
     import ErrorAlert from '@/components/shared/ErrorAlert.vue';
-    import { FOLDER } from '@/constants';
+    import { FOLDER, STORAGE_KEYS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
-    import { useTheme } from 'vuetify';
     import { useAccordionSync } from '@cmp/useAccordionSync';
+    import { useDarkMode } from '@cmp/useDarkMode';
     import type { BookmarkNode } from '@/types/bookmark';
 
-    const theme = useTheme();
-
-    const utils = useAccordionSync();
+    const { buildRootFolder } = useAccordionSync();
+    const { applyDarkMode } = useDarkMode();
 
     const bookmarksStore = useBookmarksStore();
 
@@ -58,47 +57,19 @@
     }
 
     onMounted(async () => {
-        // Fetch initial data in parallel for better performance
-        const [
-            tree,
-            preferDarkModeResponse,
-            systemDarkModeResponse,
-        ] = await Promise.all([
-            bookmarksStore.getTree(),
-            bookmarksStore.getSyncStorage('darkMode'),
-            bookmarksStore.getSyncStorage('systemDarkMode'),
-        ]);
-
-        // Locate and set up the bookmarks bar
-        type NodeWithFolderType = chrome.bookmarks.BookmarkTreeNode & { folderType?: string };
-        const bookmarksBar = (tree[0].children ?? [])
-            .find((node) => (node as NodeWithFolderType).folderType === FOLDER.ROOT.parentFolderType);
-
-        if (!bookmarksBar) {
+        if (!await bookmarksStore.loadBookmarksBarId()) {
             return;
         }
 
-        bookmarksStore.setBookmarksBarId(bookmarksBar.id);
+        const [darkMode, systemDarkMode] = await Promise.all([
+            bookmarksStore.getSyncStorage(STORAGE_KEYS.DARK_MODE),
+            bookmarksStore.getSyncStorage(STORAGE_KEYS.SYSTEM_DARK_MODE),
+        ]);
 
-        // Configure dark mode theme
-        bookmarksStore.enablePreferDarkMode = !!preferDarkModeResponse;
-        bookmarksStore.enableSystemDarkMode = !!systemDarkModeResponse;
-
-        // Determine active dark mode setting based on priority: system > preference > light
-        if (bookmarksStore.enableSystemDarkMode) {
-            bookmarksStore.enableDarkMode = window
-                .matchMedia('(prefers-color-scheme: dark)').matches;
-        } else if (bookmarksStore.enablePreferDarkMode) {
-            bookmarksStore.enableDarkMode = true;
-        } else {
-            bookmarksStore.enableDarkMode = false;
-        }
-
-        // Apply theme to Vuetify
-        theme.global.name.value = bookmarksStore.enableDarkMode ? 'dark' : 'light';
+        applyDarkMode(darkMode, systemDarkMode);
 
         // Initialize bookmarks data structure
-        await utils.buildRootFolder();
+        await buildRootFolder();
         await getBookmarks();
 
         // Get current tab information for the form
@@ -107,8 +78,14 @@
     });
 </script>
 
-<style>
-    @import "./scss/typography.scss";
+<style lang="scss">
+    @use "./scss/typography.scss";
+
+    // The popup has no scroll-lock overlay, so the stable gutter only adds an empty strip.
+    html:has(.popup-wrapper),
+    html:has(.popup-wrapper) body {
+        scrollbar-gutter: auto;
+    }
 
     .popup-wrapper {
         min-width: 650px;

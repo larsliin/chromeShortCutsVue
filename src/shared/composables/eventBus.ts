@@ -1,10 +1,12 @@
 import mitt from 'mitt';
 import { EMITS } from '@/constants';
 
-export type AppEventMap = {
+export type BookmarksUpdatedPayload = { type: string; id: string; children?: string[] };
+
+type AppEventMap = {
     [EMITS.BOOKMARK_ADD]: string;
     [EMITS.BOOKMARKS_IMPORT]: void;
-    [EMITS.BOOKMARKS_UPDATED]: { type: string; id: string; children?: string[] };
+    [EMITS.BOOKMARKS_UPDATED]: BookmarksUpdatedPayload;
     [EMITS.CHANGED]: string;
     [EMITS.CLICK_BACKGROUND]: void;
     [EMITS.DRAG_START]: void;
@@ -14,10 +16,8 @@ export type AppEventMap = {
     [EMITS.IMAGES_IMPORT]: void;
 };
 
-// Single shared event bus instance for the entire app.
-// Emit: emitter.emit(EMITS.XXX, payload)
-// Subscribe: emitter.on(EMITS.XXX, handler)  — call in onMounted
-// Unsubscribe: emitter.off(EMITS.XXX, handler) — call in onUnmounted
+// Shared event bus for the app.
+// Use it for cross-component notifications and cleanup.
 const emitter = mitt<AppEventMap>();
 
 export default emitter;

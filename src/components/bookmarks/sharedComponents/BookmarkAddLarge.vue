@@ -2,16 +2,19 @@
     <div class="outer"
         v-if="!bookmarksStore.hasBookmarks && !bookmarksStore.bookmarkSearch"
         :class="{ dark: bookmarksStore.enableDarkMode }"
+        role="button"
+        tabindex="0"
+        aria-label="Add bookmark"
         @keyup.enter="onClick()"
         @click="onClick()">
         <v-icon
             class="icon"
-            :icon="mdiStar" />
+            :icon="StarIcon" />
     </div>
 </template>
 
 <script setup lang="ts">
-    import { mdiStar } from '@mdi/js';
+    import StarIcon from '@/components/bookmarks/sharedComponents/StarIcon.vue';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { EMITS } from '@/constants';
     import emitter from '@cmp/eventBus';
@@ -45,6 +48,12 @@
         &:hover {
             cursor: pointer;
             opacity: .15;
+        }
+
+        &:focus-visible {
+            opacity: .15;
+            outline: solid 2px #01a1f6;
+            outline-offset: 4px;
         }
     }
 

@@ -1,5 +1,4 @@
-// Initial loading and refresh of the bookmarks tree, plus cleanup of
-// orphaned local-storage entries.
+import { watch } from 'vue';
 import type { BookmarkNode } from '@/types/bookmark';
 import { useBookmarksStore } from '@stores/bookmarks';
 import { useBookmarkOps } from '@cmp/useBookmarkOps';
@@ -9,21 +8,41 @@ export function useBookmarkLoader() {
     const bookmarksStore = useBookmarksStore();
     const { getBookmarksAsFlatArr } = useBookmarkOps();
 
-    // Skipped during an active drag — the next event will perform the refresh
-    async function update(): Promise<void> {
-        if (bookmarksStore.dragStart) {
-            bookmarksStore.dragStart = false;
-            return;
-        }
+    let pendingRefresh = false;
 
-        const rootId = await bookmarksStore.getLocalStorage(FOLDER.ROOT.name);
-        const tree = await bookmarksStore.getBookmarks(rootId as string);
+    async function loadTree(rootId: unknown): Promise<void> {
+        const tree = await bookmarksStore.getColorizedBookmarks(rootId as string);
 
-        const rootChildren = tree[0].children ?? [];
+        const rootChildren = tree[0]?.children ?? [];
+        await bookmarksStore.reconcileGroupIdsFromTree(rootChildren);
         bookmarksStore.bookmarks = rootChildren as BookmarkNode[];
     }
 
-    // Remove local-storage entries whose IDs no longer exist in Chrome bookmarks
+    async function performUpdate(): Promise<void> {
+        await loadTree(await bookmarksStore.getLocalStorage(FOLDER.ROOT.name));
+    }
+
+    // Skip refreshes during drag so vuedraggable does not lose its source array.
+    // A pending refresh runs once the drag completes.
+    async function update(): Promise<void> {
+        if (bookmarksStore.dragStart) {
+            pendingRefresh = true;
+            return;
+        }
+
+        await performUpdate();
+    }
+
+    watch(
+        () => bookmarksStore.dragStart,
+        async (dragging) => {
+            if (!dragging && pendingRefresh) {
+                pendingRefresh = false;
+                await performUpdate();
+            }
+        },
+    );
+
     async function runCleanup(): Promise<void> {
         const localItems = await bookmarksStore.getLocalStorageAll() as Record<
             string,
@@ -50,11 +69,12 @@ export function useBookmarkLoader() {
         bookmarksStore.rootId = rootId as string | null;
 
         try {
-            const tree = await bookmarksStore.getColorizedBookmarks(rootId as string);
-            const rootChildren = tree[0]?.children ?? [];
+            await bookmarksStore.loadGroupIds();
+            await bookmarksStore.migrateLegacyGroupFolders();
 
-            bookmarksStore.bookmarks = rootChildren as BookmarkNode[];
+            await loadTree(rootId);
 
+            await bookmarksStore.cleanupGroupIds();
             await runCleanup();
         } catch (_error) {
             bookmarksStore.bookmarks = [];

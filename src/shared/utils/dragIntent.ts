@@ -1,0 +1,79 @@
+import { GROUPING } from '@/constants';
+import type { BookmarkNode, DragEventInfo } from '@/types/bookmark';
+import {
+    findNodeById,
+    isBookmarkLink,
+    isGroupFolder,
+} from '@utils/bookmarkGroups';
+
+export interface DropIntent {
+    type: 'create' | 'add-to-group';
+    targetId: string;
+}
+
+// Chrome inserts before the target index, so moving down needs one extra slot.
+export function getMoveIndex({ newIndex, oldIndex }: DragEventInfo): number {
+    return newIndex > oldIndex ? newIndex + 1 : newIndex;
+}
+
+interface ComputeDropIntentArgs {
+    draggedId: string;
+    targetId: string;
+    items: BookmarkNode[];
+    parentFolder: BookmarkNode;
+    storeBookmarks: BookmarkNode[];
+    groupMode: boolean;
+    groupIds: Record<string, true>;
+}
+
+// Derive the drag-and-drop intent for the current gesture.
+// Return null when the action should fall through to a normal move.
+export function computeDropIntent({
+    draggedId,
+    targetId,
+    items,
+    parentFolder,
+    storeBookmarks,
+    groupMode,
+    groupIds,
+}: ComputeDropIntentArgs): DropIntent | null {
+    if (!groupMode) {
+        return null;
+    }
+
+    if (!draggedId || !targetId || draggedId === targetId) {
+        return null;
+    }
+
+    const dragged = items.find((item) => item.id === draggedId);
+    const related = items.find((item) => item.id === targetId);
+
+    if (!dragged || !related) {
+        return null;
+    }
+
+    const canCreateGroup = isBookmarkLink(dragged)
+        && isBookmarkLink(related)
+        && dragged.parentId === parentFolder.id
+        && related.parentId === parentFolder.id
+        && !isGroupFolder(parentFolder, groupIds);
+
+    if (canCreateGroup) {
+        return { type: 'create', targetId: related.id };
+    }
+
+    const canAddToGroup = isBookmarkLink(dragged) && isGroupFolder(related, groupIds);
+
+    if (canAddToGroup) {
+        const groupedNode = findNodeById(storeBookmarks, related.id);
+        const groupedCount = groupedNode?.children?.filter((item) => !!item.url).length ?? 0;
+
+        if (groupedCount >= GROUPING.MAX_ITEMS) {
+            return null;
+        }
+
+        return { type: 'add-to-group', targetId: related.id };
+    }
+
+    return null;
+}

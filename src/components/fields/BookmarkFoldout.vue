@@ -4,6 +4,7 @@
             'dark-mode-border': darkModeBorder, dark: bookmarksStore.enableDarkMode,
         }"
         location="end bottom"
+        :offset="[-6, -6]"
         origin="start top"
         v-model="toggle">
         <template v-slot:activator="{ props }">
@@ -11,7 +12,8 @@
                 class="button"
                 :size="size"
                 :icon="mdiDotsVertical"
-                v-bind="props" />
+                v-bind="props"
+                :ripple="false" />
         </template>
         <v-list
             class="list">
@@ -52,6 +54,7 @@
 
     const emits = defineEmits([
         EMITS.DELETE,
+        EMITS.DELETE_ALL,
         EMITS.RENAME,
         EMITS.TOGGLE,
         EMITS.OPEN_COLOR_EDITOR,
@@ -69,25 +72,8 @@
 
     const toggle = ref();
 
-    function onListItemClick(event: string): void {
-        switch (event) {
-        case EMITS.RENAME:
-            emits(EMITS.RENAME);
-            break;
-        case EMITS.OPEN_COLOR_EDITOR:
-            emits(EMITS.OPEN_COLOR_EDITOR);
-            break;
-        case EMITS.DELETE:
-            emits(EMITS.DELETE);
-            break;
-        case EMITS.EDIT:
-            emits(EMITS.EDIT);
-            break;
-        case EMITS.BOOKMARK_ADD:
-            emits(EMITS.BOOKMARK_ADD);
-            break;
-        default:
-        }
+    function onListItemClick(event: FoldoutListItem['event']): void {
+        emits(event);
     }
 
     watch(toggle, (newVal) => {
@@ -123,10 +109,35 @@
     }
 
     .button {
-        background-color: transparent;
-        box-shadow: none;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        color: var(--popup-menu-icon-color, currentColor);
+        outline-color: #01a1f6;
+        outline-offset: 2px;
         position: relative;
+        width: var(--menu-badge-size, 28px);
+        height: var(--menu-badge-size, 28px);
         z-index: 5;
+
+        &:focus-visible {
+            outline: 2px solid #01a1f6 !important;
+            box-shadow: none !important;
+
+            &::after {
+                content: none;
+            }
+        }
+
+    }
+
+    // Vuetify renders the button root, so scope this global selector by its local class.
+    :global(.v-btn.button > .v-btn__overlay) {
+        display: none !important;
+        opacity: 0 !important;
+    }
+
+    :global(.v-btn.button .v-ripple__container) {
+        display: none !important;
     }
 
     .item-button {

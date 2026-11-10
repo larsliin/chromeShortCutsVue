@@ -1,16 +1,24 @@
 <template>
     <div class="toolbar d-flex" v-if="ready">
         <div>
-            <v-btn
+            <TooltipButton
                 class="toolbar-add-button"
-                :icon="mdiStar"
+                text="Add bookmark"
+                :icon="StarIcon"
                 @click="dialogAddOpen = true" />
             <BookmarksFilter
                 class="toolbar-filter-input" />
         </div>
         <div>
-            <v-btn
+            <TooltipButton
+                class="toolbar-group-button"
+                :class="{ active: bookmarksStore.groupMode }"
+                :text="bookmarksStore.groupMode ? 'Disable group mode' : 'Enable group mode'"
+                :icon="mdiFolderMultiple"
+                @click="onToggleGroupMode()" />
+            <TooltipButton
                 class="toolbar-settings-button"
+                text="Settings"
                 :icon="mdiWrench"
                 @click="dialogSettings = true" />
         </div>
@@ -95,7 +103,7 @@
                     v-model="showConfirmDelete"
                     persistent
                     width="450">
-                    <BookmarkConfirmDelete
+                    <BookmarkConfirmAction
                         :title="deleteConfirmTitle"
                         :id="deleteConfirmId"
                         :typeFolder="deleteConfirmIsFolder"
@@ -108,7 +116,11 @@
 </template>
 
 <script setup lang="ts">
-    import { mdiStar, mdiWrench, mdiAlertCircleOutline } from '@mdi/js';
+    import {
+        mdiWrench,
+        mdiAlertCircleOutline,
+        mdiFolderMultiple,
+    } from '@mdi/js';
     import {
         ref, watch, onMounted, onUnmounted,
     } from 'vue';
@@ -118,9 +130,11 @@
     import { EMITS, TIMEOUTS } from '@/constants';
     import { useBookmarksStore } from '@stores/bookmarks';
     import { getDomainFromUrl } from '@utils/urlUtils';
-    import BookmarkConfirmDelete
-        from '@/components/forms/BookmarkConfirmDelete.vue';
+    import BookmarkConfirmAction
+        from '@/components/forms/BookmarkConfirmAction.vue';
     import BookmarksFilter from '@/components/fields/BookmarksFilter.vue';
+    import TooltipButton from '@/components/fields/TooltipButton.vue';
+    import StarIcon from '@/components/bookmarks/sharedComponents/StarIcon.vue';
 
     const dialogSettings = ref(false);
 
@@ -136,18 +150,18 @@
     const deleteConfirmTitle = ref('');
     const deleteConfirmIsFolder = ref(false);
     const showConfirmDelete = ref(false);
+    const bookmarksStore = useBookmarksStore();
 
     async function onDelete(event: { title: string; id: string }): Promise<void> {
         deleteConfirmTitle.value = event.title;
         deleteConfirmId.value = event.id;
 
         const bookmark = await bookmarksStore.getBookmarkById(event.id);
-        deleteConfirmIsFolder.value = !bookmark?.url;
+        deleteConfirmIsFolder.value = !bookmark.url;
 
         showConfirmDelete.value = true;
     }
 
-    const bookmarksStore = useBookmarksStore();
     const dialogAddOpen = ref(false);
 
     async function onDeleteConfirm(id: string): Promise<void> {
@@ -156,10 +170,9 @@
         showConfirmDelete.value = false;
         dialogAddOpen.value = false;
 
-        const bookmarkResponse = await bookmarksStore.getBookmarkById(id);
-        const bookmark = bookmarkResponse;
+        const bookmark = await bookmarksStore.getBookmarkById(id);
 
-        if (bookmark && bookmark.url) {
+        if (bookmark.url) {
             bookmarksStore.removeBookmark(bookmark.id);
             bookmarksStore.deleteLocalStorageItem(bookmark.id);
         } else {
@@ -197,6 +210,10 @@
         dialogAddOpen.value = true;
     }
 
+    function onToggleGroupMode(): void {
+        bookmarksStore.groupMode = !bookmarksStore.groupMode;
+    }
+
     watch(dialogAddOpen, (val) => {
         if (!val) {
             // wait with resetting until modal has finished close animation
@@ -215,7 +232,7 @@
         emitter.off(EMITS.CLICK_BACKGROUND, onClickBackgroundHandler);
     });
 
-    onMounted(async () => {
+    onMounted(() => {
         emitter.on(EMITS.EDIT, onEditHandler);
         emitter.on(EMITS.BOOKMARK_ADD, onBookmarkAddHandler);
         emitter.on(EMITS.CLICK_BACKGROUND, onClickBackgroundHandler);
@@ -225,17 +242,15 @@
 </script>
 
 <style scoped lang="scss">
-    .add-bookmark-btn.v-btn.v-btn--density-default {
-        height: calc(var(--v-btn-height) + 3px);
-    }
-
     .toolbar {
         $breakpoint: 540px;
 
+        box-sizing: border-box;
         height: 0;
         justify-content: center;
         position: fixed;
         width: $breakpoint;
+        padding-inline: 20px;
         z-index: 999;
 
         @media (min-width: $breakpoint) {
@@ -249,12 +264,28 @@
             top: 45px;
         }
 
+        > div:last-child {
+            gap: 6px;
+        }
+
         > div:first-child {
             flex: 0 1 calc(100% - 90px);
         }
 
-        &-add-button {
-            color: var(--yellow);
+        :deep(.toolbar-add-button) {
+            color: var(--green);
+        }
+
+        :deep(.toolbar-group-button) {
+            transition: box-shadow 0.28s cubic-bezier(0.2, 0.85, 0.2, 1), color 0.28s ease;
+        }
+
+        :deep(.toolbar-group-button.active) {
+            color: #4ade80;
+            box-shadow:
+                0 0 10px rgba(74, 222, 128, 0.6),
+                0 0 20px rgba(74, 222, 128, 0.4),
+                inset 0 0 8px rgba(74, 222, 128, 0.2);
         }
 
         &-filter-input {

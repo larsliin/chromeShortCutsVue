@@ -1,22 +1,7 @@
 import { FOLDER } from './src/constants';
+import { searchFolder } from './src/shared/composables/chromeApi';
 
 /* eslint-disable */
-function searchFolder(bookmarkTreeNodes, folderName) {
-    // eslint-disable-next-line no-restricted-syntax
-    for (const node of bookmarkTreeNodes) {
-        if (node.title === folderName && node.children) {
-            return node;
-        }
-        if (node.children) {
-            const result = searchFolder(node.children, folderName);
-            if (result) {
-                return result;
-            }
-        }
-    }
-    return false;
-}
-
 chrome.runtime.onInstalled.addListener(async (details) => {
     const title = FOLDER.ROOT.label;
     const { reason } = details;
@@ -51,28 +36,32 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     }
 });
 
-function disableActionButton(tabId, url) {
-    const protocols = ['http', 'https'];
-    const startsWithAny = protocols.some((prefix) => url.startsWith(`${prefix}:`));
+const ICON_SIZES = [16, 32, 48, 128];
 
-    if (!startsWithAny) {
-        chrome.action.setPopup({ popup: '' });
-    } else {
-        chrome.action.setPopup({ popup: 'popup.html' });
-    }
- }
+function getIconPaths(suffix = '') {
+    return Object.fromEntries(ICON_SIZES.map((size) => [size, `icons/${size}${suffix}.png`]));
+}
 
-chrome.tabs.onActivated.addListener((activeInfo) => {
-    chrome.tabs.get(activeInfo.tabId, (tab) => {
-        if (chrome.runtime.lastError) {
-            return;
-        }
-        disableActionButton(activeInfo.tabId, tab.url);
-    });
-});
+// Only http(s) pages are enabled; chrome://, chrome-extension://, about:, file: etc. are disabled
+function isPageSupported(url = '') {
+    return ['http', 'https'].some((protocol) => url.startsWith(`${protocol}:`));
+}
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+async function syncActionButton() {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    const supported = isPageSupported(tab?.url);
+
+    chrome.action.setPopup({ popup: supported ? 'popup.html' : '' });
+    chrome.action.setIcon({ path: getIconPaths(supported ? '' : '-disabled') });
+}
+
+chrome.tabs.onActivated.addListener(syncActionButton);
+chrome.windows.onFocusChanged.addListener(syncActionButton);
+chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
     if (changeInfo.url) {
-        disableActionButton(tabId, changeInfo.url);
+        syncActionButton();
     }
 });
+
+// Service worker state is ephemeral, so re-sync whenever it starts
+syncActionButton();

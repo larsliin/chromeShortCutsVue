@@ -6,24 +6,46 @@ import { useBookmarksStore } from '@stores/bookmarks';
 import { useBookmarkOps } from '@cmp/useBookmarkOps';
 import { useAccordionSync } from '@cmp/useAccordionSync';
 import { useBookmarkLoader } from '@cmp/useBookmarkLoader';
-import { FOLDER, EMITS, ARGS } from '@/constants';
-import emitter from '@cmp/eventBus';
+import {
+    FOLDER, EMITS, ARGS, GROUPING, STORAGE_KEYS,
+} from '@/constants';
+import emitter, { type BookmarksUpdatedPayload } from '@cmp/eventBus';
+import { findNodeById, removeNodeById } from '@utils/bookmarkGroups';
 
 export function useBookmarkEvents() {
     const bookmarksStore = useBookmarksStore();
     const { getStoredBookmarkById, deleteLocalStoreImages } = useBookmarkOps();
-    const { buildRootFolder, updateAccordionModel } = useAccordionSync();
-    const { update } = useBookmarkLoader();
+    const { buildRootFolder, updateAccordionModel, persistAccordionModel } = useAccordionSync();
+    const { getBookmarks: reloadBookmarks, update } = useBookmarkLoader();
+
+    function collectLeafIds(node: BookmarkNode): string[] {
+        if (node.url) {
+            return [node.id];
+        }
+
+        return (node.children ?? []).flatMap((child) => collectLeafIds(child));
+    }
+
+    function findParentNode(nodes: BookmarkNode[], id: string): BookmarkNode | null {
+        return nodes.reduce<BookmarkNode | null>((found, node) => {
+            if (found) {
+                return found;
+            }
+
+            if ((node.children ?? []).some((child) => child.id === id)) {
+                return node;
+            }
+
+            return findParentNode(node.children ?? [], id);
+        }, null);
+    }
 
     function isBookmarkInScope(id: string): boolean {
         if (id === bookmarksStore.rootId) {
             return true;
         }
 
-        const bookmarkExists = bookmarksStore.flatBookmarks.some((e) => e?.id === id);
-        const folderExists = (bookmarksStore.bookmarks ?? []).some((e) => e.id === id);
-
-        return bookmarkExists || folderExists;
+        return !!findNodeById(bookmarksStore.bookmarks ?? [], id);
     }
 
     async function isNewBookmarkInScope(
@@ -34,73 +56,72 @@ export function useBookmarkEvents() {
         }
 
         const event = await bookmarksStore.getBookmarks(bookmarksStore.rootId as string);
-        const rootChildren = event[0].children ?? [];
+        const rootChildren = (event[0].children ?? []) as BookmarkNode[];
 
-        return rootChildren.some((item) => {
-            if (item.id.toString() === bookmark.id.toString()) {
-                return true;
+        const findDepth = (
+            nodes: BookmarkNode[],
+            targetId: string,
+            depth = 1,
+        ): number | null => nodes.reduce<number | null>((found, node) => {
+            if (found !== null) {
+                return found;
             }
 
-            return !!item.children?.some(
-                (child) => child.id.toString() === bookmark.id.toString(),
-            );
-        });
-    }
-
-    function insertCreatedNode(node: chrome.bookmarks.BookmarkTreeNode): void {
-        const bm = node as BookmarkNode;
-        const insertIndex = node.index ?? 0;
-
-        if (node.parentId === bookmarksStore.rootId) {
-            if (bookmarksStore.bookmarks?.length) {
-                bookmarksStore.bookmarks.splice(insertIndex, 0, bm);
-            } else {
-                bookmarksStore.bookmarks = [bm];
+            if (node.id.toString() === targetId) {
+                return depth;
             }
-            return;
+
+            return findDepth(node.children ?? [], targetId, depth + 1);
+        }, null);
+
+        const depth = findDepth(rootChildren, bookmark.id.toString());
+        if (depth === null) {
+            return false;
         }
 
-        const parent = (bookmarksStore.bookmarks ?? []).find((e) => e.id === node.parentId);
-        if (!parent) return;
-
-        if (!parent.children) {
-            parent.children = [];
-        }
-        parent.children.splice(insertIndex, 0, bm);
+        return depth <= GROUPING.MAX_NESTED_LEVEL + GROUPING.ROOT_DEPTH_OFFSET;
     }
 
     function removeBookmarkFromTree(id: string): void {
-        bookmarksStore.bookmarks = (bookmarksStore.bookmarks ?? []).map((parent) => ({
-            ...parent,
-            children: (parent.children ?? []).filter((child) => child.id !== id),
-        }));
+        bookmarksStore.bookmarks = removeNodeById(bookmarksStore.bookmarks ?? [], id);
 
         bookmarksStore.deleteLocalStorageItem(id);
     }
 
     function removeFolderFromTree(id: string): string[] {
         const folders = bookmarksStore.bookmarks ?? [];
-        const index = folders.findIndex((e) => e.id === id);
-        const folder = folders.find((e) => e.id === id);
-        const childIds = folder ? (folder.children ?? []).map((e) => e.id) : [];
+        const rootFolderIndex = folders.findIndex((e) => e.id === id);
+        const folder = findNodeById(folders as BookmarkNode[], id);
 
-        childIds.forEach((childId) => bookmarksStore.deleteLocalStorageItem(childId));
+        if (!folder) {
+            return [];
+        }
 
-        updateAccordionModel(index);
+        const leafIds = collectLeafIds(folder);
 
-        bookmarksStore.bookmarks = folders.filter((e) => e.id !== id);
+        leafIds.forEach((leafId) => bookmarksStore.deleteLocalStorageItem(leafId));
 
-        return childIds;
+        if (rootFolderIndex >= 0) {
+            updateAccordionModel(rootFolderIndex);
+            bookmarksStore.bookmarks = folders.filter((e) => e.id !== id);
+            return leafIds;
+        }
+
+        const parent = findParentNode(folders as BookmarkNode[], id);
+        if (parent?.children) {
+            parent.children = parent.children.filter((child) => child.id !== id);
+        }
+
+        return leafIds;
     }
 
     async function removeEverything(event: string): Promise<void> {
         const cleanup = [
             bookmarksStore.deleteLocalStorageItem(FOLDER.ROOT.name),
-            bookmarksStore.deleteLocalStorageItem('root'),
-            bookmarksStore.deleteSyncStorageItem('accordion'),
-            bookmarksStore.deleteSyncStorageItem('folderColors'),
-            bookmarksStore.deleteSyncStorageItem('bookmarkColors'),
-            bookmarksStore.deleteSyncStorageItem('statistics'),
+            bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.ACCORDION),
+            bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.FOLDER_COLORS),
+            bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.BOOKMARK_COLORS),
+            bookmarksStore.deleteSyncStorageItem(STORAGE_KEYS.STATISTICS),
             deleteLocalStoreImages(),
         ];
 
@@ -111,14 +132,14 @@ export function useBookmarkEvents() {
             bookmarksStore.bookmarks = [];
             bookmarksStore.accordionModel = null;
 
-            emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'removed', id: event });
+            emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.REMOVED, id: event });
         } catch (_error) {
             bookmarksStore.errorMessage = 'Failed to remove bookmarks. Please try again.';
         }
     }
 
     async function applyStoredColor(id: string): Promise<void> {
-        const colorsObj = await bookmarksStore.getSyncStorage('bookmarkColors') as
+        const colorsObj = await bookmarksStore.getSyncStorage(STORAGE_KEYS.BOOKMARK_COLORS) as
             Record<string, string> | null;
 
         const bookmark = getStoredBookmarkById(id);
@@ -127,8 +148,8 @@ export function useBookmarkEvents() {
         bookmark.color = colorsObj?.[id] || '';
     }
 
-    async function onBookmarksUpdated(event: { type: string; id: string }): Promise<void> {
-        if (event.type !== 'color') return;
+    async function onBookmarksUpdated(event: BookmarksUpdatedPayload): Promise<void> {
+        if (event.type !== ARGS.COLOR) return;
 
         await applyStoredColor(event.id);
     }
@@ -152,12 +173,6 @@ export function useBookmarkEvents() {
         id: string,
         bookmarkResponse: chrome.bookmarks.BookmarkTreeNode,
     ): void {
-        const folder = (bookmarksStore.bookmarks ?? []).find((e) => e.id === id);
-        if (folder) {
-            folder.title = bookmarkResponse.title;
-            return;
-        }
-
         const bm = getStoredBookmarkById(id);
         if (!bm) return;
 
@@ -166,8 +181,56 @@ export function useBookmarkEvents() {
         bm.title = bookmarkResponse.title;
     }
 
+    // Single-flight bootstrap guard for root-folder recreation.
+    // This prevents duplicate root folders during bursty Chrome events.
+    let bootstrapPromise: Promise<void> | null = null;
+
+    async function runBootstrap(): Promise<void> {
+        if (bootstrapPromise) {
+            return bootstrapPromise;
+        }
+
+        bootstrapPromise = (async () => {
+            try {
+                await buildRootFolder();
+                if (!bookmarksStore.rootId) return;
+
+                await reloadBookmarks();
+
+                if (bookmarksStore.accordionModel === null) {
+                    await persistAccordionModel([0]);
+                }
+            } finally {
+                bootstrapPromise = null;
+            }
+        })();
+
+        return bootstrapPromise;
+    }
+
     async function onCreated(event: string): Promise<void> {
         if (bookmarksStore.isImporting) return;
+
+        // While bootstrap is running, funnel onCreated events through one pass.
+        // That avoids repeated root-folder rebuilds during a burst.
+        if (bookmarksStore.rootId === null || bootstrapPromise) {
+            try {
+                await runBootstrap();
+            } catch (_error) {
+                return;
+            }
+
+            if (!bookmarksStore.rootId) return;
+
+            // Re-snapshot after a paste burst so late-arriving children are captured.
+            // We trust Chrome's current state after the rebuild.
+            await update();
+
+            await applyStoredColor(event);
+
+            emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.CREATED, id: event });
+            return;
+        }
 
         const bookmarkResponse = await bookmarksStore.getBookmarkById(event);
 
@@ -176,7 +239,8 @@ export function useBookmarkEvents() {
 
         await buildRootFolder();
 
-        insertCreatedNode(bookmarkResponse);
+        await update();
+
         await applyStoredColor(event);
 
         emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.CREATED, id: event });
@@ -201,7 +265,7 @@ export function useBookmarkEvents() {
         }
 
         emitter.emit(EMITS.BOOKMARKS_UPDATED, {
-            type: 'removed',
+            type: ARGS.REMOVED,
             id: event,
             children: removedChildren,
         });
@@ -216,23 +280,18 @@ export function useBookmarkEvents() {
         }
 
         try {
-            const [bookmarkResponse] = await Promise.all([
-                bookmarksStore.getBookmarkById(event),
-                bookmarksStore.getLocalStorage(event),
-            ]);
+            const bookmarkResponse = await bookmarksStore.getBookmarkById(event);
 
-            if (bookmarkResponse) {
-                await persistChangedBookmark(event, bookmarkResponse);
-                emitter.emit(EMITS.ICON_UPDATE, event);
-                syncInMemoryNode(event, bookmarkResponse);
-            }
+            await persistChangedBookmark(event, bookmarkResponse);
+            emitter.emit(EMITS.ICON_UPDATE, event);
+            syncInMemoryNode(event, bookmarkResponse);
         } catch (_error) {
             bookmarksStore.errorMessage = 'Failed to update bookmark. Please try again.';
         }
 
         await applyStoredColor(event);
 
-        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'update', id: event });
+        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.UPDATED, id: event });
     }
 
     async function onMoved(event: string): Promise<void> {
@@ -240,11 +299,7 @@ export function useBookmarkEvents() {
 
         await update();
 
-        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: 'moved', id: event });
-    }
-
-    function onChangedFromBus(id: string): void {
-        onChanged(id);
+        emitter.emit(EMITS.BOOKMARKS_UPDATED, { type: ARGS.MOVED, id: event });
     }
 
     onMounted(() => {
@@ -253,7 +308,7 @@ export function useBookmarkEvents() {
         chrome.bookmarks.onMoved.addListener(onMoved);
         chrome.bookmarks.onChanged.addListener(onChanged);
 
-        emitter.on(EMITS.CHANGED, onChangedFromBus);
+        emitter.on(EMITS.CHANGED, onChanged);
         emitter.on(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdated);
     });
 
@@ -263,7 +318,7 @@ export function useBookmarkEvents() {
         chrome.bookmarks.onMoved.removeListener(onMoved);
         chrome.bookmarks.onChanged.removeListener(onChanged);
 
-        emitter.off(EMITS.CHANGED, onChangedFromBus);
+        emitter.off(EMITS.CHANGED, onChanged);
         emitter.off(EMITS.BOOKMARKS_UPDATED, onBookmarksUpdated);
     });
 }
